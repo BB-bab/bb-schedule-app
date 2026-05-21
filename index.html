@@ -340,13 +340,14 @@
 
         <div id="tab-leaves" class="tab-content hidden space-y-6">
 
-            <div class="bg-white rounded-[2rem] shadow-sm border border-green-100 overflow-hidden">
+            <!-- 🥑 智慧展開式「自動不重複抽籤工具」 -->
+            <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border border-green-100 overflow-hidden">
                 <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-4 bg-green-50/50 hover:bg-green-50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🎉</span>
                         <div class="text-left">
                             <h4 class="font-black text-gray-800 text-lg">🥑 自動抽籤</h4>
-                            <p class="text-[11px] text-gray-400 font-bold">已設定智慧加權不重複機制：中獎一次者權重降低 80% 防止連莊，中獎滿兩次者自動排除！</p>
+                            <p class="text-[11px] text-gray-400 font-bold">已設定智慧加權不重複機制：中獎一次者權重降低 80% 防止連莊，中獎滿兩次者自動排除！支援點休表「超休日期」一鍵智能導入。</p>
                         </div>
                     </div>
                     <div id="draw-arrow-icon" class="text-green-600 transition-transform duration-300">
@@ -355,7 +356,17 @@
                 </button>
 
                 <div id="lucky-draw-panel" class="hidden border-t border-green-50 p-6 bg-white space-y-6">
+                    <!-- 點休表連動高亮提示 -->
+                    <div id="draw-linked-banner" class="hidden bg-[#F6F1EB] border border-[#DECFC0] p-3.5 rounded-2xl flex items-center justify-between transition-all">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🎲</span>
+                            <span id="draw-linked-text" class="text-xs font-black text-[#7F6449]">已載入超休日期進行抽籤</span>
+                        </div>
+                        <button onclick="resetLinkedDrawData()" class="text-[11px] font-black text-red-500 hover:text-red-700 transition">取消連動</button>
+                    </div>
+
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                        <!-- Left Panel -->
                         <div id="draw-control-block" class="lg:col-span-5 flex flex-col justify-between space-y-4">
                             <div>
                                 <div class="flex justify-between items-center mb-2">
@@ -373,13 +384,33 @@
                                         </button>
                                     </div>
                                 </div>
-                                <textarea id="draw-names-input" rows="5" class="input-minimal w-full font-bold focus:border-green-600 h-[150px] resize-none" placeholder=""></textarea>
+
+                                <!-- 可編輯的名單膠囊標籤區 -->
+                                <div class="space-y-3 mb-3">
+                                    <div class="text-[11px] font-bold text-[#7F6449] bg-[#F6F1EB]/50 px-3 py-2 rounded-xl border border-[#DECFC0]/50 flex items-center justify-between">
+                                        <span>膠囊名單管理區 (點選右側 X 可手動排除成員)</span>
+                                        <button onclick="clearDrawPoolTags()" class="text-[10px] text-red-500 font-black hover:underline">清空</button>
+                                    </div>
+                                    <div id="draw-pool-tags-container" class="min-h-[50px] p-2.5 bg-gray-50 border border-gray-200 rounded-2xl flex flex-wrap gap-2 items-center">
+                                        <span id="draw-pool-placeholder" class="text-xs text-gray-400 pl-1 font-bold">名單尚無成員，請在下方手動鍵入或由假表一鍵導入</span>
+                                    </div>
+                                </div>
+
+                                <!-- 手動修改名單輸入區域 -->
+                                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-3 space-y-3">
+                                    <div class="flex gap-2">
+                                        <select id="draw-member-quick-select" class="input-minimal bg-white flex-1 font-bold text-xs"></select>
+                                        <button onclick="quickAddMemberToDrawPool()" class="bg-[#567d46] hover:bg-[#436236] text-white px-4 py-2 rounded-xl text-xs font-black transition shrink-0">加入成員</button>
+                                    </div>
+                                    <textarea id="draw-names-input" rows="3" class="input-minimal w-full font-bold focus:border-green-600 h-[80px] resize-none text-xs hidden" placeholder="原始抽籤名單 (由膠囊自動同步)"></textarea>
+                                </div>
                             </div>
                             <button id="start-draw-btn" onclick="startLuckyDraw()" class="avocado-gradient text-white w-full py-3.5 rounded-2xl text-base font-black shadow-lg hover:brightness-115 active:scale-95 transition flex items-center justify-center gap-2">
                                 <i class="fas fa-random text-lg"></i> 開始公平抽籤
                             </button>
                         </div>
 
+                        <!-- Right Panel -->
                         <div id="draw-display-block" class="lg:col-span-7 bg-gray-50/50 border border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] relative">
                             <div id="draw-slot-machine" class="w-full max-w-sm hidden z-10">
                                 <div class="slot-machine-window rounded-2xl">
@@ -408,6 +439,7 @@
                 </div>
             </div>
 
+            <!-- 📅 智慧預假區工具 -->
             <div class="bg-white rounded-[2rem] shadow-sm border border-[#DECFC0] overflow-hidden">
                 <button onclick="togglePreLeaveCollapse()" class="w-full px-6 py-4 bg-[#F6F1EB]/50 hover:bg-[#F6F1EB] flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
@@ -475,16 +507,19 @@
                 </div>
             </div>
 
+            <!-- 🗓️ 當月放假登記表格區 -->
             <div class="bg-white p-6 rounded-[2rem] shadow-sm">
                 <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-                    <div>
-                        <h3 class="text-2xl font-black text-gray-800">🗓️ 當月放假登記全覽</h3>
-                        <p class="text-xs text-gray-400 font-bold mt-1">點擊欄位可快速切換 ［休］ 狀態，下方自動計算每日總額</p>
-                    </div>
-                    <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100 shadow-inner">
-                        <button onclick="changeMonth(-1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-left"></i></button>
-                        <span id="display-month-leaves" class="px-4 font-bold text-sm min-w-[100px] text-center text-gray-700">2026 / 05</span>
-                        <button onclick="changeMonth(1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-right"></i></button>
+                    <div class="flex items-center gap-6">
+                        <div>
+                            <h3 class="text-2xl font-black text-gray-800">🗓️ 當月放假登記全覽</h3>
+                            <p class="text-xs text-gray-400 font-bold mt-1">點擊欄位可快速切換 ［休］ 狀態，超休（&ge;3人）日期可在表尾點擊 🎲 智能連動至抽籤模組</p>
+                        </div>
+                        <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100 shadow-inner">
+                            <button onclick="changeMonth(-1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-left"></i></button>
+                            <span id="display-month-leaves" class="px-4 font-bold text-sm min-w-[100px] text-center text-gray-700">2026 / 05</span>
+                            <button onclick="changeMonth(1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-right"></i></button>
+                        </div>
                     </div>
                 </div>
                 <div class="table-container">
@@ -497,6 +532,7 @@
             </div>
         </div>
 
+        <!-- Stats Tab -->
         <div id="tab-stats" class="tab-content hidden space-y-6">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border-t-[8px] border-green-500">
                 <div class="mb-6 flex flex-wrap justify-between items-end gap-4">
@@ -510,6 +546,7 @@
                 <div class="overflow-x-auto rounded-2xl border border-slate-200">
                     <table class="w-full border-collapse text-center text-xs font-bold matrix-table bg-white">
                         <thead>
+                            <!-- 6人 Row -->
                             <tr class="bg-slate-50">
                                 <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">6人 模式</th>
                                 <th id="header-6-0" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">ND XO JY XH</th>
@@ -519,6 +556,7 @@
                                 <th id="header-6-4" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">所有外部主审</th>
                                 <th id="header-6-5" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">所有外部異常+GPAY</th>
                             </tr>
+                            <!-- 5人 Row -->
                             <tr class="bg-slate-50">
                                 <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">5人 模式</th>
                                 <th id="header-5-0" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">ND SH JD XY SY</th>
@@ -528,6 +566,7 @@
                                 <th id="header-5-4" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">所有外部主审</th>
                                 <th id="header-5-5" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">所有外部異常+GPAY+代付+2card</th>
                             </tr>
+                            <!-- 4人 Row -->
                             <tr class="bg-slate-50">
                                 <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">4人 模式</th>
                                 <th id="header-4-0" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">ND SH JD XY SY 2card</th>
@@ -553,7 +592,9 @@
             </div>
         </div>
 
+        <!-- Settings Tab -->
         <div id="tab-settings" class="tab-content hidden space-y-8">
+            <!-- 標題編輯 -->
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-green-50">
                 <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-heading text-green-500"></i> 系統標題設定</h3>
                 <div class="flex gap-2 max-w-md">
@@ -562,6 +603,7 @@
                 </div>
             </div>
 
+            <!-- 本地資料重設控制 -->
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-red-500">
                 <h3 class="text-xl font-black mb-2 flex items-center gap-2 text-red-600"><i class="fas fa-trash-alt"></i> 資料管理控制</h3>
                 <p class="text-xs text-gray-400 font-bold mb-4">用來清空目前設定或開始新月份 of 勾選。清除後無法還原，請謹慎操作。</p>
@@ -572,12 +614,14 @@
                     <button onclick="clearOnlyLeaves()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-calendar-times mr-1"></i> 一鍵清除本月放假登記
                     </button>
+                    <!-- 一鍵清除自定義任務模組按鈕 -->
                     <button onclick="clearOnlyTasks()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-tasks mr-1"></i> 一鍵清除任務清單
                     </button>
                 </div>
             </div>
 
+            <!-- 成員編輯 -->
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-blue-500">
                 <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-users text-blue-500"></i> 成員名單管理</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -595,6 +639,7 @@
                 </div>
             </div>
 
+            <!-- 任務模組編輯 -->
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-orange-500">
                 <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-orange-500"></i> 任務模組自定義</h3>
                 <p class="text-sm text-gray-400 font-bold mb-6">根據當天在崗人數，系統會自動選用對應的任務清單進行公平分配。</p>
@@ -608,18 +653,21 @@
         </div>
     </main>
 
+    <!-- 智慧自訂確認視窗 Modal -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[300] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-[#DECFC0] text-center space-y-4">
             <div class="text-4xl text-[#C2A383]"><i class="fas fa-exclamation-circle"></i></div>
             <h4 class="font-black text-lg text-gray-800" id="confirm-title">確認操作</h4>
             <p class="text-sm text-gray-500 font-bold leading-relaxed" id="confirm-msg">您確定要執行此操作嗎？</p>
             <div class="flex gap-3 justify-center pt-2">
+                <!-- 直接綁定全域 onclick 方法，100% 點擊必成功 -->
                 <button onclick="closeConfirmModal(false)" class="bg-gray-100 hover:bg-gray-250 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">取消</button>
                 <button onclick="closeConfirmModal(true)" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition shadow-md cursor-pointer">確認執行</button>
             </div>
         </div>
     </div>
 
+    <!-- Toast 提示方塊 -->
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl opacity-0 transition-all pointer-events-none z-[200]">
         已儲存變更
     </div>
@@ -674,7 +722,7 @@
         // 📅 預假小日曆當前被選中的多個日期數組
         let selectedPreLeaveDays = [];
 
-        // 智慧自訂確認視窗全域變數 (已經完美統一，徹底解決重複宣告 identifier has already been declared 崩潰錯誤)
+        // 智慧自訂確認視窗全域變數
         let currentConfirmCallback = null;
 
         // Firebase 運行變數
@@ -683,10 +731,13 @@
         let isCloudReady = false;
         let unsubscribeOnSnapshot = null;
 
+        // 🎲 抽籤模組動態池狀態
+        let currentDrawPool = [];
+
         // 核心環境變數 (Rule 1 & Rule 3: 完美動態解析標準 appId)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'avocado-sched-id';
         
-        // 預設空的備用 Firebase Config (由於安全政策，不建議在開源端寫入私鑰)
+        // 預設空的備用 Firebase Config
         const defaultBackupConfig = {
             apiKey: "", 
             authDomain: "avocado-sched-id.firebaseapp.com",
@@ -710,7 +761,7 @@
             }
         }
 
-        // 顯示提示訊息 (Toast) - 完美寫入 (防止 showToast is not defined 錯誤)
+        // 顯示提示訊息 (Toast) - 完美寫入
         function showToast(msg) {
             const t = document.getElementById('toast');
             if (!t) return;
@@ -719,7 +770,7 @@
             setTimeout(() => t.classList.add('opacity-0'), 2500);
         }
 
-        // 渲染成員管理面板 - 完美寫入 (防止 renderMembersEdit is not defined 錯誤)
+        // 渲染成員管理面板 - 完美寫入
         function renderMembersEdit() {
             const container = document.getElementById('members-list-edit');
             if (!container) return;
@@ -789,6 +840,7 @@
                     renderAnalysis();
                     renderPreLeaveDropdowns();
                     renderPreLeaveList();
+                    renderDrawQuickSelect();
                     return;
                 }
 
@@ -837,6 +889,7 @@
                 renderAnalysis();
                 renderPreLeaveDropdowns();
                 renderPreLeaveList();
+                renderDrawQuickSelect();
             }
         };
 
@@ -888,7 +941,7 @@
 
                     saveAllDataToLocalStorage();
 
-                    // 【核心修正】雲端拉完資料後，即時重設「假表登記」上方的年份月份字體
+                    // 雲端拉完資料後，即時重設「假表登記」上方的年份月份字體
                     const monthDisplay = document.getElementById('display-month-leaves');
                     if (monthDisplay) {
                         monthDisplay.innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
@@ -900,6 +953,7 @@
                     renderAnalysis();
                     renderPreLeaveDropdowns();
                     renderPreLeaveList();
+                    renderDrawQuickSelect();
                 } else {
                     uploadToCloud();
                 }
@@ -945,7 +999,7 @@
             }
         }
 
-        // 智慧自訂確認視窗 Modal 拉起方法
+        // 智慧自訂確認視窗 Modal 常規調用
         function showCustomConfirm(msg, callback) {
             document.getElementById('confirm-msg').innerText = msg;
             const modal = document.getElementById('confirm-modal');
@@ -1034,7 +1088,7 @@
         function toggleLeave(d, n) {
             const isPreLeaved = preLeaveRecords.some(r => r.dateKey === d && r.member === n);
             if (isPreLeaved) {
-                showToast("💡 此欄位由預假登記區管理，請在上方清單中刪除");
+                showToast("💡 此欄位由預假登記區 management，請在上方清單中刪除");
                 return;
             }
             if (!leaveData[d]) leaveData[d] = [];
@@ -1060,7 +1114,7 @@
             document.getElementById('calendar-view').classList.add('hidden');
             document.getElementById('empty-state').classList.remove('hidden');
             
-            // 【核心修正】不論單機還是雲端，點擊按鈕立刻強制把「假表登記」上方的 2026 / 05 文字刷過去
+            // 不論單機還是雲端，點擊按鈕立刻強制把「假表登記」上方的 2026 / 05 文字刷過去
             const monthDisplay = document.getElementById('display-month-leaves');
             if (monthDisplay) {
                 monthDisplay.innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
@@ -1087,7 +1141,16 @@
             renderMembersEdit();
             renderLeaveTable();
             renderPreLeaveDropdowns();
+            renderDrawQuickSelect();
             uploadToCloud();
+        }
+
+        // 快速初始化/渲染手動新增成員選單
+        function renderDrawQuickSelect() {
+            const selector = document.getElementById('draw-member-quick-select');
+            if (!selector) return;
+            selector.innerHTML = '<option value="">-- 快速選擇 BBP 團隊成員加入 --</option>' + 
+                members.map(m => `<option value="${m}">${m}</option>`).join('');
         }
 
         function addMember() {
@@ -1103,6 +1166,7 @@
             renderMembersEdit();
             renderLeaveTable();
             renderPreLeaveDropdowns();
+            renderDrawQuickSelect();
             uploadToCloud();
         }
 
@@ -1113,7 +1177,7 @@
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             document.getElementById(`btn-${tabId}`).classList.add('active');
             
-            // 【核心修正】當切換到 leaves 頁面時，再次確保顯示正確的年份月份，防止渲染時間差
+            // 當切換到 leaves 頁面時，再次確保顯示正確的年份月份，防止渲染時間差
             if (tabId === 'leaves') {
                 const monthDisplay = document.getElementById('display-month-leaves');
                 if (monthDisplay) {
@@ -1122,6 +1186,8 @@
                 renderLeaveTable();
                 renderPreLeaveDropdowns();
                 renderPreLeaveList();
+                renderDrawQuickSelect();
+                renderDrawPoolTags();
             }
             if (tabId === 'dashboard') {
                 const mainDisplay = document.getElementById('display-month');
@@ -1147,11 +1213,161 @@
             if (panel.classList.contains('hidden')) {
                 panel.classList.remove('hidden');
                 arrow.style.transform = 'rotate(180deg)';
+                renderDrawQuickSelect();
+                renderDrawPoolTags();
             } else {
                 panel.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
             }
         }
+
+        // =========================================================================
+        // 🎲 UI/UX 核心優化：點休表連動抽籤、膠囊 Tag 渲染與手動名單管理邏輯
+        // =========================================================================
+
+        // 1. 點休表一鍵帶入抽籤連動橋樑（加入智慧排除與預先登記防護機制）
+        window.triggerLuckyDrawBridge = function(dateKey, membersArray) {
+            // 切換/打開抽籤折疊面板
+            const panel = document.getElementById('lucky-draw-panel');
+            if (panel.classList.contains('hidden')) {
+                toggleLuckyDrawCollapse();
+            }
+
+            // 🔍 尋找當日有在「預假登記區」成功建檔的成員名單
+            const preLeaveForDay = preLeaveRecords
+                .filter(r => r.dateKey === dateKey)
+                .map(r => r.member);
+
+            // 篩選出「手動一般請假」而非預先登記的成員
+            const manualOffForDay = membersArray.filter(name => !preLeaveForDay.includes(name));
+
+            let finalDrawPool = [];
+            let bannerMsg = "";
+
+            if (manualOffForDay.length > 0) {
+                // 如果有手動請假的成員：智慧排除預假登記成員
+                finalDrawPool = [...manualOffForDay];
+                if (preLeaveForDay.length > 0) {
+                    bannerMsg = `🌟 已自動載入點休名單，且<strong>自動排除預約假成員（${preLeaveForDay.join('、')}）</strong>，僅保留一般點休之 ${manualOffForDay.length} 人進行公平抽籤！`;
+                } else {
+                    bannerMsg = `🌟 已成功載入本日超休名單（共 ${manualOffForDay.length} 人：${manualOffForDay.join('、')}）進行抽籤！`;
+                }
+            } else {
+                // 如果全部超休的人都是預約假成員：在極端狀態下轉為「全體預假成員」下去抽籤
+                finalDrawPool = [...membersArray];
+                bannerMsg = `⚠️ 警告：本日放假者<strong>皆為提前預假成員</strong>，因達超休限制，全體（共 ${membersArray.length} 人：${membersArray.join('、')}）仍需進行抽籤！`;
+            }
+
+            // 更新動態池變數
+            currentDrawPool = finalDrawPool;
+
+            // 顯示連動成功橫幅
+            const dateNum = parseInt(dateKey.split('-')[2]);
+            const banner = document.getElementById('draw-linked-banner');
+            const bannerText = document.getElementById('draw-linked-text');
+            if (banner && bannerText) {
+                banner.classList.remove('hidden');
+                bannerText.innerHTML = bannerMsg;
+            }
+
+            // 同步名單至原始 text-area 以及膠囊 Tags
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+
+            // 平滑滾動至自動抽籤區域
+            const anchor = document.getElementById('lucky-draw-anchor');
+            if (anchor) {
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                anchor.classList.add('ring-4', 'ring-[#8cae43]/30');
+                setTimeout(() => {
+                    anchor.classList.remove('ring-4', 'ring-[#8cae43]/30');
+                }, 1200);
+            }
+        };
+
+        // 2. 取消連動狀態
+        window.resetLinkedDrawData = function() {
+            document.getElementById('draw-linked-banner')?.classList.add('hidden');
+            currentDrawPool = [];
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+            showToast("已重置連動數據");
+        };
+
+        // 3. 膠囊 Tags 動態渲染 (允許點 X 刪除)
+        function renderDrawPoolTags() {
+            const container = document.getElementById('draw-pool-tags-container');
+            const placeholder = document.getElementById('draw-pool-placeholder');
+            if (!container) return;
+
+            // 清除現有的 Tags
+            container.querySelectorAll('.draw-tag-item').forEach(t => t.remove());
+
+            if (currentDrawPool.length === 0) {
+                placeholder?.classList.remove('hidden');
+                return;
+            } else {
+                placeholder?.classList.add('hidden');
+            }
+
+            currentDrawPool.forEach((name, idx) => {
+                const tag = document.createElement('span');
+                tag.className = "draw-tag-item inline-flex items-center gap-1.5 px-3 py-1 bg-[#F6F1EB] hover:bg-[#ECE3D7] border border-[#DECFC0] rounded-full text-xs font-black text-[#7F6449] shadow-sm transition-all animate-fade-in";
+                tag.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="removeMemberFromDrawPool(${idx})" class="text-gray-400 hover:text-red-500 font-bold focus:outline-none focus:ring-0 leading-none pl-0.5">
+                        <i class="fas fa-times-circle text-[11px]"></i>
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        // 4. 手動點膠囊叉叉排除成員
+        window.removeMemberFromDrawPool = function(idx) {
+            const removedName = currentDrawPool[idx];
+            currentDrawPool.splice(idx, 1);
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+            showToast(`已手動排除成員：${removedName}`);
+        };
+
+        // 5. 透過下拉選單快速新增成員至抽籤池
+        window.quickAddMemberToDrawPool = function() {
+            const selector = document.getElementById('draw-member-quick-select');
+            const name = selector.value;
+            if (!name) return;
+
+            if (currentDrawPool.includes(name)) {
+                showToast(`『${name}』已在抽籤名單中囉！`);
+                selector.value = "";
+                return;
+            }
+
+            currentDrawPool.push(name);
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+            selector.value = "";
+            showToast(`已手動加入成員：${name}`);
+        };
+
+        // 6. 一鍵清空膠囊
+        window.clearDrawPoolTags = function() {
+            currentDrawPool = [];
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+            showToast("抽籤池已完全清空");
+        };
+
+        // 7. 將動態變數池同步回 textarea (確保底層不衝突)
+        function syncDrawPoolToTextarea() {
+            const textarea = document.getElementById('draw-names-input');
+            if (textarea) {
+                textarea.value = currentDrawPool.join('\n');
+            }
+        }
+
+        // =========================================================================
 
         function resetLuckyDrawOnlyNames() {
             const inputArea = document.getElementById('draw-names-input');
@@ -1159,6 +1375,11 @@
             const slotMachine = document.getElementById('draw-slot-machine');
             const winnerCard = document.getElementById('draw-winner-card');
             const drawBtn = document.getElementById('start-draw-btn');
+            document.getElementById('draw-linked-banner')?.classList.add('hidden');
+            
+            currentDrawPool = [];
+            renderDrawPoolTags();
+
             if (inputArea) inputArea.value = '';
             if (idleBlock) idleBlock.classList.remove('hidden');
             if (slotMachine) slotMachine.classList.add('hidden');
@@ -1169,7 +1390,7 @@
                 drawBtn.innerHTML = `<i class="fas fa-random text-lg"></i> 開始公平抽籤`;
             }
             uploadToCloud();
-            showToast("抽籤名單已重新整理");
+            showToast("抽籤名單與膠囊已重新整理");
         }
 
         function resetDrawHistoryOnly() {
@@ -1192,32 +1413,44 @@
 
         // 公平加權抽籤演算方法
         function startLuckyDraw() {
-            const inputArea = document.getElementById('draw-names-input');
             const idleBlock = document.getElementById('draw-idle');
             const slotMachine = document.getElementById('draw-slot-machine');
             const winnerCard = document.getElementById('draw-winner-card');
             const strip = document.getElementById('slot-strip');
             const drawBtn = document.getElementById('start-draw-btn');
-            if (!inputArea) return;
-            const rawNames = inputArea.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
-            if (rawNames.length === 0) {
-                showToast("⚠️ 請輸入至少一個抽籤名字！");
+            
+            // 讀取當前膠囊抽籤池（若變數為空，則嘗試從手動輸入欄位反向解析）
+            if (currentDrawPool.length === 0) {
+                const textarea = document.getElementById('draw-names-input');
+                if (textarea && textarea.value) {
+                    currentDrawPool = textarea.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+                }
+            }
+
+            if (currentDrawPool.length === 0) {
+                showToast("⚠️ 請手動新增成員，或由下方假表超休日期一鍵導入！");
                 return;
             }
-            const allowedCandidates = rawNames.filter(name => {
+
+            // 過濾已經中獎滿 2 次的成員
+            const allowedCandidates = currentDrawPool.filter(name => {
                 const count = luckyDrawWinnersCount[name] || 0;
                 return count < 2;
             });
+
             if (allowedCandidates.length === 0) {
-                showToast("💡 所有成員中獎次數已達上限！請重設紀錄。");
+                showToast("💡 參與抽籤之成員中獎次數皆已達上限！請先重設歸零紀錄。");
                 return;
             }
+
             idleBlock.classList.add('hidden');
             winnerCard.classList.add('hidden');
             slotMachine.classList.remove('hidden');
             drawBtn.disabled = true;
             drawBtn.classList.add('opacity-50', 'cursor-not-allowed');
             drawBtn.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> 正在過濾並滾動...`;
+
+            // 計算權重池 (中獎 0 次權重 5，中獎 1 次權重 1)
             let weightedPool = [];
             allowedCandidates.forEach(name => {
                 const count = luckyDrawWinnersCount[name] || 0;
@@ -1226,7 +1459,10 @@
                     weightedPool.push(name);
                 }
             });
+
             const winner = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+
+            // 洗牌滾動動畫
             let scrollList = [];
             for (let i = 0; i < 6; i++) {
                 scrollList = scrollList.concat([...allowedCandidates].sort(() => Math.random() - 0.5));
@@ -1240,6 +1476,7 @@
             const totalDistance = (scrollList.length - 1) * itemHeight;
             strip.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
             strip.style.transform = `translateY(-${totalDistance}px)`;
+
             setTimeout(() => {
                 slotMachine.classList.add('hidden');
                 winnerCard.classList.remove('hidden');
@@ -1387,7 +1624,7 @@
             for (let i = 1; i <= nextMonthDaysNeeded; i++) {
                 calHtml += `<div class="preleave-cal-day is-overflow">${i}</div>`;
             }
-            calContainer.innerHTML = calHtml;
+            calContainer.innerHTML = calHtml; 
             updatePreLeaveCalendarUI();
         }
 
@@ -1591,16 +1828,37 @@
                 return row;
             }).join('');
 
-            // 表尾
+            // 表尾 (完美連動超休一鍵抽籤功能)
             let offTotalRow = `<tr class="bg-red-50/50 text-center"><td class="sticky-col border-t text-red-600 font-black text-xs bg-red-50/50">放假總人數</td>`;
             let workTotalRow = `<tr class="bg-green-50/50 text-center"><td class="sticky-col border-t text-green-700 font-black text-xs bg-green-50/50">上班總人數</td>`;
             for (let i = 1; i <= daysCount; i++) {
                 const dKey = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                const manualOffCount = (leaveData[dKey] || []).length;
-                const preLeaveCountForDay = preLeaveRecords.filter(r => r.dateKey === dKey && !((leaveData[dKey] || []).includes(r.member))).length;
-                const offCount = manualOffCount + preLeaveCountForDay;
+                
+                // 計算當天所有請假的人
+                const manualOffList = leaveData[dKey] || [];
+                const preLeaveList = preLeaveRecords.filter(r => r.dateKey === dKey).map(r => r.member);
+                // 合併去重請假名單
+                const allOffForDay = Array.from(new Set([...manualOffList, ...preLeaveList]));
+
+                const offCount = allOffForDay.length;
                 const workCount = members.length - offCount;
-                offTotalRow += `<td class="border-t border-l border-gray-100 text-xs font-black ${offCount > 0 ? 'text-red-500' : 'text-gray-300'}">${offCount}</td>`;
+
+                // 若請假人數 >= 3 人，則顯示具有高亮互動效果與 🎲 圖標的「一鍵抽籤連動按鈕」
+                if (offCount >= 3) {
+                    const listPayload = JSON.stringify(allOffForDay).replace(/"/g, '&quot;');
+                    offTotalRow += `
+                        <td class="border-t border-l border-gray-100 p-0 text-center">
+                            <button onclick="triggerLuckyDrawBridge('${dKey}', ${listPayload})" 
+                                    title="該日超休 ${offCount} 人：${allOffForDay.join('、')}。點擊自動連動至上方抽籤模組"
+                                    class="w-full h-full min-h-[40px] bg-amber-500/10 hover:bg-amber-500/25 text-amber-700 hover:text-amber-900 font-black text-xs transition flex flex-col items-center justify-center gap-0.5 cursor-pointer">
+                                <span>${offCount}</span>
+                                <span class="text-[9px] bg-amber-600 text-white px-1 rounded animate-pulse"><i class="fas fa-dice"></i> 抽</span>
+                            </button>
+                        </td>`;
+                } else {
+                    offTotalRow += `<td class="border-t border-l border-gray-100 text-xs font-black ${offCount > 0 ? 'text-red-500' : 'text-gray-300'}">${offCount}</td>`;
+                }
+
                 workTotalRow += `<td class="border-t border-l border-gray-100 text-xs font-black ${workCount < 4 ? 'text-orange-600' : 'text-green-700'}">${workCount}</td>`;
             }
             offTotalRow += `<td class="border-t border-l border-gray-100 bg-red-50/30"></td></tr>`;
@@ -1872,6 +2130,8 @@
             renderModulesEditor();
             renderPreLeaveDropdowns();
             renderPreLeaveList();
+            renderDrawQuickSelect();
+            renderDrawPoolTags();
             
             if (window.FirebaseCore && typeof window.initFirebase === 'function') {
                 window.initFirebase();
