@@ -791,8 +791,8 @@
         
         // 完美解析與載入 Firebase 實體：不再重複宣告 `db`，直接對全域變數賦值！
         try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultBackupConfig;
-            const app = window.FirebaseCore.initializeApp(firebaseConfig);
+            const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+            const app = window.FirebaseCore.initializeApp(effectiveConfig);
             db = window.FirebaseCore.getFirestore(app);
             auth = window.FirebaseCore.getAuth(app);
         } catch (e) {
@@ -934,7 +934,7 @@
         // 智慧港口初始化 Firebase
         window.initFirebase = async function() {
             try {
-                const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultBackupConfig;
+                const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
                 
                 // 本地執行時：若檢測到 API Key 為空，直接優雅啟用智慧降級的「🟢 本機單機模式」
                 if (!config || !config.apiKey) {
@@ -1246,22 +1246,16 @@
 
             const currentStatus = (leaveData[d] || []).includes(n) ? "放假" : "在崗上班";
             const targetStatus = currentStatus === "放假" ? "上班" : "請假休息";
-            
-            showCustomConfirm(
-                "變更假表登記", 
-                `您確定要將【${n}】在 ${d} 的狀態變更為 ［${targetStatus}］ 嗎？`, 
-                () => {
-                    if (!leaveData[d]) leaveData[d] = [];
-                    if (leaveData[d].includes(n)) {
-                        leaveData[d] = leaveData[d].filter(x => x !== n);
-                    } else {
-                        leaveData[d].push(n);
-                    }
-                    renderLeaveTable();
-                    uploadToCloud();
-                    showToast(`已成功將 ${n} 在 ${d} 的狀態調整為 ${targetStatus}`);
-                }
-            );
+
+            if (!leaveData[d]) leaveData[d] = [];
+            if (leaveData[d].includes(n)) {
+                leaveData[d] = leaveData[d].filter(x => x !== n);
+            } else {
+                leaveData[d].push(n);
+            }
+            renderLeaveTable();
+            uploadToCloud();
+            showToast(`已成功將 ${n} 在 ${d} 的狀態調整為 ${targetStatus}`);
         }
 
         function changeMonth(v) {
