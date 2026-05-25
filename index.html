@@ -722,11 +722,14 @@
         // 系統變數初始化 (智慧防丟失：會優先從本機儲存 LocalStorage 載入資料)
         let members = loadLocalData('avocado_members', DEFAULT_MEMBERS);
         
-        let appConfig = { 
-            currentYear: 2026, 
+        const _urlTeamId = new URLSearchParams(window.location.search).get('team');
+        const _activeTeamId = (_urlTeamId && _urlTeamId.trim()) ? _urlTeamId.trim() : "avocado-team-main";
+
+        let appConfig = {
+            currentYear: 2026,
             currentMonth: 5,
             title: loadLocalData('avocado_title', "牛油果排班"),
-            teamId: "avocado-team-main" 
+            teamId: _activeTeamId
         };
         
         let leaveData = loadLocalData('avocado_leaves', {}); 
