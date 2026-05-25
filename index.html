@@ -15,7 +15,7 @@
 
         window.FirebaseCore = { initializeApp, getFirestore, doc, setDoc, getDoc, onSnapshot, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged };
         
-        // 當 Firebase 載入完成後，嘗試初始化 system 連線
+        // 當 Firebase 載入完成後，嘗試初始化系統連線
         if (typeof window.initFirebase === 'function') {
             window.initFirebase();
         }
@@ -31,8 +31,9 @@
             -webkit-font-smoothing: antialiased;
         }
 
+        /* 莫蘭迪綠漸層 */
         .avocado-gradient {
-            background: linear-gradient(135deg, #567d46 0%, #8cae43 100%);
+            background: linear-gradient(135deg, #7A8F81 0%, #A3B5A8 100%);
         }
 
         /* 工作台日曆：嚴格 5 列網格佈局 */
@@ -61,7 +62,7 @@
         }
         .calendar-day:hover {
             transform: translateY(-4px); 
-            box-shadow: 0 10px 15px -3px rgba(86, 125, 70, 0.08); 
+            box-shadow: 0 10px 15px -3px rgba(122, 143, 129, 0.12); 
         }
 
         /* 放大日期標籤 */
@@ -89,7 +90,7 @@
             justify-content: space-between;
             align-items: center;
             background: #f8faf8;
-            border-left: 4px solid #8cae43; 
+            border-left: 6px solid #7A8F81; 
         }
 
         .task-name {
@@ -105,7 +106,7 @@
         .task-user {
             font-weight: 900;
             color: #ffffff;
-            background: #567d46;
+            background: #7A8F81;
             padding: 3px 8px; 
             border-radius: 6px;
             font-size: 11px; 
@@ -181,7 +182,7 @@
 
         .tab-btn.active {
             background: white;
-            color: #567d46;
+            color: #7A8F81;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
@@ -195,8 +196,8 @@
             transition: all 0.2s;
         }
         .input-minimal:focus {
-            border-color: #8cae43;
-            box-shadow: 0 0 0 3px rgba(140, 174, 67, 0.1);
+            border-color: #A3B5A8;
+            box-shadow: 0 0 0 3px rgba(163, 181, 168, 0.2);
         }
 
         .matrix-table th, .matrix-table td {
@@ -213,7 +214,7 @@
             overflow: hidden;
             position: relative;
             background: #f1f5f1;
-            border: 3px solid #8cae43;
+            border: 3px solid #A3B5A8;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.08);
         }
         .slot-machine-strip {
@@ -232,16 +233,16 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
         }
         @keyframes glow-pulse {
-            0%, 100% { box-shadow: 0 0 5px rgba(140,174,67,0.4); }
-            50% { box-shadow: 0 0 20px rgba(140,174,67,0.8); }
+            0%, 100% { box-shadow: 0 0 5px rgba(122, 143, 129, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(122, 143, 129, 0.8); }
         }
         .winner-glow {
             animation: glow-pulse 1.5s infinite;
         }
 
-        /* 📅 預假多選日曆特定的 UI 樣式 (微軟墨綠風與溫柔奶茶色美學) */
+        /* 📅 預假多選日曆特定的 UI 樣式 */
         .preleave-calendar-container {
-            background-color: rgba(74, 124, 124, 0.9); 
+            background-color: rgba(122, 143, 129, 0.9); 
             border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px); 
             border-radius: 1.5rem;
@@ -294,7 +295,6 @@
     </style>
 </head>
 <body class="min-h-screen pb-12 text-gray-800">
-
     <nav class="avocado-gradient text-white p-4 shadow-md sticky top-0 z-[100]">
         <div class="max-w-[1600px] mx-auto flex justify-between items-center px-4">
             <div class="flex items-center gap-3">
@@ -319,9 +319,9 @@
             <div class="bg-white p-6 rounded-3xl shadow-sm flex flex-wrap items-center justify-between gap-6">
                 <div class="flex items-center gap-4">
                     <div class="flex items-center gap-1 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
-                        <button onclick="changeMonth(-1)" class="w-10 h-10 hover:bg-white rounded-xl flex items-center justify-center text-green-600 transition shadow-sm text-lg"><i class="fas fa-chevron-left"></i></button>
+                        <button onclick="changeMonth(-1)" class="w-10 h-10 hover:bg-white rounded-xl flex items-center justify-center text-[#7A8F81] transition shadow-sm text-lg"><i class="fas fa-chevron-left"></i></button>
                         <span id="display-month" class="px-6 font-black text-xl min-w-[160px] text-center text-gray-700">2026 / 05</span>
-                        <button onclick="changeMonth(1)" class="w-10 h-10 hover:bg-white rounded-xl flex items-center justify-center text-green-600 transition shadow-sm text-lg"><i class="fas fa-chevron-right"></i></button>
+                        <button onclick="changeMonth(1)" class="w-10 h-10 hover:bg-white rounded-xl flex items-center justify-center text-[#7A8F81] transition shadow-sm text-lg"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
                 <div class="flex flex-col gap-1 items-end">
@@ -341,8 +341,8 @@
         <div id="tab-leaves" class="tab-content hidden space-y-6">
 
             <!-- 🥑 智慧展開式「自動不重複抽籤工具」 -->
-            <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border border-green-100 overflow-hidden">
-                <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-4 bg-green-50/50 hover:bg-green-50 flex justify-between items-center transition-colors">
+            <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border border-[#A3B5A8]/30 overflow-hidden">
+                <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-4 bg-[#F4EBE4]/10 hover:bg-[#EBD8C9]/20 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🎉</span>
                         <div class="text-left">
@@ -350,12 +350,12 @@
                             <p class="text-[11px] text-gray-400 font-bold">已設定智慧加權不重複機制：中獎一次者權重降低 80% 防止連莊，中獎滿兩次者自動排除！支援點休表「超休日期」一鍵智能導入。</p>
                         </div>
                     </div>
-                    <div id="draw-arrow-icon" class="text-green-600 transition-transform duration-300">
+                    <div id="draw-arrow-icon" class="text-[#7A8F81] transition-transform duration-300">
                         <i class="fas fa-chevron-down text-lg"></i>
                     </div>
                 </button>
 
-                <div id="lucky-draw-panel" class="hidden border-t border-green-50 p-6 bg-white space-y-6">
+                <div id="lucky-draw-panel" class="hidden border-t border-[#A3B5A8]/30 p-6 bg-white space-y-6">
                     <!-- 點休表連動高亮提示 -->
                     <div id="draw-linked-banner" class="hidden bg-[#F6F1EB] border border-[#DECFC0] p-3.5 rounded-2xl flex items-center justify-between transition-all">
                         <div class="flex items-center gap-2">
@@ -371,7 +371,7 @@
                             <div>
                                 <div class="flex justify-between items-center mb-2">
                                     <label class="text-sm font-black text-gray-700 flex items-center gap-1.5">
-                                        <i class="fas fa-clipboard-list text-green-600"></i> 輸入抽籤名單
+                                        <i class="fas fa-clipboard-list text-[#7A8F81]"></i> 輸入抽籤名單
                                     </label>
                                     <div class="flex gap-1.5 items-center">
                                         <button onclick="resetLuckyDrawOnlyNames()" class="text-xs bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 font-black transition flex flex-col items-center justify-center leading-tight text-center">
@@ -400,9 +400,9 @@
                                 <div class="bg-gray-50 border border-gray-200 rounded-2xl p-3 space-y-3">
                                     <div class="flex gap-2">
                                         <select id="draw-member-quick-select" class="input-minimal bg-white flex-1 font-bold text-xs"></select>
-                                        <button onclick="quickAddMemberToDrawPool()" class="bg-[#567d46] hover:bg-[#436236] text-white px-4 py-2 rounded-xl text-xs font-black transition shrink-0">加入成員</button>
+                                        <button onclick="quickAddMemberToDrawPool()" class="bg-[#7A8F81] hover:bg-[#637569] text-white px-4 py-2 rounded-xl text-xs font-black transition shrink-0">加入成員</button>
                                     </div>
-                                    <textarea id="draw-names-input" rows="3" class="input-minimal w-full font-bold focus:border-green-600 h-[80px] resize-none text-xs hidden" placeholder="原始抽籤名單 (由膠囊自動同步)"></textarea>
+                                    <textarea id="draw-names-input" rows="3" class="input-minimal w-full font-bold focus:border-[#7A8F81] h-[80px] resize-none text-xs hidden" placeholder="原始抽籤名單 (由膠囊自動同步)"></textarea>
                                 </div>
                             </div>
                             <button id="start-draw-btn" onclick="startLuckyDraw()" class="avocado-gradient text-white w-full py-3.5 rounded-2xl text-base font-black shadow-lg hover:brightness-115 active:scale-95 transition flex items-center justify-center gap-2">
@@ -422,7 +422,7 @@
                             <div id="draw-winner-card" class="hidden text-center p-6 bg-white rounded-3xl border border-green-200 winner-glow max-w-md w-full relative z-10">
                                 <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-4 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-md">恭喜中獎</span>
                                 <div class="text-6xl my-2">👑</div>
-                                <h2 id="winner-name-display" class="text-4xl font-black text-green-700 tracking-tight my-4">晴</h2>
+                                <h2 id="winner-name-display" class="text-4xl font-black text-[#7A8F81] tracking-tight my-4">晴</h2>
                                 <p id="winner-rule-notice" class="text-xs text-gray-400 font-bold">已自動記錄中獎次數，確保抽籤公平進行！ 🎉</p>
                             </div>
 
@@ -445,7 +445,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">📅</span>
                         <div class="text-left">
-                            <h4 class="font-black text-gray-800 text-lg">🥑 預假登記 management區</h4>
+                            <h4 class="font-black text-gray-800 text-lg">🥑 預假登記管理區</h4>
                             <p class="text-[11px] text-gray-400 font-bold">預約排休與註解，將全自動在下方點休表渲染優雅奶茶色標記，並於滑鼠移入時顯示預假原因！支援滑鼠點選多天預休。</p>
                         </div>
                     </div>
@@ -479,7 +479,7 @@
                                     </div>
                                     <div class="preleave-calendar-grid" id="preleave-mini-calendar"></div>
                                 </div>
-                                <span id="selected-days-badge" class="text-[10px] text-[#7F6449] font-black block mt-2">尚未選擇任何日期</span>
+                                <span id="selected-days-badge" class="text-[10px] text-gray-400 font-bold block mt-2">尚未選擇任何日期</span>
                             </div>
 
                             <div>
@@ -516,9 +516,9 @@
                             <p class="text-xs text-gray-400 font-bold mt-1">點擊欄位可快速切換 ［休］ 狀態，超休（&ge;3人）日期可在表尾點擊 🎲 智能連動至抽籤模組</p>
                         </div>
                         <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100 shadow-inner">
-                            <button onclick="changeMonth(-1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="changeMonth(-1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-[#7A8F81] transition text-sm"><i class="fas fa-chevron-left"></i></button>
                             <span id="display-month-leaves" class="px-4 font-bold text-sm min-w-[100px] text-center text-gray-700">2026 / 05</span>
-                            <button onclick="changeMonth(1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-green-600 transition text-sm"><i class="fas fa-chevron-right"></i></button>
+                            <button onclick="changeMonth(1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-[#7A8F81] transition text-sm"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -534,10 +534,10 @@
 
         <!-- Stats Tab -->
         <div id="tab-stats" class="tab-content hidden space-y-6">
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-t-[8px] border-green-500">
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-t-[8px] border-[#7A8F81]">
                 <div class="mb-6 flex flex-wrap justify-between items-end gap-4">
                     <div>
-                        <h3 class="text-3xl font-black text-gray-800 tracking-tighter">📊 任務分配均衡度 analysis (Category-based)</h3>
+                        <h3 class="text-3xl font-black text-gray-800 tracking-tighter">📊 任務分配均衡度分析 (Category-based)</h3>
                         <p class="text-sm text-gray-400 font-bold">15 項任務統籌分配成 6 大工作欄位，進行全域次數精準平衡 (隔3日不重複)</p>
                     </div>
                     <div id="avg-info" class="text-right p-3 bg-gray-50 rounded-2xl border border-gray-100"></div>
@@ -574,10 +574,10 @@
                                 <th id="header-4-2" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">OL XO XH YS HS GPAY</th>
                                 <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無此欄位</th>
                                 <th id="header-4-4" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">所有外部主审+異常</th>
-                                <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無光欄位</th>
+                                <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無此欄位</th>
                             </tr>
                             <tr class="bg-zinc-800 text-white text-xs">
-                                <th class="p-2 border border-slate-300 sticky left-0 z-10">當月工作 average</th>
+                                <th class="p-2 border border-slate-300 sticky left-0 z-10">當月工作平均</th>
                                 <th class="p-2 border border-slate-300">欄位 1 (ND系列)</th>
                                 <th class="p-2 border border-slate-300">欄位 2 (LS/OL系列)</th>
                                 <th class="p-2 border border-slate-300">欄位 3 (OL/MT/GPAY)</th>
@@ -594,19 +594,19 @@
 
         <!-- Settings Tab -->
         <div id="tab-settings" class="tab-content hidden space-y-8">
-            <!-- 標題編輯 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-green-50">
-                <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-heading text-green-500"></i> 系統標題設定</h3>
+            <!-- 系統名稱設定 -->
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]/10">
+                <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-heading text-[#7A8F81]"></i> 系統標題設定</h3>
                 <div class="flex gap-2 max-w-md">
                     <input type="text" id="app-title-input" class="input-minimal" placeholder="輸入系統名稱">
-                    <button onclick="updateAppTitle()" class="bg-green-600 text-white px-6 py-2 rounded-xl font-black hover:bg-green-700 shrink-0">更新</button>
+                    <button onclick="updateAppTitle()" class="bg-[#7A8F81] text-white px-6 py-2 rounded-xl font-black hover:bg-[#637569] shrink-0">更新</button>
                 </div>
             </div>
 
             <!-- 本地資料重設控制 -->
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-red-500">
                 <h3 class="text-xl font-black mb-2 flex items-center gap-2 text-red-600"><i class="fas fa-trash-alt"></i> 資料管理控制</h3>
-                <p class="text-xs text-gray-400 font-bold mb-4">用來清空目前設定或開始新月份 of 勾選。清除後無法還原，請謹慎操作。</p>
+                <p class="text-xs text-gray-400 font-bold mb-4">用來清空目前設定或開始新月份的勾選。清除後無法還原，請謹慎操作。</p>
                 <div class="flex flex-wrap gap-3">
                     <button onclick="clearOnlySchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-eraser mr-1"></i> 一鍵清除排班結果
@@ -614,7 +614,6 @@
                     <button onclick="clearOnlyLeaves()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-calendar-times mr-1"></i> 一鍵清除本月放假登記
                     </button>
-                    <!-- 一鍵清除自定義任務模組按鈕 -->
                     <button onclick="clearOnlyTasks()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-tasks mr-1"></i> 一鍵清除任務清單
                     </button>
@@ -660,7 +659,6 @@
             <h4 class="font-black text-lg text-gray-800" id="confirm-title">確認操作</h4>
             <p class="text-sm text-gray-500 font-bold leading-relaxed" id="confirm-msg">您確定要執行此操作嗎？</p>
             <div class="flex gap-3 justify-center pt-2">
-                <!-- 直接綁定全域 onclick 方法，100% 點擊必成功 -->
                 <button onclick="closeConfirmModal(false)" class="bg-gray-100 hover:bg-gray-250 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">取消</button>
                 <button onclick="closeConfirmModal(true)" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition shadow-md cursor-pointer">確認執行</button>
             </div>
@@ -713,7 +711,6 @@
         }
 
         // 🎲 抽籤專用全域記憶狀態（智慧加權不重複抽籤機制）
-        // 格式：{ '晴': 1, '小依': 2 } 紀錄每個人中獎次數
         let luckyDrawWinnersCount = loadLocalData('avocado_draw_winners', {});
 
         // 📅 預假專用資料架構（智慧儲存）
@@ -761,6 +758,26 @@
             }
         }
 
+        // 保存系統所有當前設定與排班數據至本機緩存
+        function saveAllDataToLocalStorage() {
+            saveLocalData('avocado_members', members);
+            saveLocalData('avocado_title', appConfig.title || "牛油果排班");
+            saveLocalData('avocado_leaves', leaveData);
+            saveLocalData('avocado_assignments', monthAssignments);
+            saveLocalData('avocado_all_tasks', allTaskNames);
+            saveLocalData('avocado_modules', scheduleModules);
+            saveLocalData('avocado_draw_winners', luckyDrawWinnersCount);
+            saveLocalData('avocado_pre_leaves', preLeaveRecords);
+        }
+
+        function saveLocalData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.warn("寫入本機儲存失敗:", e);
+            }
+        }
+
         // 顯示提示訊息 (Toast) - 完美寫入
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -782,26 +799,6 @@
                     </button>
                 </div>
             `).join('');
-        }
-
-        function saveLocalData(key, data) {
-            try {
-                localStorage.setItem(key, JSON.stringify(data));
-            } catch (e) {
-                console.warn("寫入本機儲存失敗:", e);
-            }
-        }
-
-        // 保存系統所有當前設定與排班數據至本機緩存
-        function saveAllDataToLocalStorage() {
-            saveLocalData('avocado_members', members);
-            saveLocalData('avocado_title', appConfig.title || "牛油果排班");
-            saveLocalData('avocado_leaves', leaveData);
-            saveLocalData('avocado_assignments', monthAssignments);
-            saveLocalData('avocado_all_tasks', allTaskNames);
-            saveLocalData('avocado_modules', scheduleModules);
-            saveLocalData('avocado_draw_winners', luckyDrawWinnersCount);
-            saveLocalData('avocado_pre_leaves', preLeaveRecords);
         }
 
         // 智慧欄位映射函數
@@ -999,6 +996,16 @@
             }
         }
 
+        // 更新系統名稱
+        window.updateAppTitle = function() {
+            const input = document.getElementById('app-title-input');
+            const title = input.value.trim();
+            if (!title) return;
+            appConfig.title = title;
+            document.getElementById('app-title-display').innerText = title;
+            uploadToCloud();
+        };
+
         // 智慧自訂確認視窗 Modal 常規調用
         function showCustomConfirm(msg, callback) {
             document.getElementById('confirm-msg').innerText = msg;
@@ -1050,7 +1057,7 @@
         }
 
         function clearOnlyTasks() {
-            showCustomConfirm("您確定要清空所有的「任務模組設定」嗎？\n清空後，6人、5人、4人及3人在崗模式 the任務項目將全數歸零空白，您需要重新在系統設定中自定義任務名稱。", () => {
+            showCustomConfirm("您確定要清空所有的「任務模組設定」嗎？\n清空後，6人、5人、4人及3人在崗模式的任務項目將全數歸零空白，您需要重新在系統設定中自定義任務名稱。", () => {
                 scheduleModules = {
                     "6": ["", "", "", "", "", ""],
                     "5": ["", "", "", "", ""],
@@ -1088,7 +1095,7 @@
         function toggleLeave(d, n) {
             const isPreLeaved = preLeaveRecords.some(r => r.dateKey === d && r.member === n);
             if (isPreLeaved) {
-                showToast("💡 此欄位由預假登記區 management，請在上方清單中刪除");
+                showToast("💡 此欄位由預假登記區管理，請在上方清單中刪除");
                 return;
             }
             if (!leaveData[d]) leaveData[d] = [];
@@ -1114,7 +1121,7 @@
             document.getElementById('calendar-view').classList.add('hidden');
             document.getElementById('empty-state').classList.remove('hidden');
             
-            // 不論單機還是雲端，點擊按鈕立刻強制把「假表登記」上方的 2026 / 05 文字刷過去
+            // 不論單機還是雲端，點擊按鈕立刻強制把「假表登記」上方的文字刷過去
             const monthDisplay = document.getElementById('display-month-leaves');
             if (monthDisplay) {
                 monthDisplay.innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
@@ -1278,9 +1285,9 @@
             const anchor = document.getElementById('lucky-draw-anchor');
             if (anchor) {
                 anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                anchor.classList.add('ring-4', 'ring-[#8cae43]/30');
+                anchor.classList.add('ring-4', 'ring-[#F4EBE4]/30');
                 setTimeout(() => {
-                    anchor.classList.remove('ring-4', 'ring-[#8cae43]/30');
+                    anchor.classList.remove('ring-4', 'ring-[#EBD8C9]/30');
                 }, 1200);
             }
         };
@@ -1367,9 +1374,7 @@
             }
         }
 
-        // =========================================================================
-
-        function resetLuckyDrawOnlyNames() {
+        window.resetLuckyDrawOnlyNames = function() {
             const inputArea = document.getElementById('draw-names-input');
             const idleBlock = document.getElementById('draw-idle');
             const slotMachine = document.getElementById('draw-slot-machine');
@@ -1393,7 +1398,7 @@
             showToast("抽籤名單與膠囊已重新整理");
         }
 
-        function resetDrawHistoryOnly() {
+        window.resetDrawHistoryOnly = function() {
             const idleBlock = document.getElementById('draw-idle');
             const slotMachine = document.getElementById('draw-slot-machine');
             const winnerCard = document.getElementById('draw-winner-card');
@@ -1411,8 +1416,10 @@
             showToast("中獎次數與冷卻紀錄已歸零");
         }
 
-        // 公平加權抽籤演算方法
-        function startLuckyDraw() {
+        // =========================================================================
+        // 🎲 公平加權抽籤演算方法 (跑馬燈與中獎特效、莫蘭迪綠配色與環境微光完美拼接)
+        // =========================================================================
+        window.startLuckyDraw = function() {
             const idleBlock = document.getElementById('draw-idle');
             const slotMachine = document.getElementById('draw-slot-machine');
             const winnerCard = document.getElementById('draw-winner-card');
@@ -1471,7 +1478,7 @@
             strip.innerHTML = scrollList.map(name => `<div class="slot-item">${name}</div>`).join('');
             strip.style.transition = 'none';
             strip.style.transform = 'translateY(0)';
-            strip.offsetHeight;
+            strip.offsetHeight; // 觸發重繪
             const itemHeight = 80;
             const totalDistance = (scrollList.length - 1) * itemHeight;
             strip.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
@@ -1480,6 +1487,19 @@
             setTimeout(() => {
                 slotMachine.classList.add('hidden');
                 winnerCard.classList.remove('hidden');
+                
+                // 完美拼接：中獎環境微光擴散特效 (Glow Effect)
+                winnerCard.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                winnerCard.style.boxShadow = '0 0 40px 12px rgba(122, 143, 129, 0.4)'; // 莫蘭迪綠環境光
+                winnerCard.style.borderColor = '#7A8F81'; // 邊框變為深莫蘭迪綠
+                winnerCard.classList.add('scale-105');     // 微幅放大
+                
+                // 3秒後微光淡淡收斂，回歸質感外觀
+                setTimeout(() => {
+                    winnerCard.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.05)';
+                    winnerCard.classList.remove('scale-105');
+                }, 3000);
+
                 const winnerCountBefore = luckyDrawWinnersCount[winner] || 0;
                 const winnerCountAfter = winnerCountBefore + 1;
                 document.getElementById('winner-name-display').innerText = winner;
@@ -1492,30 +1512,35 @@
                 document.getElementById('winner-rule-notice').innerText = noticeText;
                 luckyDrawWinnersCount[winner] = winnerCountAfter;
                 uploadToCloud();
+                
+                // 觸發高質感噴灑紙屑
                 triggerWinnerConfetti();
+
                 drawBtn.disabled = false;
                 drawBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 drawBtn.innerHTML = `<i class="fas fa-random text-lg"></i> 開始公平抽籤`;
             }, 3600);
-        }
+        };
 
         function triggerWinnerConfetti() {
             var duration = 2.5 * 1000;
             var end = Date.now() + duration;
+            // 全新高雅莫蘭迪綠配色組合：深莫蘭迪綠、淡莫蘭迪綠、暖米茶色、純白
+            const morandiColors = ['#7A8F81', '#A3B5A8', '#EBD8C9', '#ffffff'];
             (function frame() {
                 confetti({
                     particleCount: 4,
                     angle: 60,
                     spread: 55,
                     origin: { x: 0 },
-                    colors: ['#567d46', '#8cae43', '#fbbf24', '#ffffff']
+                    colors: morandiColors
                 });
                 confetti({
                     particleCount: 4,
                     angle: 120,
                     spread: 55,
                     origin: { x: 1 },
-                    colors: ['#567d46', '#8cae43', '#fbbf24', '#ffffff']
+                    colors: morandiColors
                 });
                 if (Date.now() < end) {
                     requestAnimationFrame(frame);
@@ -1544,7 +1569,7 @@
         }
 
         // 智慧預假小日曆日期選擇
-        function togglePreLeaveDaySelection(dateKey, isOverflow) {
+        window.togglePreLeaveDaySelection = function(dateKey, isOverflow) {
             if (isOverflow) return;
             if (selectedPreLeaveDays.includes(dateKey)) {
                 selectedPreLeaveDays = selectedPreLeaveDays.filter(d => d !== dateKey);
@@ -1577,7 +1602,7 @@
                     badge.innerHTML = `<i class="fas fa-check-circle text-[#7F6449]"></i> 已選 ${sortedDays.length} 天：${appConfig.currentMonth}月 ${sortedDays.join(', ')} 日`;
                     badge.className = "text-[11px] text-[#7F6449] font-black block mt-2 bg-[#F6F1EB] border border-[#DECFC0] px-3 py-1.5 rounded-xl";
                 } else {
-                    badge.innerHTML = `<i class="fas fa-info-circle"></i> 尚未選擇 any 日期 (請直接在下方日曆上點選多天)`;
+                    badge.innerHTML = `<i class="fas fa-info-circle"></i> 尚未選擇任何日期 (請直接在下方日曆上點選多天)`;
                     badge.className = "text-[10px] text-gray-400 font-bold block mt-2";
                 }
             }
@@ -1638,7 +1663,7 @@
                 container.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-gray-300 py-16">
                         <i class="fas fa-calendar-day text-3xl opacity-30 mb-2"></i>
-                        <span class="text-xs font-bold text-gray-400">當月尚無 any 預假登記</span>
+                        <span class="text-xs font-bold text-gray-400">當月尚無任何預假登記</span>
                     </div>`;
                 return;
             }
@@ -1704,7 +1729,7 @@
             }).join('');
         }
 
-        function addPreLeaveRecord() {
+        window.addPreLeaveRecord = function() {
             const member = document.getElementById('pre-leave-member-select').value;
             const noteInput = document.getElementById('pre-leave-note-input');
             const note = noteInput.value.trim();
@@ -1752,7 +1777,7 @@
             showToast(`已成功批次同步 ${addedCount} 天預假登記：${member}`);
         }
 
-        function deletePreLeaveSegment(idsString) {
+        window.deletePreLeaveSegment = function(idsString) {
             const ids = idsString.split(',');
             if (ids.length === 0) return;
             ids.forEach(id => {
@@ -1901,7 +1926,7 @@
         }
 
         // 儲存自定義任務模組
-        function saveModules() {
+        window.saveModules = function() {
             ["6", "5", "4", "3"].forEach(key => {
                 const inputs = document.querySelectorAll(`.task-input-${key}`);
                 scheduleModules[key] = Array.from(inputs).map(inp => inp.value);
@@ -2022,7 +2047,7 @@
         }
 
         // Backtracking 月度公平排班演算法
-        function runAutoScheduleFullMonthAndSave() {
+        window.runAutoScheduleFullMonthAndSave = function() {
             const { currentYear: y, currentMonth: m } = appConfig;
             const daysInMonth = new Date(y, m, 0).getDate();
             const newMonthlyData = {};
@@ -2131,7 +2156,6 @@
             renderPreLeaveDropdowns();
             renderPreLeaveList();
             renderDrawQuickSelect();
-            renderDrawPoolTags();
             
             if (window.FirebaseCore && typeof window.initFirebase === 'function') {
                 window.initFirebase();
