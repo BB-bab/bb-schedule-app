@@ -958,6 +958,13 @@
                     return;
                 }
 
+                // Firebase app 尚未初始化（module script 比 regular script 晚執行的競態問題）
+                if (!db || !auth) {
+                    const app = window.FirebaseCore.initializeApp(config);
+                    db = window.FirebaseCore.getFirestore(app);
+                    auth = window.FirebaseCore.getAuth(app);
+                }
+
                 // 認證連線狀態指示
                 document.getElementById('cloud-status').innerText = "☁️ 正在與雲端安全認證...";
                 document.getElementById('cloud-status').style.color = "#fbbf24";
