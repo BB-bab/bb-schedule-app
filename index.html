@@ -155,16 +155,20 @@
             background-color: #ECE3D7 !important;
         }
 
-        .sticky-col { 
-            position: sticky; 
-            left: 0; 
-            background: white; 
-            z-index: 20; 
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 20;
             box-shadow: 3px 0 6px rgba(0,0,0,0.05);
-            min-width: 110px;
-            font-weight: 900; 
-            font-size: 14px;
-            padding: 8px 14px !important;
+            min-width: 64px;
+            max-width: 80px;
+            font-weight: 900;
+            font-size: 12px;
+            padding: 6px 8px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* 總休天數統計專用樣式（橫式強制不換行，防擠壓） */
@@ -370,7 +374,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🎉</span>
                         <div class="text-left">
-                            <h4 class="font-black text-gray-800 text-lg">🥑 自動抽籤</h4>
+                            <h4 class="font-black text-gray-800 text-lg">自動抽籤</h4>
                             <p class="text-[11px] text-gray-400 font-bold">已設定智慧加權不重複機制：中獎一次者權重降低 80% 防止連莊，中獎滿兩次者自動排除！支援點休表「超休日期」一鍵智能導入。</p>
                         </div>
                     </div>
@@ -429,6 +433,14 @@
                                     <textarea id="draw-names-input" rows="3" class="input-minimal w-full font-bold focus:border-[#7A8F81] h-[80px] resize-none text-xs hidden" placeholder="原始抽籤名單 (由膠囊自動同步)"></textarea>
                                 </div>
                             </div>
+                            <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5">
+                                <label class="text-xs font-black text-gray-500 whitespace-nowrap flex items-center gap-1.5">
+                                    <i class="fas fa-users text-[#7A8F81]"></i> 抽取人數
+                                </label>
+                                <select id="draw-count-select" class="input-minimal bg-white flex-1 font-black text-sm text-center border-0 focus:ring-0">
+                                    <option value="1">抽 1 人</option>
+                                </select>
+                            </div>
                             <button id="start-draw-btn" onclick="startLuckyDraw()" class="avocado-gradient text-white w-full py-3.5 rounded-2xl text-base font-black shadow-lg hover:brightness-115 active:scale-95 transition flex items-center justify-center gap-2">
                                 <i class="fas fa-random text-lg"></i> 開始公平抽籤
                             </button>
@@ -445,8 +457,8 @@
 
                             <div id="draw-winner-card" class="hidden text-center p-6 bg-white rounded-3xl border border-green-200 winner-glow max-w-md w-full relative z-10">
                                 <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-4 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-md">恭喜中獎</span>
-                                <div class="text-6xl my-2">👑</div>
-                                <h2 id="winner-name-display" class="text-4xl font-black text-[#7A8F81] tracking-tight my-4">晴</h2>
+                                <div class="text-5xl my-2">👑</div>
+                                <div id="winner-names-display" class="my-3"></div>
                                 <p id="winner-rule-notice" class="text-xs text-gray-400 font-bold">已自動記錄中獎次數，確保抽籤公平進行！ 🎉</p>
                             </div>
 
@@ -469,7 +481,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">📅</span>
                         <div class="text-left">
-                            <h4 class="font-black text-gray-800 text-lg">🥑 預假登記管理區</h4>
+                            <h4 class="font-black text-gray-800 text-lg">預假登記管理區</h4>
                             <p class="text-[11px] text-gray-400 font-bold">預約排休與註解，將全自動在下方點休表渲染優雅奶茶色標記，並於滑鼠移入時顯示預假原因！支援滑鼠點選多天預休。</p>
                         </div>
                     </div>
@@ -536,8 +548,13 @@
                 <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
                     <div class="flex items-center gap-6">
                         <div>
-                            <h3 class="text-2xl font-black text-gray-800">🗓️ 當月放假登記全覽</h3>
-                            <p class="text-xs text-gray-400 font-bold mt-1">點擊欄位可快速切換 ［休］ 狀態，超休（&ge;3人）日期可在表尾點擊 🎲 智能連動至抽籤模組</p>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-2xl font-black text-gray-800">🗓️ 當月放假登記全覽</h3>
+                                <button onclick="openOverThresholdModal()" class="text-gray-400 hover:text-[#5A7A56] p-1.5 rounded-xl hover:bg-[#EAF2E8] transition" title="設定超休門檻">
+                                    <i class="fas fa-cog text-sm"></i>
+                                </button>
+                            </div>
+                            <p id="leave-threshold-desc" class="text-xs text-gray-400 font-bold mt-1">點擊欄位可快速切換 ［休］ 狀態，超休（&ge;<span id="threshold-display">3</span>人）日期可在表尾點擊 🎲 智能連動至抽籤模組</p>
                         </div>
                         <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100 shadow-inner">
                             <button onclick="changeMonth(-1)" class="w-8 h-8 hover:bg-white rounded-lg flex items-center justify-center text-[#7A8F81] transition text-sm"><i class="fas fa-chevron-left"></i></button>
@@ -547,7 +564,7 @@
                     </div>
                 </div>
                 <div class="table-container">
-                    <table class="w-full border-collapse min-w-[1400px]">
+                    <table class="w-full border-collapse min-w-max">
                         <thead id="leave-table-head" class="bg-gray-50 text-gray-500"></thead>
                         <tbody id="leave-table-body"></tbody>
                         <tfoot id="leave-table-foot"></tfoot>
@@ -561,55 +578,15 @@
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border-t-[8px] border-[#7A8F81]">
                 <div class="mb-6 flex flex-wrap justify-between items-end gap-4">
                     <div>
-                        <h3 class="text-3xl font-black text-gray-800 tracking-tighter">📊 任務分配均衡度分析 (Category-based)</h3>
-                        <p class="text-sm text-gray-400 font-bold">15 項任務統籌分配成 6 大工作欄位，進行全域次數精準平衡 (隔3日不重複)</p>
+                        <h3 class="text-3xl font-black text-gray-800 tracking-tighter">📊 任務分配均衡度分析</h3>
+                        <p class="text-sm text-gray-400 font-bold">依當天在崗人數套用對應模式，各欄位進行全域次數精準平衡（隔3日不重複）</p>
                     </div>
                     <div id="avg-info" class="text-right p-3 bg-gray-50 rounded-2xl border border-gray-100"></div>
                 </div>
 
                 <div class="overflow-x-auto rounded-2xl border border-slate-200">
                     <table class="w-full border-collapse text-center text-xs font-bold matrix-table bg-white">
-                        <thead>
-                            <!-- 6人 Row -->
-                            <tr class="bg-slate-50">
-                                <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">6人 模式</th>
-                                <th id="header-6-0" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">ND XO JY XH</th>
-                                <th id="header-6-1" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">OL HS XY SY</th>
-                                <th id="header-6-2" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">MT YD FB JD 2card</th>
-                                <th id="header-6-3" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">LS SH YS LY 代付</th>
-                                <th id="header-6-4" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">所有外部主审</th>
-                                <th id="header-6-5" class="bg-amber-100 text-amber-900 border border-slate-300 p-2 min-w-[160px]">所有外部異常+GPAY</th>
-                            </tr>
-                            <!-- 5人 Row -->
-                            <tr class="bg-slate-50">
-                                <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">5人 模式</th>
-                                <th id="header-5-0" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">ND SH JD XY SY</th>
-                                <th id="header-5-1" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">LS MT JY YD LY FB</th>
-                                <th id="header-5-2" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">OL XO XH YS HS</th>
-                                <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無此欄位</th>
-                                <th id="header-5-4" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">所有外部主审</th>
-                                <th id="header-5-5" class="bg-orange-100 text-orange-900 border border-slate-300 p-2">所有外部異常+GPAY+代付+2card</th>
-                            </tr>
-                            <!-- 4人 Row -->
-                            <tr class="bg-slate-50">
-                                <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">4人 模式</th>
-                                <th id="header-4-0" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">ND SH JD XY SY 2card</th>
-                                <th id="header-4-1" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">LS MT JY YD LY FB +代付</th>
-                                <th id="header-4-2" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">OL XO XH YS HS GPAY</th>
-                                <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無此欄位</th>
-                                <th id="header-4-4" class="bg-emerald-100 text-emerald-900 border border-slate-300 p-2">所有外部主审+異常</th>
-                                <th class="bg-slate-100 text-slate-400 border border-slate-300 p-2 font-normal italic">無此欄位</th>
-                            </tr>
-                            <tr class="bg-zinc-800 text-white text-xs">
-                                <th class="p-2 border border-slate-300 sticky left-0 z-10">當月工作平均</th>
-                                <th class="p-2 border border-slate-300">欄位 1 (ND系列)</th>
-                                <th class="p-2 border border-slate-300">欄位 2 (LS/OL系列)</th>
-                                <th class="p-2 border border-slate-300">欄位 3 (OL/MT/GPAY)</th>
-                                <th class="p-2 border border-slate-300">欄位 4 (LS代付)</th>
-                                <th class="p-2 border border-slate-300">欄位 5 (外部主審)</th>
-                                <th class="p-2 border border-slate-300">欄位 6 (異常/代付)</th>
-                            </tr>
-                        </thead>
+                        <thead id="analysis-thead"></thead>
                         <tbody id="matrix-tbody"></tbody>
                     </table>
                 </div>
@@ -628,50 +605,35 @@
             </div>
 
             <!-- 本地資料重設控制 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-red-500">
-                <h3 class="text-xl font-black mb-2 flex items-center gap-2 text-red-600"><i class="fas fa-trash-alt"></i> 資料管理控制</h3>
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#5A7A56]">
+                <h3 class="text-xl font-black mb-2 flex items-center gap-2 text-gray-800"><i class="fas fa-trash-alt text-[#5A7A56]"></i> 資料管理控制</h3>
                 <p class="text-xs text-gray-400 font-bold mb-4">用來清空目前設定或開始新月份的勾選。清除後無法還原，請謹慎操作。</p>
                 <div class="flex flex-wrap gap-3">
-                    <button onclick="clearOnlySchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
+                    <button onclick="clearOnlySchedule()" class="bg-[#5A7A56] hover:bg-[#4A6A46] text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-eraser mr-1"></i> 一鍵清除排班結果
                     </button>
-                    <button onclick="clearOnlyLeaves()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
+                    <button onclick="clearOnlyLeaves()" class="bg-[#4A6A46] hover:bg-[#3A5A36] text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
                         <i class="fas fa-calendar-times mr-1"></i> 一鍵清除本月放假登記
-                    </button>
-                    <button onclick="clearOnlyTasks()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-colors">
-                        <i class="fas fa-tasks mr-1"></i> 一鍵清除任務清單
                     </button>
                 </div>
             </div>
 
             <!-- 成員編輯 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-blue-500">
-                <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-users text-blue-500"></i> 成員名單管理</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <p class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">現有成員 (點擊可刪除)</p>
-                        <div id="members-list-edit" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div class="bg-blue-50/50 p-4 rounded-2xl">
-                        <p class="text-xs font-bold text-blue-600 mb-3 uppercase tracking-wider">新增成員</p>
-                        <div class="flex gap-2">
-                            <input type="text" id="new-member-input" class="input-minimal" placeholder="輸入姓名">
-                            <button onclick="addMember()" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-black hover:bg-blue-700 shrink-0">新增</button>
-                        </div>
-                    </div>
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#5A7A56]">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black flex items-center gap-2"><i class="fas fa-users text-[#5A7A56]"></i> 成員名單管理</h3>
+                    <button onclick="openMemberModal()" class="text-gray-400 hover:text-[#3A5A36] p-2 rounded-xl hover:bg-[#EAF2E8] transition" title="管理成員">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
                 </div>
+                <div id="members-list-edit" class="flex flex-wrap gap-2"></div>
             </div>
 
             <!-- 任務模組編輯 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-orange-500">
-                <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-orange-500"></i> 任務模組自定義</h3>
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#5A7A56]">
+                <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-[#5A7A56]"></i> 任務模組自定義</h3>
                 <p class="text-sm text-gray-400 font-bold mb-6">根據當天在崗人數，系統會自動選用對應的任務清單進行公平分配。</p>
                 <div id="modules-editor" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-                <div class="mt-8 flex justify-center">
-                    <button onclick="saveModules()" class="avocado-gradient text-white px-12 py-4 rounded-2xl text-lg font-black shadow-xl hover:scale-105 active:scale-95 transition-all">
-                        儲存任務模組設定
-                    </button>
-                </div>
             </div>
         </div>
     </main>
@@ -689,12 +651,99 @@
         </div>
     </div>
 
+    <!-- ⚙️ 超休門檻設定 Modal -->
+    <div id="over-threshold-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[320] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-black text-base text-gray-800"><i class="fas fa-cog text-[#5A7A56] mr-2"></i>超休門檻設定</h4>
+                <button onclick="closeOverThresholdModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <p class="text-xs text-gray-400 font-bold mb-4">當日請假人數達到此數值時，表格底部才會出現 🎲 抽籤連動按鈕。</p>
+            <div class="flex items-center gap-3 mb-5">
+                <label class="text-sm font-black text-gray-600 whitespace-nowrap">超休人數 ≥</label>
+                <input type="number" id="threshold-input" min="1" max="20" value="3"
+                    class="input-minimal w-24 text-center font-black text-lg border border-gray-200 rounded-xl px-3 py-2 focus:border-[#5A7A56]">
+                <span class="text-sm font-black text-gray-500">人</span>
+            </div>
+            <button onclick="saveOverThreshold()" class="w-full bg-[#5A7A56] hover:bg-[#4A6A46] text-white py-2.5 rounded-2xl text-sm font-black transition-colors">
+                儲存設定
+            </button>
+        </div>
+    </div>
+
+    <!-- 🎲 抽籤直播廣播 Modal（所有非管理員觀看者） -->
+    <div id="draw-broadcast-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[450] hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full mx-4 shadow-2xl border border-[#A3B5A8]/30">
+            <!-- 標題 -->
+            <div class="text-center mb-5">
+                <span class="text-4xl">🎲</span>
+                <h3 class="font-black text-lg text-gray-800 mt-2">管理員正在進行公平抽籤</h3>
+            </div>
+            <!-- 本次名單 -->
+            <div class="mb-5">
+                <p class="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">本次參與名單</p>
+                <div id="broadcast-pool-tags" class="flex flex-wrap gap-2"></div>
+            </div>
+            <!-- 跑馬燈滾輪（動畫中） -->
+            <div id="broadcast-slot-machine" class="hidden mb-4">
+                <div class="slot-machine-window rounded-2xl">
+                    <div id="broadcast-slot-strip" class="slot-machine-strip"></div>
+                </div>
+                <p class="text-center text-[10px] text-gray-400 font-bold mt-2 animate-pulse">正在精準計算權重，挑選幸運成員…</p>
+            </div>
+            <!-- 結果卡片 -->
+            <div id="broadcast-winner-card" class="hidden text-center p-6 bg-white rounded-3xl border border-green-200 winner-glow relative">
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-4 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-md">恭喜中獎</span>
+                <div class="text-5xl my-2">👑</div>
+                <h2 id="broadcast-winner-name" class="text-4xl font-black text-[#7A8F81] tracking-tight my-3"></h2>
+                <button onclick="document.getElementById('draw-broadcast-modal').classList.add('hidden')"
+                        class="mt-3 bg-[#7A8F81] hover:bg-[#637569] text-white px-8 py-2.5 rounded-2xl text-sm font-black transition-colors">
+                    確認
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👥 成員管理 Modal -->
+    <div id="member-manage-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[320] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-gray-100 flex flex-col gap-4 max-h-[85vh]">
+            <div class="flex items-center justify-between">
+                <h4 class="font-black text-base text-gray-800"><i class="fas fa-users text-blue-500 mr-2"></i>成員名單管理</h4>
+                <button onclick="closeMemberModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none cursor-pointer">&#x2715;</button>
+            </div>
+            <div id="member-modal-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+            <div class="border-t border-gray-100 pt-3">
+                <p class="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-wider">新增成員</p>
+                <div class="flex gap-2">
+                    <input type="text" id="new-member-input" class="input-minimal flex-1" placeholder="輸入姓名" onkeydown="if(event.key==='Enter') addMember()">
+                    <button onclick="addMember()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-xs transition shrink-0 cursor-pointer">新增</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚙️ 任務模組編輯 Modal -->
+    <div id="module-edit-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[320] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-gray-100 flex flex-col gap-4 max-h-[85vh]">
+            <div class="flex items-center justify-between">
+                <h4 class="font-black text-base text-gray-800" id="module-edit-title">任務模組編輯</h4>
+                <button onclick="closeModuleEditModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <div id="module-edit-inputs" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+            <button onclick="addTaskToEdit()" class="text-xs text-[#7A8F81] font-black hover:underline text-left">＋ 新增任務項目</button>
+            <div class="flex gap-2 justify-end pt-1 border-t border-gray-100">
+                <button onclick="closeModuleEditModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl font-bold text-xs transition cursor-pointer">取消</button>
+                <button onclick="saveModuleEdit()" class="avocado-gradient text-white px-6 py-2 rounded-xl font-black text-xs transition shadow-md cursor-pointer">儲存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 🔑 管理員密碼輸入 Modal -->
     <div id="admin-password-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[310] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-[#DECFC0] text-center space-y-4">
             <div class="text-4xl text-[#7A8F81]"><i class="fas fa-key"></i></div>
             <h4 class="font-black text-lg text-gray-800">解鎖管理員權限</h4>
-            <p class="text-xs text-gray-400 font-bold leading-relaxed">請輸入組長管理密碼進行全域授權解鎖<br>(預設密碼為 <span class="text-[#7A8F81]">avocado</span>)</p>
+            <p class="text-xs text-gray-400 font-bold leading-relaxed">請輸入組長管理密碼進行全域授權解鎖</p>
             <div class="py-2">
                 <input type="password" id="admin-pass-input" class="input-minimal text-center text-lg tracking-widest font-black focus:border-[#7A8F81]" placeholder="••••••">
             </div>
@@ -729,7 +778,8 @@
             currentYear: 2026,
             currentMonth: 5,
             title: loadLocalData('avocado_title', "牛油果排班"),
-            teamId: _activeTeamId
+            teamId: _activeTeamId,
+            overThreshold: loadLocalData('avocado_over_threshold', 3)
         };
         
         let leaveData = loadLocalData('avocado_leaves', {}); 
@@ -744,14 +794,6 @@
             "3": [allTaskNames[11], allTaskNames[12], allTaskNames[13]] // 智慧預載3人模式
         });
 
-        // 智慧防禦：針對既存的 LocalStorage / Cloud 髒資料進行全自動初始化補正
-        if (!scheduleModules["3"]) {
-            scheduleModules["3"] = [
-                allTaskNames[11] || "ND SH JD XY SY 2card",
-                allTaskNames[12] || "LS MT JY YD LY FB +代付",
-                allTaskNames[13] || "OL XO XH YS HS GPAY"
-            ];
-        }
 
         // 🎲 抽籤專用全域記憶狀態（智慧加權不重複抽籤機制）
         let luckyDrawWinnersCount = loadLocalData('avocado_draw_winners', {});
@@ -774,6 +816,7 @@
         let auth = null;
         let isCloudReady = false;
         let unsubscribeOnSnapshot = null;
+        let unsubscribeDrawBroadcast = null;
 
         // 🎲 抽籤模組動態池狀態
         let currentDrawPool = [];
@@ -845,16 +888,26 @@
 
         // 渲染成員管理面板 - 完美寫入 (串接防呆刪除確認框)
         function renderMembersEdit() {
+            // 設定頁唯讀名牌
             const container = document.getElementById('members-list-edit');
-            if (!container) return;
-            container.innerHTML = members.map(m => `
-                <div class="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-xl group">
-                    <span class="font-bold text-gray-700">${m}</span>
-                    <button onclick="requestRemoveMember('${m}')" class="text-gray-300 hover:text-red-500 transition-colors">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
-                </div>
-            `).join('');
+            if (container) {
+                container.innerHTML = members.length
+                    ? members.map(m => `<span class="bg-gray-100 text-gray-700 font-bold text-xs px-3 py-1.5 rounded-xl">${m}</span>`).join('')
+                    : `<span class="text-xs text-gray-400 font-bold">尚無成員</span>`;
+            }
+            // Modal 內清單（含刪除按鈕）
+            const modal = document.getElementById('member-modal-list');
+            if (modal) {
+                modal.innerHTML = members.length
+                    ? members.map(m => `
+                        <div class="flex items-center justify-between bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100">
+                            <span class="font-bold text-gray-700 text-sm">${m}</span>
+                            <button onclick="requestRemoveMember('${m}')" class="text-gray-300 hover:text-red-500 transition-colors cursor-pointer">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>`).join('')
+                    : `<p class="text-xs text-gray-400 font-bold text-center py-4">尚無成員</p>`;
+            }
         }
 
         // 智慧欄位映射函數
@@ -918,7 +971,7 @@
             const modal = document.getElementById('admin-password-modal');
             if (isConfirm) {
                 const pass = document.getElementById('admin-pass-input').value;
-                if (pass === "avocado") {
+                if (pass === "666888") {
                     isAdminMode = true;
                     document.getElementById('admin-mode-btn').innerHTML = '<i class="fas fa-lock-open text-white animate-pulse"></i> <span class="text-white">管理員模式已啟用</span>';
                     document.getElementById('admin-mode-btn').className = "px-4 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-xs font-black text-white transition-all flex items-center gap-1.5 shadow-md";
@@ -1048,14 +1101,17 @@
 
                     if (data.scheduleModules) {
                         scheduleModules = data.scheduleModules;
-                        if (!scheduleModules["3"]) {
-                            scheduleModules["3"] = [
-                                allTaskNames[11] || "ND SH JD XY SY 2card",
-                                allTaskNames[12] || "LS MT JY YD LY FB +代付",
-                                allTaskNames[13] || "OL XO XH YS HS GPAY"
-                            ];
-                        }
-                        allTaskNames = [...scheduleModules["6"], ...scheduleModules["5"], ...scheduleModules["4"], ...scheduleModules["3"]];
+                        allTaskNames = Object.keys(scheduleModules)
+                            .sort((a, b) => Number(b) - Number(a))
+                            .flatMap(k => scheduleModules[k] || []);
+                    }
+
+                    // 同步超休門檻設定
+                    if (data.overThreshold != null) {
+                        appConfig.overThreshold = data.overThreshold;
+                        saveLocalData('avocado_over_threshold', data.overThreshold);
+                        const tdEl = document.getElementById('threshold-display');
+                        if (tdEl) tdEl.innerText = data.overThreshold;
                     }
 
                     saveAllDataToLocalStorage();
@@ -1081,6 +1137,84 @@
                 console.error("即時同步錯誤:", err);
                 showToast("無權限或網絡異常");
             });
+
+            // 抽籤廣播監聽（獨立文件，不影響主資料）
+            if (unsubscribeDrawBroadcast) unsubscribeDrawBroadcast();
+            const drawBroadcastRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId + '_draw');
+            unsubscribeDrawBroadcast = window.FirebaseCore.onSnapshot(drawBroadcastRef, (snap) => {
+                handleDrawBroadcast(snap.exists() ? snap.data() : null);
+            });
+        }
+
+        // 廣播抽籤狀態到 Firestore（管理員呼叫）
+        async function broadcastDrawState(phase, extraData = {}) {
+            if (!db || !isCloudReady || !appConfig.teamId) return;
+            try {
+                const drawRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId + '_draw');
+                await window.FirebaseCore.setDoc(drawRef, { phase, ...extraData, ts: Date.now() });
+            } catch(e) { console.warn('抽籤廣播失敗', e); }
+        }
+
+        // 接收廣播並更新所有人的畫面（名單 + 跑馬燈動畫 + 結果）
+        function handleDrawBroadcast(data) {
+            const modal = document.getElementById('draw-broadcast-modal');
+            if (!modal) return;
+            if (isAdminMode) return; // 管理員已有原始面板，不重複顯示
+
+            if (!data || data.phase === 'idle') {
+                modal.classList.add('hidden');
+                return;
+            }
+
+            if (data.phase === 'drawing') {
+                // 超過 30 秒的舊廣播忽略，避免新開啟者重播已結束的抽籤
+                if (!data.ts || (Date.now() - data.ts) > 30000) return;
+
+                const pool   = data.pool   || [];
+                const winner = data.winner || '';
+
+                // 渲染參與名單標籤
+                document.getElementById('broadcast-pool-tags').innerHTML = pool.map(n =>
+                    `<span class="bg-[#EAF2E8] text-[#3A5A36] font-black text-sm px-3 py-1.5 rounded-xl">${n}</span>`
+                ).join('');
+
+                // 顯示滾輪、隱藏結果
+                document.getElementById('broadcast-slot-machine').classList.remove('hidden');
+                document.getElementById('broadcast-winner-card').classList.add('hidden');
+                modal.classList.remove('hidden');
+
+                // 建立滾動列表（與管理員端相同邏輯，15 批次確保滾動飽滿）
+                const strip = document.getElementById('broadcast-slot-strip');
+                let scrollList = [];
+                for (let i = 0; i < 15; i++) {
+                    scrollList = scrollList.concat([...pool].sort(() => Math.random() - 0.5));
+                }
+                scrollList.push(winner);
+                strip.innerHTML = scrollList.map(n => `<div class="slot-item">${n}</div>`).join('');
+                strip.style.transition = 'none';
+                strip.style.transform  = 'translateY(0)';
+                strip.offsetHeight;
+                const totalDistance = (scrollList.length - 1) * 80;
+                strip.style.transition = 'transform 6.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
+                strip.style.transform  = `translateY(-${totalDistance}px)`;
+
+                // 8.7 秒後切換為結果卡
+                const broadcastWinners = data.winners || [winner];
+                setTimeout(() => {
+                    document.getElementById('broadcast-slot-machine').classList.add('hidden');
+                    const card = document.getElementById('broadcast-winner-card');
+                    card.classList.remove('hidden');
+                    const nameEl = document.getElementById('broadcast-winner-name');
+                    if (broadcastWinners.length === 1) {
+                        nameEl.innerHTML = `<span class="text-4xl font-black text-[#7A8F81] tracking-tight">${broadcastWinners[0]}</span>`;
+                    } else {
+                        nameEl.innerHTML = `<div class="flex flex-wrap justify-center gap-2 mt-1">${
+                            broadcastWinners.map((w, i) => `<span class="bg-[#EAF2E8] text-[#2E3E2A] font-black px-4 py-2 rounded-2xl text-base">${i + 1}. ${w}</span>`).join('')
+                        }</div>`;
+                    }
+                    triggerWinnerConfetti();
+                }, 6700);
+            }
         }
 
         // 上傳最新資料到 Google Firestore
@@ -1111,6 +1245,7 @@
                     scheduleModules: cleanScheduleModules,
                     luckyDrawWinnersCount: cleanLuckyDrawWinnersCount,
                     preLeaveRecords: cleanPreLeaveRecords,
+                    overThreshold: appConfig.overThreshold ?? 3,
                     updatedAt: new Date().getTime()
                 });
                 showToast("資料已同步到雲端與本機");
@@ -1169,22 +1304,18 @@
                 showToast("🔑 本操作需要管理員權限！請先啟用管理員解鎖。");
                 return;
             }
-            showCustomConfirm("清空放假與預假登記", "您確定要清空整個月的所有「放假登記」與「預假記錄」嗎？\n清空後需要重新勾選排休與登載，此操作無法還原。", () => {
+            showCustomConfirm("清空放假與預假登記", "您確定要清空整個月的所有「放假登記」與「預假記錄」嗎？\n清空後需要重新勾選排休與登載，此操作無法還原。\n（排班結果不受影響）", () => {
                 leaveData = {};
-                monthAssignments = {};
                 preLeaveRecords = [];
                 selectedPreLeaveDays = [];
                 saveLocalData('avocado_leaves', {});
-                saveLocalData('avocado_assignments', {});
                 saveLocalData('avocado_pre_leaves', []);
-                document.getElementById('calendar-view').classList.add('hidden');
-                document.getElementById('empty-state').classList.remove('hidden');
                 renderLeaveTable();
                 renderAnalysis();
                 renderPreLeaveList();
                 renderPreLeaveDropdowns();
                 uploadToCloud();
-                showToast("本月放假與預假登記已全數清空");
+                showToast("本月放假與預假登記已全數清空（排班結果保留）");
             });
         }
 
@@ -1344,6 +1475,41 @@
                 members.map(m => `<option value="${m}">${m}</option>`).join('');
         }
 
+        window.openMemberModal = function() {
+            if (!isAdminMode) {
+                showToast("🔑 需要管理員模式才能管理成員！");
+                return;
+            }
+            renderMembersEdit();
+            document.getElementById('member-manage-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('new-member-input')?.focus(), 150);
+        };
+
+        window.closeMemberModal = function() {
+            document.getElementById('member-manage-modal').classList.add('hidden');
+        };
+
+        window.openOverThresholdModal = function() {
+            document.getElementById('threshold-input').value = appConfig.overThreshold;
+            document.getElementById('over-threshold-modal').classList.remove('hidden');
+        };
+
+        window.closeOverThresholdModal = function() {
+            document.getElementById('over-threshold-modal').classList.add('hidden');
+        };
+
+        window.saveOverThreshold = function() {
+            const val = parseInt(document.getElementById('threshold-input').value);
+            if (isNaN(val) || val < 1) { showToast("請輸入有效的人數（至少 1 人）"); return; }
+            appConfig.overThreshold = val;
+            saveLocalData('avocado_over_threshold', val);
+            document.getElementById('threshold-display').innerText = val;
+            closeOverThresholdModal();
+            renderLeaveTable();
+            uploadToCloud();
+            showToast(`✅ 超休門檻已更新為 ${val} 人，已同步至雲端`);
+        };
+
         function addMember() {
             if (!isAdminMode) {
                 showToast("🔑 權限不足：請先啟用管理員模式，才能新增成員！");
@@ -1364,6 +1530,7 @@
             renderDrawQuickSelect();
             renderIdentitySelect();
             uploadToCloud();
+            showToast(`已新增成員：${name}`);
         }
 
         // 切換分頁
@@ -1407,6 +1574,11 @@
         function toggleLuckyDrawCollapse() {
             const panel = document.getElementById('lucky-draw-panel');
             const arrow = document.getElementById('draw-arrow-icon');
+            // 抽籤介面僅限管理員操作，防止其他使用者查看抽籤過程
+            if (panel.classList.contains('hidden') && !isAdminMode) {
+                showToast("🔑 抽籤功能需要管理員模式才能使用！");
+                return;
+            }
             if (panel.classList.contains('hidden')) {
                 panel.classList.remove('hidden');
                 arrow.style.transform = 'rotate(180deg)';
@@ -1415,6 +1587,7 @@
             } else {
                 panel.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
+                if (isAdminMode) broadcastDrawState('idle');
             }
         }
 
@@ -1424,6 +1597,10 @@
 
         // 1. 點休表一鍵帶入抽籤連動橋樑（加入智慧排除與預先登記防護機制）
         window.triggerLuckyDrawBridge = function(dateKey, membersArray) {
+            if (!isAdminMode) {
+                showToast("🔑 抽籤功能需要管理員模式才能使用！");
+                return;
+            }
             // 切換/打開抽籤折疊面板
             const panel = document.getElementById('lucky-draw-panel');
             if (panel.classList.contains('hidden')) {
@@ -1518,6 +1695,16 @@
                 `;
                 container.appendChild(tag);
             });
+
+            // 同步更新「抽取人數」下拉選單（最多不超過名單人數）
+            const countSel = document.getElementById('draw-count-select');
+            if (countSel) {
+                const prev = parseInt(countSel.value) || 1;
+                const max = currentDrawPool.length;
+                countSel.innerHTML = Array.from({ length: max }, (_, i) =>
+                    `<option value="${i + 1}" ${i + 1 === prev ? 'selected' : ''}>抽 ${i + 1} 人</option>`
+                ).join('');
+            }
         }
 
         // 4. 手動點膠囊叉叉排除成員
@@ -1640,6 +1827,9 @@
                 return;
             }
 
+            // 讀取抽取人數（不超過合格候選人數）
+            const drawCount = Math.min(parseInt(document.getElementById('draw-count-select')?.value) || 1, allowedCandidates.length);
+
             idleBlock.classList.add('hidden');
             winnerCard.classList.add('hidden');
             slotMachine.classList.remove('hidden');
@@ -1647,69 +1837,92 @@
             drawBtn.classList.add('opacity-50', 'cursor-not-allowed');
             drawBtn.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> 正在過濾並滾動...`;
 
-            // 計算權重池 (中獎 0 次權重 5，中獎 1 次權重 1)
-            let weightedPool = [];
-            allowedCandidates.forEach(name => {
-                const count = luckyDrawWinnersCount[name] || 0;
-                const weight = count === 0 ? 5 : 1;
-                for (let i = 0; i < weight; i++) {
-                    weightedPool.push(name);
-                }
-            });
+            // 先把候選人順序打散，增加抽取與動畫的隨機感
+            const shuffledCandidates = [...allowedCandidates].sort(() => Math.random() - 0.5);
 
-            const winner = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+            // 依權重逐一抽出 drawCount 位得獎者（已抽出者不再參與後續輪）
+            const winners = [];
+            let remainingCandidates = [...shuffledCandidates];
+            for (let round = 0; round < drawCount; round++) {
+                if (remainingCandidates.length === 0) break;
+                let pool = [];
+                remainingCandidates.forEach(name => {
+                    const w = (luckyDrawWinnersCount[name] || 0) === 0 ? 5 : 1;
+                    for (let i = 0; i < w; i++) pool.push(name);
+                });
+                // 再次洗牌權重池，打散名字分佈
+                pool.sort(() => Math.random() - 0.5);
+                const picked = pool[Math.floor(Math.random() * pool.length)];
+                winners.push(picked);
+                remainingCandidates = remainingCandidates.filter(n => n !== picked);
+            }
 
-            // 洗牌滾動動畫
+            // 顯示用：將得獎名單再次隨機洗牌，結果順序與抽出順序無關
+            const displayWinners = [...winners].sort(() => Math.random() - 0.5);
+
+            // 廣播（動畫用最後一位得獎者滾輪）
+            broadcastDrawState('drawing', { pool: allowedCandidates, winners: displayWinners, winner: displayWinners[displayWinners.length - 1] });
+
+            // 洗牌滾動動畫（每段都重新打散，15 批次，滾至最後一位得獎者）
+            const lastWinner = displayWinners[displayWinners.length - 1];
             let scrollList = [];
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 15; i++) {
                 scrollList = scrollList.concat([...allowedCandidates].sort(() => Math.random() - 0.5));
             }
-            scrollList.push(winner);
+            scrollList.push(lastWinner);
             strip.innerHTML = scrollList.map(name => `<div class="slot-item">${name}</div>`).join('');
             strip.style.transition = 'none';
             strip.style.transform = 'translateY(0)';
-            strip.offsetHeight; // 觸發重繪
+            strip.offsetHeight;
             const itemHeight = 80;
             const totalDistance = (scrollList.length - 1) * itemHeight;
-            strip.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
+            strip.style.transition = 'transform 6.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
             strip.style.transform = `translateY(-${totalDistance}px)`;
 
             setTimeout(() => {
                 slotMachine.classList.add('hidden');
                 winnerCard.classList.remove('hidden');
-                
-                // 完美拼接：中獎環境微光擴散特效 (Glow Effect)
+
                 winnerCard.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                winnerCard.style.boxShadow = '0 0 40px 12px rgba(122, 143, 129, 0.4)'; // 莫蘭迪綠環境光
-                winnerCard.style.borderColor = '#7A8F81'; // 邊框變為深莫蘭迪綠
-                winnerCard.classList.add('scale-105');     // 微幅放大
-                
-                // 3秒後微光淡淡收斂，回歸質感外觀
+                winnerCard.style.boxShadow = '0 0 40px 12px rgba(122, 143, 129, 0.4)';
+                winnerCard.style.borderColor = '#7A8F81';
+                winnerCard.classList.add('scale-105');
                 setTimeout(() => {
                     winnerCard.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.05)';
                     winnerCard.classList.remove('scale-105');
                 }, 3000);
 
-                const winnerCountBefore = luckyDrawWinnersCount[winner] || 0;
-                const winnerCountAfter = winnerCountBefore + 1;
-                document.getElementById('winner-name-display').innerText = winner;
-                let noticeText = "";
-                if (winnerCountAfter === 1) {
-                    noticeText = `這是該成員第 1 次中獎！下一輪中獎權重將降低 80% 防止連莊。 🎉`;
-                } else if (winnerCountAfter === 2) {
-                    noticeText = `該成員中獎次數已達上限 2 次！後續抽籤將自動排除。 👑`;
+                // 渲染得獎名單（1人大字顯示，多人以隨機洗牌後的標籤顯示）
+                const namesDiv = document.getElementById('winner-names-display');
+                if (displayWinners.length === 1) {
+                    namesDiv.innerHTML = `<h2 class="text-4xl font-black text-[#7A8F81] tracking-tight">${displayWinners[0]}</h2>`;
+                } else {
+                    namesDiv.innerHTML = `<div class="flex flex-wrap justify-center gap-2">${
+                        displayWinners.map((w, i) => `<span class="bg-[#EAF2E8] text-[#2E3E2A] font-black px-4 py-2 rounded-2xl text-lg">${i + 1}. ${w}</span>`).join('')
+                    }</div>`;
                 }
-                document.getElementById('winner-rule-notice').innerText = noticeText;
-                luckyDrawWinnersCount[winner] = winnerCountAfter;
+
+                // 更新中獎次數並產生提示（用原始 winners，不影響公平性計算）
+                let notices = [];
+                winners.forEach(w => {
+                    const before = luckyDrawWinnersCount[w] || 0;
+                    luckyDrawWinnersCount[w] = before + 1;
+                    if (before + 1 === 1) notices.push(`${w} 第 1 次中獎，下輪權重降低`);
+                    else if (before + 1 >= 2) notices.push(`${w} 已達上限，後續自動排除`);
+                });
+                document.getElementById('winner-rule-notice').innerText = notices.join('　|　') || '已自動記錄中獎次數 🎉';
                 uploadToCloud();
-                
+
                 // 觸發高質感噴灑紙屑
                 triggerWinnerConfetti();
 
                 drawBtn.disabled = false;
                 drawBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 drawBtn.innerHTML = `<i class="fas fa-random text-lg"></i> 開始公平抽籤`;
-            }, 3600);
+
+                // 30 秒後自動將廣播狀態歸零，避免後續開啟網頁的人重播舊抽籤
+                setTimeout(() => broadcastDrawState('idle'), 30000);
+            }, 6700);
         };
 
         function triggerWinnerConfetti() {
@@ -2093,8 +2306,8 @@
                 const offCount = allOffForDay.length;
                 const workCount = members.length - offCount;
 
-                // 若請假人數 >= 3 人，則顯示具有高亮互動效果與 🎲 圖標的「一鍵抽籤連動按鈕」
-                if (offCount >= 3) {
+                // 若請假人數 >= overThreshold，則顯示具有高亮互動效果與 🎲 圖標的「一鍵抽籤連動按鈕」
+                if (offCount >= appConfig.overThreshold) {
                     const listPayload = JSON.stringify(allOffForDay).replace(/"/g, '&quot;');
                     offTotalRow += `
                         <td class="border-t border-l border-gray-100 p-0 text-center">
@@ -2121,33 +2334,50 @@
             const container = document.getElementById('modules-editor');
             if (!container) return;
             container.innerHTML = '';
-            ["6", "5", "4", "3"].forEach(key => { 
-                if (!scheduleModules[key]) {
-                    if (key === "3") {
-                        scheduleModules["3"] = [
-                            allTaskNames[11] || "ND SH JD XY SY 2card",
-                            allTaskNames[12] || "LS MT JY YD LY FB +代付",
-                            allTaskNames[13] || "OL XO XH YS HS GPAY"
-                        ];
-                    } else {
-                        scheduleModules[key] = ["任務 1", "任務 2", "任務 3"];
-                    }
-                }
 
-                let html = `<div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-inner">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">${key}</span>
-                        <h4 class="font-black text-gray-700">人在崗時 任務清單</h4>
-                    </div>`;
-                scheduleModules[key].forEach((task, idx) => {
-                    html += `
-                    <div class="mb-3">
-                        <label class="text-[9px] font-black text-gray-400 block mb-1">任務項目 ${idx+1}</label>
-                        <input type="text" value="${task}" class="task-input-${key} input-minimal bg-white font-bold" placeholder="請輸入任務名稱">
-                    </div>`;
-                });
-                container.innerHTML += html + `</div>`;
+            const standardKeys = ["6", "5", "4", "3"];
+            const allKeys = Object.keys(scheduleModules)
+                .sort((a, b) => Number(b) - Number(a));
+
+            allKeys.forEach(key => {
+                if (!scheduleModules[key]) {
+                    scheduleModules[key] = key === "3"
+                        ? [allTaskNames[11] || "任務 1", allTaskNames[12] || "任務 2", allTaskNames[13] || "任務 3"]
+                        : ["任務 1", "任務 2", "任務 3"];
+                }
+                const isCustom = !standardKeys.includes(key);
+                const tasks = scheduleModules[key];
+                let html = `<div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-full bg-[#7A8F81]/20 text-[#7A8F81] flex items-center justify-center font-black text-sm">${key}</span>
+                            <h4 class="font-black text-gray-700 text-sm">人在崗時 任務清單</h4>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openModuleEditor('${key}')" class="text-gray-400 hover:text-[#7A8F81] p-1.5 rounded-lg hover:bg-gray-100 transition" title="編輯任務">
+                                <i class="fas fa-cog text-sm"></i>
+                            </button>
+                            <button onclick="deleteModule('${key}')" class="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition" title="刪除模式"><i class="fas fa-trash-alt text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        ${tasks.map((t, i) => `
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${i + 1}</span>
+                                <span class="text-sm text-gray-700 font-bold truncate">${t || '（未設定）'}</span>
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+                container.innerHTML += html;
             });
+
+            container.innerHTML += `
+                <div class="flex items-center justify-center border-2 border-dashed border-[#7A8F81]/40 rounded-2xl min-h-[120px] hover:border-[#7A8F81] hover:bg-[#7A8F81]/5 transition cursor-pointer" onclick="addNewModule()">
+                    <div class="text-center">
+                        <div class="text-3xl text-[#7A8F81]/40 mb-1">+</div>
+                        <p class="text-xs font-black text-[#7A8F81]/60">新增人數模式</p>
+                    </div>
+                </div>`;
         }
 
         // 儲存自定義任務模組
@@ -2156,63 +2386,156 @@
                 showToast("🔑 權限鎖定：自定義任務模組為敏感權限，請先啟用管理員模式！");
                 return;
             }
-            ["6", "5", "4", "3"].forEach(key => {
+            Object.keys(scheduleModules).forEach(key => {
                 const inputs = document.querySelectorAll(`.task-input-${key}`);
-                scheduleModules[key] = Array.from(inputs).map(inp => inp.value);
+                if (inputs.length > 0) {
+                    scheduleModules[key] = Array.from(inputs).map(inp => inp.value);
+                }
             });
-            allTaskNames = [...scheduleModules["6"], ...scheduleModules["5"], ...scheduleModules["4"], ...scheduleModules["3"]];
-            renderAnalysis(); 
+            allTaskNames = Object.keys(scheduleModules)
+                .sort((a, b) => Number(b) - Number(a))
+                .flatMap(k => scheduleModules[k] || []);
+            renderAnalysis();
             uploadToCloud();
             showToast("任務模組設定已儲存");
         }
 
-        // 任務分析面板
-        function renderAnalysis() {
-            const matrixBody = document.getElementById('matrix-tbody');
-            if (!matrixBody) return;
-
-            const headers = {
-                "6": scheduleModules["6"] || [],
-                "5": scheduleModules["5"] || [],
-                "4": scheduleModules["4"] || [],
-                "3": scheduleModules["3"] || []
-            };
-
-            for (let i = 0; i < 6; i++) {
-                const el6 = document.getElementById(`header-6-${i}`);
-                if (el6 && headers["6"][i]) el6.innerText = headers["6"][i];
+        window.addNewModule = function() {
+            if (!isAdminMode) {
+                showToast("🔑 需要管理員模式才能新增人數模式！");
+                return;
             }
-            const map5 = [0, 1, 2, 4, 5];
-            map5.forEach((cat, idx) => {
-                const el5 = document.getElementById(`header-5-${cat}`);
-                if (el5 && headers["5"][idx]) el5.innerText = headers["5"][idx];
-            });
-            const map4 = [0, 1, 2, 4];
-            map4.forEach((cat, idx) => {
-                const el4 = document.getElementById(`header-4-${idx}`);
-                if (el4 && headers["4"][idx]) el4.innerText = headers["4"][idx];
-            });
+            const input = prompt("請輸入新增的在崗人數（例如：7）：");
+            if (!input) return;
+            const count = parseInt(input.trim());
+            if (isNaN(count) || count < 2) {
+                showToast("請輸入有效的人數（最少 2 人）");
+                return;
+            }
+            const key = String(count);
+            if (scheduleModules[key]) {
+                showToast(`${count} 人模式已存在，請直接編輯！`);
+                return;
+            }
+            scheduleModules[key] = Array.from({ length: count }, (_, i) => `任務 ${i + 1}`);
+            renderModulesEditor();
+            showToast(`已新增 ${count} 人在崗模式（共 ${count} 項任務），請填入任務內容後按「儲存」`);
+        };
 
-            let statsByTask = {}; 
-            let statsByCat = {};  
-            
-            members.forEach(m => { 
+        let _currentEditModuleKey = null;
+
+        window.openModuleEditor = function(key) {
+            if (!isAdminMode) {
+                showToast("🔑 需要管理員模式才能編輯任務模組！");
+                return;
+            }
+            _currentEditModuleKey = key;
+            const tasks = scheduleModules[key] || [];
+            document.getElementById('module-edit-title').innerText = `${key} 人在崗模式 · 任務編輯`;
+            const container = document.getElementById('module-edit-inputs');
+            container.innerHTML = tasks.map((t, i) => `
+                <div class="module-edit-row flex items-center gap-2">
+                    <span class="module-edit-label text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${i + 1}</span>
+                    <input type="text" value="${t}" class="module-edit-input input-minimal bg-white font-bold flex-1" placeholder="任務名稱">
+                    <button onclick="this.closest('.module-edit-row').remove(); reindexModuleInputs()" class="text-gray-300 hover:text-red-400 font-black text-sm shrink-0 cursor-pointer">&#x2715;</button>
+                </div>`).join('');
+            document.getElementById('module-edit-modal').classList.remove('hidden');
+        };
+
+        window.closeModuleEditModal = function() {
+            document.getElementById('module-edit-modal').classList.add('hidden');
+            _currentEditModuleKey = null;
+        };
+
+        window.addTaskToEdit = function() {
+            const container = document.getElementById('module-edit-inputs');
+            const count = container.querySelectorAll('.module-edit-row').length + 1;
+            const div = document.createElement('div');
+            div.className = 'module-edit-row flex items-center gap-2';
+            div.innerHTML = `
+                <span class="module-edit-label text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${count}</span>
+                <input type="text" value="" class="module-edit-input input-minimal bg-white font-bold flex-1" placeholder="任務名稱">
+                <button onclick="this.closest('.module-edit-row').remove(); reindexModuleInputs()" class="text-gray-300 hover:text-red-400 font-black text-sm shrink-0 cursor-pointer">&#x2715;</button>`;
+            container.appendChild(div);
+        };
+
+        window.reindexModuleInputs = function() {
+            document.querySelectorAll('.module-edit-row').forEach((row, i) => {
+                const label = row.querySelector('.module-edit-label');
+                if (label) label.innerText = `任務 ${i + 1}`;
+            });
+        };
+
+        window.saveModuleEdit = function() {
+            if (!_currentEditModuleKey) return;
+            const inputs = document.querySelectorAll('.module-edit-input');
+            const tasks = Array.from(inputs).map(inp => inp.value.trim()).filter(v => v);
+            if (tasks.length === 0) { showToast("至少需要一項任務！"); return; }
+            scheduleModules[_currentEditModuleKey] = tasks;
+            allTaskNames = Object.keys(scheduleModules)
+                .sort((a, b) => Number(b) - Number(a))
+                .flatMap(k => scheduleModules[k] || []);
+            renderModulesEditor();
+            renderAnalysis();
+            uploadToCloud();
+            showToast(`${_currentEditModuleKey} 人模式已更新`);
+            closeModuleEditModal();
+        };
+
+        window.deleteModule = function(key) {
+            if (!isAdminMode) {
+                showToast("🔑 需要管理員模式才能刪除人數模式！");
+                return;
+            }
+            delete scheduleModules[key];
+            allTaskNames = Object.keys(scheduleModules)
+                .sort((a, b) => Number(b) - Number(a))
+                .flatMap(k => scheduleModules[k] || []);
+            renderModulesEditor();
+            renderAnalysis();
+            uploadToCloud();
+            showToast(`已刪除 ${key} 人模式`);
+        };
+
+        // 任務分析面板（全動態單一表格）
+        function renderAnalysis() {
+            const thead = document.getElementById('analysis-thead');
+            const matrixBody = document.getElementById('matrix-tbody');
+            if (!thead || !matrixBody) return;
+
+            const stdKeys = ["6", "5", "4", "3"];
+            // 列顏色：同色系 #f3f6f3→#7A8F81，人數越多越淺
+            const modeColorMap = {
+                "6": { bg: '#EAF2E8', text: '#3D5E39' },
+                "5": { bg: '#D8E8D4', text: '#335430' },
+                "4": { bg: '#C4DABD', text: '#2A4826' },
+                "3": { bg: '#AFCDA8', text: '#213C1E' },
+            };
+            const customModeColor = { bg: '#96BC8E', text: '#183010' };
+            const emptyCell = { bg: '#E2EDE0', text: '#7A9876' };
+            const allKeys = Object.keys(scheduleModules).sort((a, b) => Number(b) - Number(a));
+
+            // 計算最大欄數
+            const maxCols = Math.max(6, ...allKeys.map(k => (scheduleModules[k] || []).length));
+
+            // 統計數據
+            let statsByTask = {};
+            let statsByCat = {};
+            const _allTasks = Object.values(scheduleModules).flat();
+            members.forEach(m => {
                 statsByTask[m] = {};
-                statsByCat[m] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                allTaskNames.forEach(t => statsByTask[m][t] = 0); 
+                statsByCat[m] = {};
+                for (let i = 0; i < maxCols; i++) statsByCat[m][i] = 0;
+                _allTasks.forEach(t => { if (t) statsByTask[m][t] = 0; });
             });
 
-            Object.values(monthAssignments).forEach(dayTasks => { 
+            Object.values(monthAssignments).forEach(dayTasks => {
                 if (dayTasks) {
-                    const taskCount = dayTasks.length;
-                    const moduleKey = String(taskCount);
-                    dayTasks.forEach((t, idx) => { 
+                    const moduleKey = String(dayTasks.length);
+                    dayTasks.forEach((t, idx) => {
                         if (t.userName !== "待定" && statsByTask[t.userName]) {
-                            if (statsByTask[t.userName][t.ruleName] === undefined) {
-                                statsByTask[t.userName][t.ruleName] = 0;
-                            }
+                            if (statsByTask[t.userName][t.ruleName] === undefined) statsByTask[t.userName][t.ruleName] = 0;
                             statsByTask[t.userName][t.ruleName]++;
-
                             const catIdx = getCategoryIndex(moduleKey, idx);
                             if (statsByCat[t.userName] && statsByCat[t.userName][catIdx] !== undefined) {
                                 statsByCat[t.userName][catIdx]++;
@@ -2222,33 +2545,63 @@
                 }
             });
 
-            const totals = members.map(m => {
-                const taskTotal = Object.values(statsByTask[m]).reduce((sum, val) => sum + (val || 0), 0);
-                return taskTotal;
-            });
-            const avg = totals.length > 0 ? totals.reduce((a,b)=>a+b, 0) / members.length : 0;
-            
+            // 平均天數
+            const totals = members.map(m => Object.values(statsByTask[m]).reduce((s, v) => s + (v || 0), 0));
+            const avg = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / members.length : 0;
             document.getElementById('avg-info').innerHTML = `
                 <span class="text-xs font-bold text-gray-400">平均分配天數:</span>
-                <span class="text-xl font-black text-gray-700 ml-1">${avg.toFixed(1)}</span>
-            `;
+                <span class="text-xl font-black text-gray-700 ml-1">${avg.toFixed(1)}</span>`;
 
-            let matrixHtml = "";
-            members.forEach((m, idx) => {
-                const total = totals[idx] || 0;
-                matrixHtml += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3 bg-slate-100 border border-slate-300 text-slate-800 font-bold sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">${m}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700">${statsByCat[m][0]}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700">${statsByCat[m][1]}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700">${statsByCat[m][2]}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700 ${statsByCat[m][3] === 0 ? 'text-slate-300 bg-slate-50/50 font-normal' : ''}">${statsByCat[m][3]}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700">${statsByCat[m][4]}</td>
-                        <td class="p-3 border border-slate-300 font-black text-sm text-slate-700 ${statsByCat[m][5] === 0 ? 'text-slate-300 bg-slate-50/50 font-normal' : ''}">${statsByCat[m][5]}</td>
-                    </tr>
-                `;
+            // 動態生成 thead：每個模式一行
+            let theadHtml = '';
+            allKeys.forEach(key => {
+                const tasks = scheduleModules[key] || [];
+                if (tasks.length === 0) return;
+                const isCustom = !stdKeys.includes(key);
+                const mc = isCustom ? customModeColor : (modeColorMap[key] || { bg: '#E5E7EB', text: '#374151' });
+
+                let cells = '';
+                if (isCustom) {
+                    // 自定義模式：任務由左至右填入，不足補空
+                    for (let col = 0; col < maxCols; col++) {
+                        cells += col < tasks.length
+                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${tasks[col]}</th>`
+                            : `<th style="background-color:${emptyCell.bg};color:${emptyCell.text}" class="border border-slate-200 p-2 font-normal text-[10px]">無</th>`;
+                    }
+                } else {
+                    // 標準模式：依 getCategoryIndex 對齊欄位
+                    const usedCols = tasks.map((_, i) => getCategoryIndex(key, i));
+                    for (let col = 0; col < maxCols; col++) {
+                        const tIdx = usedCols.indexOf(col);
+                        cells += tIdx !== -1
+                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${tasks[tIdx]}</th>`
+                            : `<th style="background-color:${emptyCell.bg};color:${emptyCell.text}" class="border border-slate-200 p-2 font-normal text-[10px]">無</th>`;
+                    }
+                }
+                theadHtml += `
+                    <tr class="bg-slate-50">
+                        <th class="bg-slate-200 text-slate-800 font-black text-sm p-3 w-[110px] sticky left-0 z-10 border border-slate-300">${key}人 模式</th>
+                        ${cells}
+                    </tr>`;
             });
-            matrixBody.innerHTML = matrixHtml;
+
+            // 欄位標籤行
+            theadHtml += `
+                <tr class="bg-zinc-800 text-white text-xs">
+                    <th class="p-2 border border-slate-300 sticky left-0 z-10">當月工作平均</th>
+                    ${Array.from({ length: maxCols }, (_, i) => `<th class="p-2 border border-slate-300">欄位 ${i + 1}</th>`).join('')}
+                </tr>`;
+            thead.innerHTML = theadHtml;
+
+            // tbody：成員資料行
+            matrixBody.innerHTML = members.map(m => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-3 bg-slate-100 border border-slate-200 text-slate-800 font-bold sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">${m}</td>
+                    ${Array.from({ length: maxCols }, (_, col) => {
+                        const val = statsByCat[m][col] || 0;
+                        return `<td class="p-3 border border-slate-200 font-black text-sm ${val === 0 ? 'text-slate-300' : 'text-slate-700'}">${val}</td>`;
+                    }).join('')}
+                </tr>`).join('');
         }
 
         // 智慧大月日曆渲染
@@ -2280,14 +2633,23 @@
             const { currentYear: y, currentMonth: m } = appConfig;
             const daysInMonth = new Date(y, m, 0).getDate();
             const newMonthlyData = {};
-            let categoryTaskCount = {}; 
-            let lastTakenDayByCat = {}; 
-            let totalWorkingDays = {};  
+            let categoryTaskCount = {};
+            let lastTakenDayByCat = {};
+            let totalWorkingDays = {};
+            let lastExternalDay = {}; // 追蹤每人最後一次「所有外部」任務的日期
 
+            const _maxCatIdx = Math.max(5, ...Object.keys(scheduleModules).flatMap(k =>
+                (scheduleModules[k] || []).map((_, i) => getCategoryIndex(k, i))
+            ));
             members.forEach(mem => {
-                categoryTaskCount[mem] = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0 };
-                lastTakenDayByCat[mem] = { 0:-10, 1:-10, 2:-10, 3:-10, 4:-10, 5:-10 };
+                categoryTaskCount[mem] = {};
+                lastTakenDayByCat[mem] = {};
+                for (let i = 0; i <= _maxCatIdx; i++) {
+                    categoryTaskCount[mem][i] = 0;
+                    lastTakenDayByCat[mem][i] = -10;
+                }
                 totalWorkingDays[mem] = 0;
+                lastExternalDay[mem] = -10;
             });
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -2300,9 +2662,13 @@
                     continue; 
                 }
 
-                const moduleKey = available.length >= 6 ? "6" : 
-                                 (available.length === 5 ? "5" : 
-                                 (available.length === 4 ? "4" : "3")); 
+                const _sortedModKeys = Object.keys(scheduleModules)
+                    .map(Number).filter(n => !isNaN(n) && n >= 3)
+                    .sort((a, b) => b - a);
+                let moduleKey = String(_sortedModKeys[_sortedModKeys.length - 1] || 3);
+                for (const _mk of _sortedModKeys) {
+                    if (available.length >= _mk) { moduleKey = String(_mk); break; }
+                }
                                  
                 const currentTasks = scheduleModules[moduleKey];
                 const K = currentTasks.length;
@@ -2320,8 +2686,13 @@
                     }
 
                     const catIdx = getCategoryIndex(moduleKey, taskIndex);
+                    const taskName = currentTasks[taskIndex];
+                    const isExternalTask = taskName.startsWith('所有外部');
                     for (let mVal of available) {
                         if (usedMembers.has(mVal)) continue;
+
+                        // 所有外部冷卻規則：距上次所有外部任務必須至少隔兩天（含休假日）
+                        if (isExternalTask && (d - lastExternalDay[mVal]) < 2) continue;
 
                         let cost = categoryTaskCount[mVal][catIdx] * 1000;
                         const daysSinceLast = d - lastTakenDayByCat[mVal][catIdx];
@@ -2350,10 +2721,12 @@
                         const taskName = currentTasks[taskIdx];
                         const catIdx = getCategoryIndex(moduleKey, taskIdx);
                         dayPlan.push({ ruleName: taskName, userName: picked });
-                        
+
                         categoryTaskCount[picked][catIdx]++;
                         lastTakenDayByCat[picked][catIdx] = d;
                         totalWorkingDays[picked]++;
+                        // 記錄所有外部任務的最後日期，供冷卻規則使用
+                        if (taskName.startsWith('所有外部')) lastExternalDay[picked] = d;
                     });
                 } else {
                     currentTasks.forEach(taskName => {
@@ -2378,6 +2751,9 @@
             // 初始化時也強行刷一次兩個地方的月份字體
             document.getElementById('display-month').innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
             document.getElementById('display-month-leaves').innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
+            // 初始化超休門檻顯示
+            const tdEl = document.getElementById('threshold-display');
+            if (tdEl) tdEl.innerText = appConfig.overThreshold;
 
             renderLeaveTable();
             renderMembersEdit();
