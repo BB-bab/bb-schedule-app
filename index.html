@@ -665,11 +665,30 @@
                         <p class="text-xs font-bold mt-1" style="color:#7A8F81">記錄最近 30 天內的成員操作與抽籤結果，超過自動清除</p>
                     </div>
                     <button onclick="clearAllLogs()"
-                        class="text-xs font-black px-4 py-2 rounded-xl transition-colors"
+                        class="text-xs font-black px-4 py-2 rounded-xl transition-colors shrink-0"
                         style="background:#EAF2E8;color:#5A7A56">
                         <i class="fas fa-trash-alt mr-1"></i> 清除全部
                     </button>
                 </div>
+
+                <!-- 🔍 搜尋 + 標籤篩選列 -->
+                <div class="flex flex-wrap items-center gap-2 mb-4">
+                    <div class="relative flex-1" style="min-width:160px">
+                        <i class="fas fa-search absolute text-[11px]" style="left:10px;top:50%;transform:translateY(-50%);color:#AFCDA8"></i>
+                        <input type="text" id="logs-search-input" oninput="renderLogs()"
+                            class="input-minimal w-full font-bold text-xs" style="padding-left:28px;padding-top:7px;padding-bottom:7px"
+                            placeholder="搜尋成員名稱或關鍵字…">
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="setLogFilter('')"    id="lf-all"      class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#E5E7EB;color:#374151">全部</button>
+                        <button onclick="setLogFilter('leave')"    id="lf-leave"    class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#C9B8A8;color:#3A2820">排休登記</button>
+                        <button onclick="setLogFilter('preleave')" id="lf-preleave" class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#E8E4DC;color:#3A3830">預假登記</button>
+                        <button onclick="setLogFilter('schedule')" id="lf-schedule" class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#9FB8AC;color:#1A3525">排班生成</button>
+                        <button onclick="setLogFilter('draw')"     id="lf-draw"     class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#88AFB5;color:#162830">抽籤結果</button>
+                        <button onclick="setLogFilter('member')"   id="lf-member"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#DBE9AB;color:#213C1E">成員管理</button>
+                    </div>
+                </div>
+
                 <div id="logs-container" class="space-y-2.5">
                     <p class="text-sm font-bold text-center py-10" style="color:#AFCDA8">尚無操作記錄</p>
                 </div>
@@ -984,6 +1003,7 @@
         let unsubscribeGroupsRegistry = null;
         let _isSwitchingGroup = false; // 群組切換保護旗標，防止切換途中以空資料覆寫 Firestore
         let _isRenamingGroup = false;  // 群組重命名保護旗標，防止 onSnapshot 在 sync 完成前以舊資料覆蓋
+        let _logTypeFilter   = '';     // 操作日誌標籤篩選（'' = 全部）
 
         // 🎲 抽籤模組動態池狀態
         let currentDrawPool = [];
@@ -1060,8 +1080,8 @@
             const container = document.getElementById('members-list-edit');
             if (container) {
                 container.innerHTML = members.length
-                    ? members.map(m => `<span class="bg-gray-100 text-gray-700 font-bold text-xs px-3 py-1.5 rounded-xl">${m}</span>`).join('')
-                    : `<span class="text-xs text-gray-400 font-bold">尚無成員</span>`;
+                    ? members.map(m => `<span class="bg-gray-100 text-gray-700 font-bold text-sm px-4 py-2 rounded-2xl">${m}</span>`).join('')
+                    : `<span class="text-sm text-gray-400 font-bold">尚無成員</span>`;
             }
             // Modal 內清單（含刪除按鈕）
             const modal = document.getElementById('member-modal-list');
@@ -1916,12 +1936,6 @@
         function renderLogs() {
             const container = document.getElementById('logs-container');
             if (!container) return;
-            const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-            const filtered = operationLogs.filter(l => l.ts > cutoff).slice().reverse();
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-sm font-bold text-center py-10" style="color:#AFCDA8">尚無操作記錄</p>`;
-                return;
-            }
             const typeConfig = {
                 leave:    { bg: '#C9B8A8', text: '#3A2820', label: '排休登記' },
                 preleave: { bg: '#E8E4DC', text: '#3A3830', label: '預假登記' },
@@ -1929,6 +1943,36 @@
                 draw:     { bg: '#88AFB5', text: '#162830', label: '抽籤結果' },
                 member:   { bg: '#DBE9AB', text: '#213C1E', label: '成員管理' },
             };
+
+            const cutoff  = Date.now() - 30 * 24 * 60 * 60 * 1000;
+            const keyword = (document.getElementById('logs-search-input')?.value || '').trim().toLowerCase();
+
+            let filtered = operationLogs.filter(l => l.ts > cutoff).slice().reverse();
+
+            // 標籤篩選
+            if (_logTypeFilter) filtered = filtered.filter(l => l.type === _logTypeFilter);
+
+            // 關鍵字篩選（訊息內文 + 標籤文字）
+            if (keyword) filtered = filtered.filter(l => {
+                const label = (typeConfig[l.type]?.label || '').toLowerCase();
+                return (l.message || '').toLowerCase().includes(keyword) || label.includes(keyword);
+            });
+
+            // 更新篩選按鈕 active 樣式
+            ['all','leave','preleave','schedule','draw','member'].forEach(k => {
+                const btn = document.getElementById('lf-' + k);
+                if (!btn) return;
+                const isActive = (k === 'all' && !_logTypeFilter) || k === _logTypeFilter;
+                btn.style.outline = isActive ? '2px solid #5A7A56' : 'none';
+                btn.style.outlineOffset = '2px';
+            });
+
+            if (filtered.length === 0) {
+                const hint = keyword || _logTypeFilter ? '沒有符合條件的記錄' : '尚無操作記錄';
+                container.innerHTML = `<p class="text-sm font-bold text-center py-10" style="color:#AFCDA8">${hint}</p>`;
+                return;
+            }
+
             container.innerHTML = filtered.map(log => {
                 const cfg = typeConfig[log.type] || { bg: '#EAF2E8', text: '#2E4A2A', label: log.type };
                 const dt = new Date(log.ts);
@@ -1939,6 +1983,11 @@
                 </div>`;
             }).join('');
         }
+
+        window.setLogFilter = function(type) {
+            _logTypeFilter = type;
+            renderLogs();
+        };
 
         window.clearAllLogs = function() {
             operationLogs = [];
@@ -2730,10 +2779,10 @@
                 const isCustom = !standardKeys.includes(key);
                 const tasks = scheduleModules[key];
                 let html = `<div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-full bg-[#7A8F81]/20 text-[#7A8F81] flex items-center justify-center font-black text-sm">${key}</span>
-                            <h4 class="font-black text-gray-700 text-sm">人在崗時 任務清單</h4>
+                            <span class="w-9 h-9 rounded-full bg-[#7A8F81]/20 text-[#7A8F81] flex items-center justify-center font-black text-base">${key}</span>
+                            <h4 class="font-black text-gray-700 text-base">人在崗時 任務清單</h4>
                         </div>
                         <div class="flex items-center gap-1">
                             <button onclick="openModuleEditor('${key}')" class="text-gray-400 hover:text-[#7A8F81] p-1.5 rounded-lg hover:bg-gray-100 transition" title="編輯任務">
@@ -2742,11 +2791,11 @@
                             <button onclick="deleteModule('${key}')" class="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition" title="刪除模式"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-2.5">
                         ${tasks.map((t, i) => `
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${i + 1}</span>
-                                <span class="text-sm text-gray-700 font-bold truncate">${t || '（未設定）'}</span>
+                                <span class="text-sm font-black text-[#7A8F81] shrink-0 w-12">任務 ${i + 1}</span>
+                                <span class="text-base text-gray-700 font-bold truncate">${t || '（未設定）'}</span>
                             </div>`).join('')}
                     </div>
                 </div>`;
