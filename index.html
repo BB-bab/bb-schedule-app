@@ -4938,10 +4938,17 @@
 
             initGroups();
 
-            // 每次開啟都顯示群組選擇入口頁；
-            // 若已有儲存的群組 → 允許直接關閉（右上角 ✕）；首次使用 → 必須選一個
-            const _initSavedGroup = loadLocalData('avocado_active_group_id', '');
-            showGroupSelectOverlay(!!_initSavedGroup);
+            // 判斷是否顯示群組選擇入口頁
+            const _initSavedGroup    = loadLocalData('avocado_active_group_id', '');
+            const _initSavedIdentity = loadLocalData('avocado_claimed_identity', '');
+
+            if (_initSavedGroup && _initSavedIdentity) {
+                // ✅ 已有群組 + 已認領身分 → 直接進入，不顯示選擇頁面（刷新後自動還原）
+                // （Firebase onSnapshot 將自動重新拉取資料並刷新畫面）
+            } else {
+                // 首次使用 / 尚未選群組 / 尚未認領身分 → 顯示入口選擇頁
+                showGroupSelectOverlay(!!_initSavedGroup);
+            }
 
             if (window.FirebaseCore && typeof window.initFirebase === 'function') {
                 window.initFirebase();
