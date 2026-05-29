@@ -895,6 +895,7 @@
                         <button onclick="setLogFilter('member')"   id="lf-member"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#DBE9AB;color:#213C1E">成員管理</button>
                         <button onclick="setLogFilter('notice')"   id="lf-notice"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#C8D8B8;color:#2A3C20">公告管理</button>
                         <button onclick="setLogFilter('shift')"    id="lf-shift"    class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#B8CCD4;color:#1A3040">梯次登記</button>
+                        <button onclick="setLogFilter('system')"   id="lf-system"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#DDD0E8;color:#2A1840">系統紀錄</button>
                     </div>
                 </div>
 
@@ -2397,6 +2398,7 @@
                 member:   { bg: '#DBE9AB', text: '#213C1E', label: '成員管理' },
                 notice:   { bg: '#C8D8B8', text: '#2A3C20', label: '公告管理' },
                 shift:    { bg: '#B8CCD4', text: '#1A3040', label: '梯次登記' },
+                system:   { bg: '#DDD0E8', text: '#2A1840', label: '系統紀錄' },
             };
 
             const cutoff  = Date.now() - 30 * 24 * 60 * 60 * 1000;
@@ -2414,7 +2416,7 @@
             });
 
             // 更新篩選按鈕 active 樣式
-            ['all','leave','preleave','schedule','draw','member','notice','shift'].forEach(k => {
+            ['all','leave','preleave','schedule','draw','member','notice','shift','system'].forEach(k => {
                 const btn = document.getElementById('lf-' + k);
                 if (!btn) return;
                 const isActive = (k === 'all' && !_logTypeFilter) || k === _logTypeFilter;
@@ -2661,11 +2663,25 @@
         };
 
         window.clearAllLogs = function() {
-            operationLogs = [];
-            saveLocalData('avocado_logs', []);
-            renderLogs();
-            uploadToCloud();
-            showToast("操作日誌已全部清除");
+            if (!requireIdentity()) return;
+            const actor = claimedIdentity;
+            showCustomConfirm(
+                '清除操作日誌',
+                `確定要清除全部操作日誌嗎？\n清除後僅保留本次操作紀錄，無法復原。\n\n操作人：${actor}`,
+                () => {
+                    // 清空全部，再補上一筆「誰清除」的系統紀錄，讓此記錄永遠留存
+                    operationLogs = [{
+                        type: 'system',
+                        actor: actor,
+                        message: `${actor} 清除了全部操作日誌`,
+                        ts: Date.now()
+                    }];
+                    saveLocalData('avocado_logs', operationLogs);
+                    renderLogs();
+                    uploadToCloud();
+                    showToast(`操作日誌已清除，已記錄操作人：${actor}`);
+                }
+            );
         };
 
         // 抽籤 collapse 控制與重置方法
@@ -4825,19 +4841,23 @@
             const idSelect = document.getElementById('identity-claim-select');
             if (idSelect) idSelect.value = '';
 
-            // 重新連接 Firebase（自動拉取新群組資料）
+            // 切換後立即以「已清空的資料」刷新所有畫面，
+            // 防止舊群組的預假／公告／梯次等 DOM 在 Firebase 回應前殘留顯示
+            renderLeaveTable();
+            renderAnalysis();
+            renderPreLeaveList();
+            renderPreLeaveDropdowns();
+            renderNotices();
+            renderShiftEvents();
+            renderMembersEdit();
+            renderModulesEditor();
+            renderDrawQuickSelect();
+            renderIdentitySelect();
+            renderLogs();
+
+            // 重新連接 Firebase（有雲端時：自動拉取新群組資料並再次刷新）
             if (isCloudReady && auth && auth.currentUser) {
                 connectToCloudTeam(auth.currentUser);
-            } else {
-                renderLeaveTable();
-                renderAnalysis();
-                renderPreLeaveList();
-                renderPreLeaveDropdowns();
-                renderMembersEdit();
-                renderModulesEditor();
-                renderDrawQuickSelect();
-                renderIdentitySelect();
-                renderLogs();
             }
 
             updateGroupNavDisplay();
