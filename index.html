@@ -214,6 +214,10 @@
             background-color: #f0f6f2 !important;
         }
 
+        .active-tab {
+            background: white !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10) !important;
+        }
         .tab-btn.active {
             background: white;
             color: #7A8F81;
@@ -240,31 +244,41 @@
         }
 
         /* 跑馬燈與抽籤 CSS 動畫 */
-        .slot-machine-container {
+        /* 卡牌翻轉抽籤動畫 */
+        .flip-card-scene {
             perspective: 1000px;
+            flex-shrink: 0;
         }
-        .slot-machine-window {
-            height: 80px;
-            overflow: hidden;
+        .flip-card-inner {
+            width: 100%;
+            height: 100%;
             position: relative;
-            background: #f1f5f1;
-            border: 3px solid #A3B5A8;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.08);
+            transform-style: preserve-3d;
+            transform: rotateY(0deg);
         }
-        .slot-machine-strip {
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.1s cubic-bezier(0.1, 0.8, 0.3, 1);
-        }
-        .slot-item {
-            height: 80px;
+        .flip-face {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            font-size: 30px;
             font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        .flip-face-a {
+            background: linear-gradient(135deg, #EAF2E8, #d4e8d0);
+            border: 3px solid #A3B5A8;
             color: #2d412d;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+        .flip-face-b {
+            background: linear-gradient(135deg, #7A8F81, #4f6e57);
+            border: 3px solid #4f6e57;
+            color: #fff;
+            transform: rotateY(180deg);
         }
         @keyframes glow-pulse {
             0%, 100% { box-shadow: 0 0 5px rgba(122, 143, 129, 0.4); }
@@ -328,6 +342,11 @@
             cursor: not-allowed;
         }
     </style>
+    <!-- 群組識別色：動態主題（只換導覽列漸層 + 卡片左邊框，預設鼠尾草綠） -->
+    <style id="group-color-style">
+        .avocado-gradient { background: linear-gradient(135deg, #7A8F81 0%, #A3B5A8 100%) !important; }
+        .theme-card-border { border-left-color: #7A8F81 !important; }
+    </style>
 </head>
 <body class="min-h-screen pb-12 text-gray-800">
     <nav class="avocado-gradient text-white p-4 shadow-md sticky top-0 z-[100]">
@@ -342,16 +361,32 @@
                         </button>
                     </div>
                     <p id="cloud-status" class="text-[10px] text-white/80 font-bold uppercase tracking-[0.2em] leading-none">正在載入系統...</p>
-                    <p id="active-group-display" class="text-[10px] text-white/60 font-bold leading-none mt-0.5 hidden"><span class="mr-1">📍</span><span id="active-group-name">主群組</span></p>
+                    <p id="active-group-display" onclick="showGroupSelectOverlay(true)" class="text-[10px] text-white/60 font-bold leading-none mt-0.5 hidden cursor-pointer hover:text-white/90 transition-colors select-none" title="點此切換群組"><span class="mr-1">📍</span><span id="active-group-name">主群組</span><i class="fas fa-chevron-down ml-1" style="font-size:7px"></i></p>
                 </div>
             </div>
-            <div class="flex bg-black/10 p-1 rounded-2xl gap-1 overflow-x-auto max-w-[60%] md:max-w-none">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn active text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">工作台</button>
-                <button onclick="switchTab('leaves')" id="btn-leaves" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">假表登記</button>
-                <button onclick="switchTab('stats')" id="btn-stats" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">統計分析</button>
-                <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">系統設定</button>
-                <button onclick="switchTab('logs')" id="btn-logs" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">操作日誌</button>
-                <button onclick="switchTab('groups')" id="btn-groups" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap" style="display:none">🏷️ 群組</button>
+            <div class="flex items-center gap-2">
+                <div class="flex bg-black/10 p-1 rounded-2xl gap-1 overflow-x-auto max-w-[60%] md:max-w-none">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn active text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">工作台</button>
+                    <button onclick="switchTab('leaves')" id="btn-leaves" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">假表登記</button>
+                    <button onclick="switchTab('stats')" id="btn-stats" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">統計分析</button>
+                    <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">系統設定</button>
+                    <button onclick="switchTab('logs')" id="btn-logs" class="tab-btn text-xs font-black px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">操作日誌</button>
+                </div>
+                <!-- 目前身分徽章（持續顯示，不消失） -->
+                <div id="identity-badge-display" style="display:none;background:rgba(30,58,36,0.72);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.18)"
+                    class="items-center gap-1.5 px-2.5 py-1.5 rounded-xl shrink-0 cursor-default select-none"
+                    title="目前登入身分">
+                    <i class="fas fa-user-circle text-[11px]" style="color:rgba(255,255,255,0.75)"></i>
+                    <span id="identity-badge-name" class="text-[11px] font-black leading-none" style="color:#ffffff;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                </div>
+                <!-- 群組管理齒輪鍵 -->
+                <button id="btn-groups" onclick="showGroupSelectOverlay(true)"
+                    class="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all"
+                    style="background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85)"
+                    onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'"
+                    title="群組管理">
+                    <i class="fas fa-cog text-sm"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -359,7 +394,7 @@
     <main class="max-w-[1600px] mx-auto p-4 space-y-6">
         
         <div id="tab-dashboard" class="tab-content space-y-6">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border-l-[8px] border-[#7A8F81] flex flex-wrap items-center justify-between gap-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border flex flex-wrap items-center justify-between gap-6">
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-1 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 font-bold">
                         <button onclick="changeMonth(-1)" class="w-10 h-10 hover:bg-white rounded-xl flex items-center justify-center text-[#7A8F81] transition shadow-sm text-lg"><i class="fas fa-chevron-left"></i></button>
@@ -374,7 +409,7 @@
                     <button id="main-schedule-btn" onclick="runAutoScheduleFullMonthAndSave()" class="avocado-gradient text-white px-8 py-3 rounded-2xl text-base font-black shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
                         <i class="fas fa-balance-scale"></i> 公平生成排班
                     </button>
-                    <p class="text-[10px] text-gray-400 font-bold">自動避開連日重複任務 (相隔3天)</p>
+                    <p class="text-[10px] text-gray-400 font-bold">自動避開連日重複任務</p>
                 </div>
             </div>
             <div id="calendar-view" class="hidden"><div class="calendar-grid" id="calendar-container"></div></div>
@@ -386,27 +421,101 @@
 
         <div id="tab-leaves" class="tab-content hidden space-y-6">
 
-            <!-- 👤 智慧身分認領與解鎖區 -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-user-lock text-xl" style="color:#5A7A56"></i></span>
-                    <div class="text-left">
-                        <h4 class="font-black text-gray-800 text-lg flex items-center gap-2">
-                            身分認領與安全唯讀鎖定
-                        </h4>
-                        <p class="text-[11px] text-gray-400 font-bold">請先認領您的名字。系統會自動鎖定防誤點他人的假期格子。組長或需代點假期請按右側「管理員解鎖」。</p>
+            <!-- 保留隱藏元素供 JS 相容性使用 -->
+            <div id="claimed-identity-display" class="hidden"></div>
+            <select id="identity-claim-select" onchange="claimIdentity(this.value)" class="hidden"></select>
+
+            <!-- 📢 公告與規則佈告欄 -->
+            <div id="notice-board-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
+                <button onclick="toggleNoticeBoardCollapse()" class="w-full px-6 py-4 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-bullhorn text-xl" style="color:#5A7A56"></i></span>
+                        <div class="text-left">
+                            <h4 class="font-black text-gray-800 text-lg">公告與排休規則</h4>
+                            <p class="text-[11px] text-gray-400 font-bold">張貼群組公告、排休說明或注意事項，支援文字與圖片，全群組即時同步。</p>
+                        </div>
+                    </div>
+                    <div id="notice-board-arrow-icon" class="text-[#7A8F81] transition-transform duration-300">
+                        <i class="fas fa-chevron-down text-lg"></i>
+                    </div>
+                </button>
+
+                <div id="notice-board-panel" class="hidden border-t border-[#C4DABD]/40 p-6 bg-white space-y-4">
+                    <!-- 新增公告按鈕 -->
+                    <div class="flex justify-end">
+                        <button onclick="openAddNoticeModal(null)" class="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            <i class="fas fa-plus"></i> 新增公告
+                        </button>
+                    </div>
+
+                    <!-- 公告清單 -->
+                    <div id="notice-list-container" class="space-y-4">
+                        <!-- 由 renderNotices() 填入 -->
+                    </div>
+
+                    <!-- 空狀態 -->
+                    <div id="notice-empty-state" class="hidden flex flex-col items-center justify-center py-10 gap-3 text-center">
+                        <div style="font-size:2.2rem">📋</div>
+                        <p class="text-sm font-black text-gray-400">尚無任何公告</p>
+                        <p class="text-xs text-gray-300 font-bold">點擊右上角「新增公告」張貼群組規則或提醒</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <select id="identity-claim-select" onchange="claimIdentity(this.value)" class="input-minimal w-48 font-black text-sm bg-gray-50 border-[#AFCDA8] focus:border-[#7A8F81]"></select>
-                    <button id="admin-mode-btn" onclick="toggleAdminMode()" class="px-4 py-2.5 bg-gray-100 hover:bg-[#7A8F81] hover:text-white rounded-xl text-xs font-black text-gray-600 transition-all flex items-center gap-1.5 shadow-sm">
-                        <i class="fas fa-lock"></i> <span>管理員解鎖</span>
-                    </button>
+            </div>
+
+            <!-- 公告編輯 Modal -->
+            <div id="notice-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden" onpaste="handleNoticeImagePaste(event)">
+                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col" style="max-height:90vh">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 id="notice-modal-title" class="text-lg font-black text-gray-800">新增公告</h3>
+                        <button onclick="closeNoticeModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
+                            <i class="fas fa-times text-gray-500 text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                        <input type="hidden" id="notice-edit-id">
+                        <input type="hidden" id="notice-input-title">
+                        <!-- 內文（唯一輸入欄） -->
+                        <div>
+                            <label class="block text-xs font-black text-gray-600 mb-1.5">公告內容</label>
+                            <textarea id="notice-input-body" rows="6" placeholder="輸入公告內容或排休規則說明⋯&#10;（第一行會自動作為公告標題顯示）" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81] resize-none" style="min-height:130px"></textarea>
+                        </div>
+                        <!-- 圖片 -->
+                        <div>
+                            <label class="block text-xs font-black text-gray-600 mb-1.5">附圖 <span class="text-gray-400 font-medium">(選填)</span></label>
+                            <div id="notice-image-preview-wrap" class="hidden mb-2 relative inline-block w-full">
+                                <img id="notice-image-preview" src="" alt="預覽圖" class="max-h-48 rounded-2xl border border-gray-200 object-contain">
+                                <button onclick="clearNoticeImage()" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition" title="移除圖片">
+                                    <i class="fas fa-times text-white text-[10px]"></i>
+                                </button>
+                            </div>
+                            <!-- 貼上區域 + 點擊選擇 -->
+                            <div id="notice-paste-zone" tabindex="0"
+                                class="rounded-2xl border-2 border-dashed border-[#AFCDA8] bg-[#EAF2E8]/30 hover:bg-[#EAF2E8]/60 transition w-full focus:outline-none focus:border-[#7A8F81]"
+                                style="cursor:pointer"
+                                onclick="document.getElementById('notice-image-input').click()"
+                                onpaste="handleNoticeImagePaste(event)"
+                                onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('notice-image-input').click()">
+                                <div class="flex flex-col items-center justify-center gap-1.5 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex items-center gap-1.5 text-xs font-black text-[#5A7A56]"><i class="fas fa-image text-[#7A8F81]"></i> 點擊選擇圖片</span>
+                                        <span class="text-[10px] text-[#96ADA0] font-bold">或</span>
+                                        <span class="flex items-center gap-1 text-xs font-black text-[#5A7A56]"><i class="fas fa-paste text-[#7A8F81]"></i> Ctrl+V 貼上</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 font-medium">支援截圖直接貼入・上限 2MB</p>
+                                </div>
+                                <input id="notice-image-input" type="file" accept="image/*" class="hidden" onchange="handleNoticeImageUpload(event)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                        <button onclick="closeNoticeModal()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-gray-500 bg-gray-100 hover:bg-gray-200 transition">取消</button>
+                        <button onclick="saveNotice()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存公告</button>
+                    </div>
                 </div>
             </div>
 
             <!-- 🥑 智慧展開式「自動不重複抽籤工具」 -->
-            <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] overflow-hidden">
+            <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
                 <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-4 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-dice text-xl" style="color:#5A7A56"></i></span>
@@ -439,12 +548,12 @@
                                         <i class="fas fa-clipboard-list text-[#7A8F81]"></i> 輸入抽籤名單
                                     </label>
                                     <div class="flex gap-1.5 items-center">
-                                        <button onclick="resetLuckyDrawOnlyNames()" class="text-xs bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 font-black transition flex flex-col items-center justify-center leading-tight text-center">
+                                        <button onclick="resetLuckyDrawOnlyNames()" class="text-xs px-3 py-1.5 rounded-lg font-black transition flex flex-col items-center justify-center leading-tight text-center" style="background:#F7EAED;color:#8C4A58;border:1px solid #DDB8C0" onmouseover="this.style.background='#EEDCE0'" onmouseout="this.style.background='#F7EAED'">
                                             <span class="flex items-center gap-1"><i class="fas fa-trash-alt"></i> 重新整理</span>
                                             <span class="text-[10px] opacity-75 font-medium">(清空名單)</span>
                                         </button>
-                                        <button onclick="resetDrawHistoryOnly()" class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-100 font-black transition flex flex-col items-center justify-center leading-tight text-center">
-                                            <span class="flex items-center gap-1"><i class="fas fa-redo"></i> 重設歸零</span>
+                                        <button onclick="resetDrawHistoryOnly()" class="text-xs px-3 py-1.5 rounded-lg font-black transition flex flex-col items-center justify-center leading-tight text-center" style="background:#E8EDF5;color:#4A6080;border:1px solid #B4C4D8" onmouseover="this.style.background='#D8E2EE'" onmouseout="this.style.background='#E8EDF5'">
+                                            <span class="flex items-center gap-1"><i class="fas fa-redo"></i> 重新歸零</span>
                                             <span class="text-[10px] opacity-75 font-medium">(清除紀錄)</span>
                                         </button>
                                     </div>
@@ -485,11 +594,9 @@
 
                         <!-- Right Panel -->
                         <div id="draw-display-block" class="lg:col-span-7 bg-gray-50/50 border border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] relative">
-                            <div id="draw-slot-machine" class="w-full max-w-sm hidden z-10">
-                                <div class="slot-machine-window rounded-2xl">
-                                    <div id="slot-strip" class="slot-machine-strip"></div>
-                                </div>
-                                <p class="text-center text-[10px] text-gray-400 font-bold mt-2 animate-pulse">正在精準計算權重與中獎限制，挑選幸運成員...</p>
+                            <div id="draw-slot-machine" class="w-full hidden z-10">
+                                <div id="flip-cards-container" class="flex flex-wrap justify-center gap-3 mb-1"></div>
+                                <p class="text-center text-[10px] text-gray-400 font-bold mt-3 animate-pulse">正在精準計算權重與中獎限制，挑選幸運成員...</p>
                             </div>
 
                             <div id="draw-winner-card" class="hidden text-center p-6 bg-white rounded-3xl border border-green-200 winner-glow max-w-md w-full relative z-10">
@@ -513,7 +620,7 @@
             </div>
 
             <!-- 📅 智慧預假區工具 -->
-            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] overflow-hidden">
+            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
                 <button onclick="togglePreLeaveCollapse()" class="w-full px-6 py-4 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-calendar-plus text-xl" style="color:#5A7A56"></i></span>
@@ -580,13 +687,95 @@
                 </div>
             </div>
 
+            <!-- 📋 梯次登記 -->
+            <div id="shift-events-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
+                <button onclick="toggleShiftEventsCollapse()" class="w-full px-6 py-4 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-clipboard-list text-xl" style="color:#5A7A56"></i></span>
+                        <div class="text-left">
+                            <h4 class="font-black text-gray-800 text-lg">梯次登記</h4>
+                            <p class="text-[11px] text-gray-400 font-bold">建立活動梯次供成員登記出席日期，登記日期自動帶入當月放假登記全覽。</p>
+                        </div>
+                    </div>
+                    <div id="shift-events-arrow-icon" class="text-[#7A8F81] transition-transform duration-300">
+                        <i class="fas fa-chevron-down text-lg"></i>
+                    </div>
+                </button>
+                <div id="shift-events-panel" class="hidden border-t border-[#C4DABD]/40 p-6 bg-white space-y-4">
+                    <div class="flex justify-end">
+                        <button onclick="openShiftEventModal(null)" class="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            <i class="fas fa-plus"></i> 新增梯次
+                        </button>
+                    </div>
+                    <div id="shift-events-list" class="space-y-3"></div>
+                    <div id="shift-events-empty" class="hidden flex flex-col items-center justify-center py-10 gap-3 text-center">
+                        <div style="font-size:2.2rem">📋</div>
+                        <p class="text-sm font-black text-gray-400">尚無梯次</p>
+                        <p class="text-xs text-gray-300 font-bold">點擊右上角「新增梯次」建立活動</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 梯次新增／編輯 Modal -->
+            <div id="shift-event-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
+                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 id="shift-event-modal-title" class="text-lg font-black text-gray-800">新增梯次</h3>
+                        <button onclick="closeShiftEventModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
+                            <i class="fas fa-times text-gray-500 text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <input type="hidden" id="shift-event-edit-id">
+                        <div>
+                            <label class="block text-xs font-black text-gray-600 mb-1.5">梯次名稱 <span class="text-red-400">*</span></label>
+                            <input id="shift-event-name" type="text" maxlength="30" placeholder="例：五月校外教學、畢業旅行⋯" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81]">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-600 mb-1.5">說明 <span class="text-gray-400 font-medium">(選填)</span></label>
+                            <textarea id="shift-event-desc" rows="3" placeholder="活動說明或注意事項⋯" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81] resize-none" style="min-height:72px"></textarea>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                        <button onclick="closeShiftEventModal()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-gray-500 bg-gray-100 hover:bg-gray-200 transition">取消</button>
+                        <button onclick="saveShiftEvent()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 梯次日期登記 Modal -->
+            <div id="shift-register-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
+                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col" style="max-height:90vh">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-lg font-black text-gray-800">登記日期</h3>
+                            <button onclick="closeShiftRegisterModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
+                                <i class="fas fa-times text-gray-500 text-sm"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold">梯次：<span id="shift-reg-event-name" class="text-[#5A7A56]"></span></p>
+                        <p class="text-xs text-gray-400 font-bold mt-0.5">登記人：<span id="shift-reg-member-name" class="text-[#5A7A56] font-black"></span></p>
+                    </div>
+                    <div class="p-5 overflow-y-auto flex-1 space-y-3">
+                        <p class="text-[11px] text-gray-400 font-bold text-center">點選日期以標記／取消，完成後按儲存</p>
+                        <div id="shift-reg-calendar" class="select-none"></div>
+                        <p id="shift-reg-selected-badge" class="text-[11px] font-bold text-center pt-1" style="color:#5A7A56">尚未選擇任何日期</p>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                        <button onclick="closeShiftRegisterModal()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-gray-500 bg-gray-100 hover:bg-gray-200 transition">取消</button>
+                        <button onclick="saveShiftRegistration()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存登記</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 🗓️ 當月放假登記表格區 -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
                 <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
                     <div class="flex items-center gap-6">
                         <div>
                             <div class="flex items-center gap-2">
-                                <h3 class="text-2xl font-black text-gray-800">📋 當月放假登記全覽</h3>
+                                <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-calendar-check text-xl" style="color:#5A7A56"></i></span>
+                                <h3 class="text-2xl font-black text-gray-800">當月放假登記全覽</h3>
                                 <button onclick="openOverThresholdModal()" class="text-gray-400 hover:text-[#5A7A56] p-1.5 rounded-xl hover:bg-[#EAF2E8] transition" title="設定超休門檻">
                                     <i class="fas fa-cog text-sm"></i>
                                 </button>
@@ -615,7 +804,7 @@
 
         <!-- Stats Tab -->
         <div id="tab-stats" class="tab-content hidden space-y-6">
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
                 <div class="mb-6 flex flex-wrap justify-between items-end gap-4">
                     <div>
                         <h3 class="text-3xl font-black text-gray-800 tracking-tighter">📊 任務分配均衡度分析</h3>
@@ -636,18 +825,36 @@
         <!-- Settings Tab -->
         <div id="tab-settings" class="tab-content hidden space-y-8">
             <!-- 成員編輯 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
-                <div class="flex items-center gap-2 mb-4">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
+                <div class="flex items-center gap-2 mb-5">
                     <h3 class="text-xl font-black flex items-center gap-2"><i class="fas fa-users text-[#5A7A56]"></i> 成員名單管理</h3>
-                    <button onclick="openMemberModal()" class="text-gray-400 hover:text-[#3A5A36] p-1.5 rounded-xl hover:bg-[#EAF2E8] transition" title="管理成員">
-                        <i class="fas fa-cog"></i>
-                    </button>
                 </div>
-                <div id="members-list-edit" class="flex flex-wrap gap-2"></div>
+                <!-- 老師名單管理 -->
+                <div class="mb-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style="background:#EAF2E8">
+                            <i class="fas fa-chalkboard-teacher text-sm" style="color:#5A7A56"></i>
+                        </span>
+                        <span class="text-sm font-black" style="color:#5A7A56">老師名單管理</span>
+                        <button onclick="openMemberModal('teacher')" class="text-xs font-black px-2 py-1 rounded-lg transition" style="background:#EAF2E8;color:#5A7A56">＋ 編輯</button>
+                    </div>
+                    <div id="teachers-display" class="flex flex-wrap gap-2 min-h-[28px]"></div>
+                </div>
+                <!-- 學生名單管理 -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style="background:#F3F4F6">
+                            <i class="fas fa-user-graduate text-sm" style="color:#7A8F81"></i>
+                        </span>
+                        <span class="text-sm font-black" style="color:#7A8F81">學生名單管理</span>
+                        <button onclick="openMemberModal('student')" class="text-xs font-black px-2 py-1 rounded-lg transition" style="background:#F3F4F6;color:#6B7280">＋ 編輯</button>
+                    </div>
+                    <div id="students-display" class="flex flex-wrap gap-2 min-h-[28px]"></div>
+                </div>
             </div>
 
             <!-- 任務模組編輯 -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
                 <h3 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-[#5A7A56]"></i> 任務模組自定義</h3>
                 <p class="text-sm text-gray-400 font-bold mb-6">根據當天在崗人數，系統會自動選用對應的任務清單進行公平分配。</p>
                 <div id="modules-editor" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
@@ -656,7 +863,7 @@
 
         <!-- 操作日誌 tab -->
         <div id="tab-logs" class="tab-content hidden space-y-6">
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h3 class="text-xl font-black flex items-center gap-2" style="color:#2E4A2A">
@@ -686,6 +893,8 @@
                         <button onclick="setLogFilter('schedule')" id="lf-schedule" class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#9FB8AC;color:#1A3525">排班生成</button>
                         <button onclick="setLogFilter('draw')"     id="lf-draw"     class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#88AFB5;color:#162830">抽籤結果</button>
                         <button onclick="setLogFilter('member')"   id="lf-member"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#DBE9AB;color:#213C1E">成員管理</button>
+                        <button onclick="setLogFilter('notice')"   id="lf-notice"   class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#C8D8B8;color:#2A3C20">公告管理</button>
+                        <button onclick="setLogFilter('shift')"    id="lf-shift"    class="log-filter-btn text-[11px] font-black px-2.5 py-1 rounded-lg transition-all" style="background:#B8CCD4;color:#1A3040">梯次登記</button>
                     </div>
                 </div>
 
@@ -697,7 +906,7 @@
 
         <!-- 🏷️ 群組管理 Tab -->
         <div id="tab-groups" class="tab-content hidden space-y-6">
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81]">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h3 class="text-xl font-black flex items-center gap-2" style="color:#2E4A2A">
@@ -785,7 +994,7 @@
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[500] hidden">
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[960] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-[#DECFC0] text-center space-y-4">
             <div class="text-4xl text-[#C2A383]"><i class="fas fa-exclamation-circle"></i></div>
             <h4 class="font-black text-lg text-gray-800" id="confirm-title">確認操作</h4>
@@ -818,24 +1027,22 @@
     </div>
 
     <!-- 🎲 抽籤直播廣播 Modal（所有非管理員觀看者） -->
-    <div id="draw-broadcast-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[450] hidden">
+    <div id="draw-broadcast-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[960] hidden">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full mx-4 shadow-2xl border border-[#A3B5A8]/30">
             <!-- 標題 -->
             <div class="text-center mb-5">
                 <span class="text-4xl">🎲</span>
-                <h3 class="font-black text-lg text-gray-800 mt-2">管理員正在進行公平抽籤</h3>
+                <h3 id="broadcast-draw-title" class="font-black text-lg text-gray-800 mt-2">正在進行公平抽籤</h3>
             </div>
             <!-- 本次名單 -->
             <div class="mb-5">
                 <p class="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">本次參與名單</p>
                 <div id="broadcast-pool-tags" class="flex flex-wrap gap-2"></div>
             </div>
-            <!-- 跑馬燈滾輪（動畫中） -->
+            <!-- 卡牌翻轉動畫（動畫中） -->
             <div id="broadcast-slot-machine" class="hidden mb-4">
-                <div class="slot-machine-window rounded-2xl">
-                    <div id="broadcast-slot-strip" class="slot-machine-strip"></div>
-                </div>
-                <p class="text-center text-[10px] text-gray-400 font-bold mt-2 animate-pulse">正在精準計算權重，挑選幸運成員…</p>
+                <div id="broadcast-flip-container" class="flex flex-wrap justify-center gap-3 mb-1"></div>
+                <p class="text-center text-[10px] text-gray-400 font-bold mt-3 animate-pulse">正在精準計算權重，挑選幸運成員…</p>
             </div>
             <!-- 結果卡片 -->
             <div id="broadcast-winner-card" class="hidden text-center p-6 bg-white rounded-3xl border border-green-200 winner-glow relative">
@@ -851,18 +1058,48 @@
     </div>
 
     <!-- 👥 成員管理 Modal -->
-    <div id="member-manage-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[320] hidden">
-        <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-gray-100 flex flex-col gap-4 max-h-[85vh]">
+    <div id="member-manage-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[950] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-gray-100 flex flex-col gap-4 max-h-[88vh]">
+            <!-- 標題 -->
             <div class="flex items-center justify-between">
-                <h4 class="font-black text-base text-gray-800"><i class="fas fa-users text-blue-500 mr-2"></i>成員名單管理</h4>
+                <h4 class="font-black text-base text-gray-800"><i class="fas fa-users text-[#5A7A56] mr-2"></i>成員名單管理</h4>
                 <button onclick="closeMemberModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none cursor-pointer">&#x2715;</button>
             </div>
-            <div id="member-modal-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
-            <div class="border-t border-gray-100 pt-3">
-                <p class="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-wider">新增成員</p>
-                <div class="flex gap-2">
-                    <input type="text" id="new-member-input" class="input-minimal flex-1" placeholder="輸入姓名" onkeydown="if(event.key==='Enter') addMember()">
-                    <button onclick="addMember()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-xs transition shrink-0 cursor-pointer">新增</button>
+            <!-- Tab 切換 -->
+            <div class="flex gap-2 p-1 rounded-xl" style="background:#F3F4F6">
+                <button id="member-tab-teacher" onclick="switchMemberModalTab('teacher')"
+                    class="flex-1 py-1.5 rounded-lg text-xs font-black transition active-tab"
+                    style="background:white;color:#5A7A56;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+                    <i class="fas fa-chalkboard-teacher mr-1"></i>老師名單
+                </button>
+                <button id="member-tab-student" onclick="switchMemberModalTab('student')"
+                    class="flex-1 py-1.5 rounded-lg text-xs font-black transition"
+                    style="color:#6B7280">
+                    <i class="fas fa-user-graduate mr-1"></i>學生名單
+                </button>
+            </div>
+            <!-- 老師 Section -->
+            <div id="member-modal-teacher-section" class="flex flex-col gap-3 flex-1 overflow-hidden">
+                <div id="member-modal-teacher-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+                <div class="border-t border-gray-100 pt-3">
+                    <p class="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-wider">新增老師</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-teacher-input" class="input-minimal flex-1" placeholder="輸入老師姓名"
+                            onkeydown="if(event.key==='Enter') addMember('teacher')">
+                        <button onclick="addMember('teacher')" class="text-white px-4 py-2 rounded-xl font-black text-xs transition shrink-0 cursor-pointer" style="background:#5A7A56">新增</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 學生 Section -->
+            <div id="member-modal-student-section" class="flex flex-col gap-3 flex-1 overflow-hidden" style="display:none">
+                <div id="member-modal-student-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+                <div class="border-t border-gray-100 pt-3">
+                    <p class="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-wider">新增學生</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-student-input" class="input-minimal flex-1" placeholder="輸入學生姓名"
+                            onkeydown="if(event.key==='Enter') addMember('student')">
+                        <button onclick="addMember('student')" class="text-white px-4 py-2 rounded-xl font-black text-xs transition shrink-0 cursor-pointer" style="background:#7A7A56">新增</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -885,7 +1122,7 @@
     </div>
 
     <!-- 🏷️ 新增群組 Modal -->
-    <div id="add-group-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[450] hidden">
+    <div id="add-group-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[950] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
             <div class="flex items-center justify-between mb-4">
                 <h4 class="font-black text-base text-gray-800">🏷️ 新增群組</h4>
@@ -901,7 +1138,7 @@
     </div>
 
     <!-- 🏷️ 重命名群組 Modal -->
-    <div id="rename-group-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[450] hidden">
+    <div id="rename-group-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[950] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
             <div class="flex items-center justify-between mb-4">
                 <h4 class="font-black text-base text-gray-800">✏️ 重命名群組</h4>
@@ -912,6 +1149,29 @@
             <div class="flex gap-2">
                 <button onclick="closeRenameGroupModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold text-xs transition">取消</button>
                 <button onclick="confirmRenameGroup()" class="flex-1 text-white py-2.5 rounded-xl font-black text-xs transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔗 以 ID 加入群組 Modal -->
+    <div id="join-group-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[950] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-black text-base text-gray-800"><i class="fas fa-link mr-1.5" style="color:#7A8F81"></i>以 ID 加入群組</h4>
+                <button onclick="closeJoinGroupModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <p class="text-xs text-gray-400 font-bold mb-1">貼上群組 ID（從刪除時記下的那串文字）</p>
+            <p class="text-[10px] font-bold mb-3" style="color:#AFCDA8">格式例：group-1748123456789-ab3c7</p>
+            <input type="text" id="join-group-id-input" class="input-minimal w-full mb-3 font-bold text-xs" placeholder="貼上 ID…" maxlength="80"
+                style="font-family:monospace;letter-spacing:0.03em">
+            <p class="text-xs text-gray-400 font-bold mb-1">顯示名稱（可自訂，稍後可重命名）</p>
+            <input type="text" id="join-group-name-input" class="input-minimal w-full mb-4 font-black" placeholder="例：早班、A組…" maxlength="20">
+            <div id="join-group-status" class="hidden text-xs font-bold mb-3 px-3 py-2 rounded-xl"></div>
+            <div class="flex gap-2">
+                <button onclick="closeJoinGroupModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold text-xs transition">取消</button>
+                <button onclick="confirmJoinGroup()" id="join-group-confirm-btn" class="flex-1 text-white py-2.5 rounded-xl font-black text-xs transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                    <i class="fas fa-link mr-1"></i>加入群組
+                </button>
             </div>
         </div>
     </div>
@@ -933,13 +1193,15 @@
     </div>
 
     <!-- Toast 提示方塊 -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl opacity-0 transition-all pointer-events-none z-[200]">
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl opacity-0 transition-all pointer-events-none z-[1000]">
         已儲存變更
     </div>
 
     <script type="text/javascript">
         // 預設資料模版 (供重設或初次加載使用)
         const DEFAULT_MEMBERS = ["小依", "蕉蕉", "晴", "CC", "舒容", "EVIE", "欣"];
+        const DEFAULT_TEACHERS = [];
+        const DEFAULT_STUDENTS = DEFAULT_MEMBERS;
         const DEFAULT_TASKS = [
             "ND XO JY XH", "OL HS XY SY", "MT YD FB JD 2card", "LS SH YS LY 代付", "所有外部主审", "所有外部異常+GPAY",
             "ND SH JD XY SY", "LS MT JY YD LY FB", "OL XO XH YS HS", "所有外部主审", "所有外部異常+GPAY+代付+2card",
@@ -947,7 +1209,12 @@
         ];
         
         // 系統變數初始化 (智慧防丟失：會優先從本機儲存 LocalStorage 載入資料)
-        let members = loadLocalData('avocado_members', DEFAULT_MEMBERS);
+        // 老師 / 學生分組；舊版資料自動遷移至學生名單
+        let _rawTeachers = loadLocalData('avocado_teachers', null);
+        let _rawStudents = loadLocalData('avocado_students', null);
+        let teachers = (_rawTeachers !== null) ? (_rawTeachers || []) : [];
+        let students = (_rawStudents !== null) ? (_rawStudents || []) : loadLocalData('avocado_members', DEFAULT_MEMBERS);
+        let members  = [...teachers, ...students];
         
         const _urlTeamId = new URLSearchParams(window.location.search).get('team');
         const _savedGroupId = (() => { try { const _v = localStorage.getItem('avocado_active_group_id'); return _v ? (JSON.parse(_v) || '') : ''; } catch(e) { return ''; } })();
@@ -976,6 +1243,8 @@
 
         // 🎲 抽籤專用全域記憶狀態（智慧加權不重複抽籤機制）
         let luckyDrawWinnersCount = loadLocalData('avocado_draw_winners', {});
+        let _isDrawInitiator = false;  // 本機是否為本次抽籤的發起人（不重複接收廣播用）
+        let _isDrawAnimating = false;  // 防止同一次 drawing 廣播重複觸發動畫
 
         // 📋 操作日誌（保留最近 30 天）
         let operationLogs = loadLocalData('avocado_logs', []);
@@ -983,6 +1252,12 @@
 
         // 📅 預假專用資料架構（智慧儲存）
         let preLeaveRecords = loadLocalData('avocado_pre_leaves', []);
+
+        // 📢 公告佈告欄資料
+        let notices = loadLocalData('avocado_notices', []);
+
+        // 📋 梯次登記資料
+        let shiftEvents = loadLocalData('avocado_shift_events', []);
 
         // 📅 預假小日曆當前被選中的多個日期數組
         let selectedPreLeaveDays = [];
@@ -1003,6 +1278,7 @@
         let unsubscribeGroupsRegistry = null;
         let _isSwitchingGroup = false; // 群組切換保護旗標，防止切換途中以空資料覆寫 Firestore
         let _isRenamingGroup = false;  // 群組重命名保護旗標，防止 onSnapshot 在 sync 完成前以舊資料覆蓋
+        let _lastScheduleGenTime = 0;  // 最後一次生成排班的時間戳（防 Firebase 舊快照覆蓋）
         let _logTypeFilter   = '';     // 操作日誌標籤篩選（'' = 全部）
 
         // 🎲 抽籤模組動態池狀態
@@ -1045,6 +1321,8 @@
 
         // 保存系統所有當前設定與排班數據至本機緩存
         function saveAllDataToLocalStorage() {
+            saveLocalData('avocado_teachers', teachers);
+            saveLocalData('avocado_students', students);
             saveLocalData('avocado_members', members);
             saveLocalData('avocado_title', appConfig.title || "牛油果排班");
             saveLocalData('avocado_leaves', leaveData);
@@ -1053,6 +1331,8 @@
             saveLocalData('avocado_modules', scheduleModules);
             saveLocalData('avocado_draw_winners', luckyDrawWinnersCount);
             saveLocalData('avocado_pre_leaves', preLeaveRecords);
+            saveLocalData('avocado_notices', notices);
+            saveLocalData('avocado_shift_events', shiftEvents);
             saveLocalData('avocado_claimed_identity', claimedIdentity);
             saveLocalData('avocado_logs', operationLogs);
         }
@@ -1076,25 +1356,45 @@
 
         // 渲染成員管理面板 - 完美寫入 (串接防呆刪除確認框)
         function renderMembersEdit() {
-            // 設定頁唯讀名牌
-            const container = document.getElementById('members-list-edit');
-            if (container) {
-                container.innerHTML = members.length
-                    ? members.map(m => `<span class="bg-gray-100 text-gray-700 font-bold text-sm px-4 py-2 rounded-2xl">${m}</span>`).join('')
-                    : `<span class="text-sm text-gray-400 font-bold">尚無成員</span>`;
+            // 設定頁：老師名牌
+            const teachersDisplay = document.getElementById('teachers-display');
+            if (teachersDisplay) {
+                teachersDisplay.innerHTML = teachers.length
+                    ? teachers.map(m => `<span class="font-bold text-sm px-4 py-2 rounded-2xl" style="background:#D8E8D4;color:#2E4A2A">${m}</span>`).join('')
+                    : `<span class="text-sm text-gray-400 font-bold">尚無老師</span>`;
             }
-            // Modal 內清單（含刪除按鈕）
-            const modal = document.getElementById('member-modal-list');
-            if (modal) {
-                modal.innerHTML = members.length
-                    ? members.map(m => `
+            // 設定頁：學生名牌
+            const studentsDisplay = document.getElementById('students-display');
+            if (studentsDisplay) {
+                studentsDisplay.innerHTML = students.length
+                    ? students.map(m => `<span class="font-bold text-sm px-4 py-2 rounded-2xl" style="background:#F3F4F6;color:#374151">${m}</span>`).join('')
+                    : `<span class="text-sm text-gray-400 font-bold">尚無學生</span>`;
+            }
+            // Modal 內老師清單
+            const teacherList = document.getElementById('member-modal-teacher-list');
+            if (teacherList) {
+                teacherList.innerHTML = teachers.length
+                    ? teachers.map(m => `
+                        <div class="flex items-center justify-between bg-[#EAF2E8] px-4 py-2.5 rounded-xl border border-[#AFCDA8]/40">
+                            <span class="font-bold text-gray-700 text-sm">${m}</span>
+                            <button onclick="requestRemoveMember('${m}')" class="text-gray-300 hover:text-red-500 transition-colors cursor-pointer">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>`).join('')
+                    : `<p class="text-xs text-gray-400 font-bold text-center py-3">尚無老師</p>`;
+            }
+            // Modal 內學生清單
+            const studentList = document.getElementById('member-modal-student-list');
+            if (studentList) {
+                studentList.innerHTML = students.length
+                    ? students.map(m => `
                         <div class="flex items-center justify-between bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100">
                             <span class="font-bold text-gray-700 text-sm">${m}</span>
                             <button onclick="requestRemoveMember('${m}')" class="text-gray-300 hover:text-red-500 transition-colors cursor-pointer">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>`).join('')
-                    : `<p class="text-xs text-gray-400 font-bold text-center py-4">尚無成員</p>`;
+                    : `<p class="text-xs text-gray-400 font-bold text-center py-3">尚無學生</p>`;
             }
         }
 
@@ -1115,15 +1415,29 @@
             return taskIdx;
         }
 
+        // 👤 共用：產生老師／學生 optgroup HTML
+        function buildMemberOptgroupHtml(selectedVal) {
+            let html = '<option value="">── 請選擇您的名字 ──</option>';
+            if (teachers.length > 0) {
+                html += '<optgroup label="━ 老師 ━">';
+                teachers.forEach(m => { html += `<option value="${m}" ${selectedVal === m ? 'selected' : ''}>${m}</option>`; });
+                html += '</optgroup>';
+            }
+            if (students.length > 0) {
+                html += '<optgroup label="━ 學生 ━">';
+                students.forEach(m => { html += `<option value="${m}" ${selectedVal === m ? 'selected' : ''}>${m}</option>`; });
+                html += '</optgroup>';
+            }
+            return html;
+        }
+
         // 👤 身分認領渲染
         window.renderIdentitySelect = function() {
             const select = document.getElementById('identity-claim-select');
-            if (!select) return;
-            let html = '<option value="">-- 請認領您的名字 --</option>';
-            members.forEach(m => {
-                html += `<option value="${m}" ${claimedIdentity === m ? 'selected' : ''}>${m}</option>`;
-            });
-            select.innerHTML = html;
+            if (select) {
+                select.innerHTML = buildMemberOptgroupHtml(claimedIdentity);
+            }
+            updateIdentityDisplay();
         };
 
         // 👤 身分選取觸發
@@ -1139,33 +1453,35 @@
             }
         };
 
-        // 🔑 管理員密碼驗證解鎖與鎖定
+        // 🔑 管理員密碼驗證解鎖與鎖定（管理員卡已移除，函數保留供相容性）
         window.toggleAdminMode = function() {
+            const adminBtn = document.getElementById('admin-mode-btn');
             if (isAdminMode) {
                 isAdminMode = false;
-                document.getElementById('admin-mode-btn').innerHTML = '<i class="fas fa-lock"></i> <span>管理員解鎖</span>';
-                document.getElementById('admin-mode-btn').className = "px-4 py-2.5 bg-gray-100 hover:bg-[#7A8F81] hover:text-white rounded-xl text-xs font-black text-gray-600 transition-all flex items-center gap-1.5 shadow-sm";
-                showToast("🔒 已退出管理員解鎖模式，重啟唯讀安全防護。");
+                if (adminBtn) { adminBtn.innerHTML = '<i class="fas fa-lock"></i> <span>管理員解鎖</span>'; adminBtn.className = "px-4 py-2.5 bg-gray-100 hover:bg-[#7A8F81] hover:text-white rounded-xl text-xs font-black text-gray-600 transition-all flex items-center gap-1.5 shadow-sm"; }
+                showToast("🔒 已退出管理員解鎖模式。");
                 updateGroupTabVisibility();
                 renderLeaveTable();
                 renderPreLeaveDropdowns();
             } else {
-                document.getElementById('admin-pass-input').value = '';
-                document.getElementById('admin-password-modal').classList.remove('hidden');
-                setTimeout(() => document.getElementById('admin-pass-input').focus(), 150);
+                const passInput = document.getElementById('admin-pass-input');
+                if (passInput) passInput.value = '';
+                const modal = document.getElementById('admin-password-modal');
+                if (modal) { modal.classList.remove('hidden'); setTimeout(() => passInput?.focus(), 150); }
             }
         };
 
         window.closeAdminPasswordModal = function(isConfirm) {
             const modal = document.getElementById('admin-password-modal');
             if (isConfirm) {
-                const pass = document.getElementById('admin-pass-input').value;
+                const passInput = document.getElementById('admin-pass-input');
+                const pass = passInput ? passInput.value : '';
                 if (pass === "585858") {
                     isAdminMode = true;
-                    document.getElementById('admin-mode-btn').innerHTML = '<i class="fas fa-lock-open text-white animate-pulse"></i> <span class="text-white">管理員模式已啟用</span>';
-                    document.getElementById('admin-mode-btn').className = "px-4 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-xs font-black text-white transition-all flex items-center gap-1.5 shadow-md";
-                    showToast("🔓 管理員解鎖成功！您現在擁有了全域代點、調度與修改排班權限。");
-                    modal.classList.add('hidden');
+                    const adminBtn = document.getElementById('admin-mode-btn');
+                    if (adminBtn) { adminBtn.innerHTML = '<i class="fas fa-lock-open text-white animate-pulse"></i> <span class="text-white">管理員模式已啟用</span>'; adminBtn.className = "px-4 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-xs font-black text-white transition-all flex items-center gap-1.5 shadow-md"; }
+                    showToast("🔓 管理員解鎖成功！");
+                    if (modal) modal.classList.add('hidden');
                     updateGroupTabVisibility();
                     renderLeaveTable();
                     renderPreLeaveDropdowns();
@@ -1267,29 +1583,48 @@
             document.getElementById('cloud-status').style.color = "#ffffff";
 
             const teamDocRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId);
+            // 版本守衛：記錄此次監聽對應的 teamId，避免舊監聽器延遲觸發污染新群組資料
+            const _expectedTeamId = appConfig.teamId;
 
             unsubscribeOnSnapshot = window.FirebaseCore.onSnapshot(teamDocRef, (docSnap) => {
+                // 若目前 teamId 已不符（舊監聽器最後一次延遲回調），直接丟棄
+                if (appConfig.teamId !== _expectedTeamId) return;
                 if (docSnap.exists()) {
                     _isSwitchingGroup = false; // 資料確認存在，解除切換保護
                     const data = docSnap.data();
 
-                    if (data.members) members = data.members || [];
+                    // 載入老師 / 學生名單（舊版只有 members 時自動遷移至學生名單）
+                    if (data.teachers !== undefined || data.students !== undefined) {
+                        teachers = data.teachers || [];
+                        students = data.students || [];
+                    } else if (data.members) {
+                        teachers = [];
+                        students = data.members || [];
+                    }
+                    members = [...teachers, ...students];
                     if (data.title) {
                         appConfig.title = data.title || "牛油果排班";
                         document.getElementById('app-title-display').innerText = data.title;
                     }
                     leaveData = data.leaveData || {};
                     preLeaveRecords = data.preLeaveRecords || [];
+                    notices = data.notices || [];
+                    shiftEvents = data.shiftEvents || [];
 
                     if (data.monthAssignments && Object.keys(data.monthAssignments).length > 0) {
-                        monthAssignments = data.monthAssignments;
-                        document.getElementById('empty-state').classList.add('hidden');
-                        document.getElementById('calendar-view').classList.remove('hidden');
-                        renderCalendar();
+                        // 生成排班後 3 秒內，忽略 Firebase 推回的舊快照，防止覆蓋剛排好的結果
+                        if (Date.now() - _lastScheduleGenTime > 3000) {
+                            monthAssignments = data.monthAssignments;
+                            document.getElementById('empty-state').classList.add('hidden');
+                            document.getElementById('calendar-view').classList.remove('hidden');
+                            renderCalendar();
+                        }
                     } else {
-                        monthAssignments = {};
-                        document.getElementById('calendar-view').classList.add('hidden');
-                        document.getElementById('empty-state').classList.remove('hidden');
+                        if (Date.now() - _lastScheduleGenTime > 3000) {
+                            monthAssignments = {};
+                            document.getElementById('calendar-view').classList.add('hidden');
+                            document.getElementById('empty-state').classList.remove('hidden');
+                        }
                     }
 
                     if (data.scheduleModules) {
@@ -1327,8 +1662,27 @@
                     renderAnalysis();
                     renderPreLeaveDropdowns();
                     renderPreLeaveList();
+                    renderNotices();
+                    renderShiftEvents();
                     renderDrawQuickSelect();
                     renderIdentitySelect();
+
+                    // 若群組選擇 overlay 的身分認領步驟正在顯示，補填成員清單並更新空成員提示
+                    const gsoStep2 = document.getElementById('gso-step-identity');
+                    if (gsoStep2 && gsoStep2.style.display !== 'none') {
+                        const gsoSel   = document.getElementById('gso-identity-select');
+                        const gsoHint  = document.getElementById('gso-no-members-hint');
+                        const gsoEnter = document.getElementById('gso-enter-btn');
+                        if (members.length > 0) {
+                            if (gsoSel)   { gsoSel.innerHTML = buildMemberOptgroupHtml(claimedIdentity); gsoSel.classList.remove('hidden'); }
+                            if (gsoHint)  gsoHint.classList.add('hidden');
+                            if (gsoEnter) gsoEnter.classList.remove('hidden');
+                        } else {
+                            if (gsoSel)   gsoSel.classList.add('hidden');
+                            if (gsoHint)  gsoHint.classList.remove('hidden');
+                            if (gsoEnter) gsoEnter.classList.add('hidden');
+                        }
+                    }
                 } else {
                     // 只有在「非切換途中」才允許建立新文件，防止切換時以空資料覆寫既有群組
                     if (!_isSwitchingGroup) {
@@ -1343,7 +1697,9 @@
             // 抽籤廣播監聽（獨立文件，不影響主資料）
             if (unsubscribeDrawBroadcast) unsubscribeDrawBroadcast();
             const drawBroadcastRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId + '_draw');
+            const _expectedDrawTeamId = appConfig.teamId;
             unsubscribeDrawBroadcast = window.FirebaseCore.onSnapshot(drawBroadcastRef, (snap) => {
+                if (appConfig.teamId !== _expectedDrawTeamId) return; // 丟棄舊群組的延遲廣播
                 handleDrawBroadcast(snap.exists() ? snap.data() : null);
             });
         }
@@ -1361,19 +1717,63 @@
         function handleDrawBroadcast(data) {
             const modal = document.getElementById('draw-broadcast-modal');
             if (!modal) return;
-            if (isAdminMode) return; // 管理員已有原始面板，不重複顯示
+            if (_isDrawInitiator) return; // 本機是發起人，主面板已有畫面，不重複顯示
 
+            // 群組選擇 overlay 開啟中，不干擾
+            const gsoOverlay = document.getElementById('group-select-overlay');
+            if (gsoOverlay && gsoOverlay.style.display !== 'none') return;
+
+            const winnerCard = document.getElementById('broadcast-winner-card');
+            const slotMachine = document.getElementById('broadcast-slot-machine');
+
+            // idle：清除動畫旗標，只在沒有顯示結果時才收起 modal
             if (!data || data.phase === 'idle') {
-                modal.classList.add('hidden');
+                _isDrawAnimating = false;
+                if (winnerCard && winnerCard.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                }
                 return;
             }
 
+            // ── phase: result ── 直接顯示結果卡，讓所有人都看到最終名單
+            if (data.phase === 'result') {
+                if (!data.ts || (Date.now() - data.ts) > 60000) return; // 超過 60 秒略過
+                _isDrawAnimating = false;
+                const broadcastWinners = data.winners || [];
+                if (slotMachine) slotMachine.classList.add('hidden');
+                if (winnerCard) {
+                    winnerCard.classList.remove('hidden');
+                    const nameEl = document.getElementById('broadcast-winner-name');
+                    if (nameEl) {
+                        if (broadcastWinners.length === 1) {
+                            nameEl.innerHTML = `<span class="text-4xl font-black text-[#7A8F81] tracking-tight">${broadcastWinners[0]}</span>`;
+                        } else {
+                            nameEl.innerHTML = `<div class="flex flex-wrap justify-center gap-2 mt-1">${
+                                broadcastWinners.map((w, i) => `<span class="bg-[#EAF2E8] text-[#2E3E2A] font-black px-4 py-2 rounded-2xl text-base">${i + 1}. ${w}</span>`).join('')
+                            }</div>`;
+                        }
+                    }
+                }
+                modal.classList.remove('hidden');
+                triggerWinnerConfetti();
+                return;
+            }
+
+            // ── phase: drawing ── 跑馬燈動畫
             if (data.phase === 'drawing') {
                 // 超過 30 秒的舊廣播忽略，避免新開啟者重播已結束的抽籤
                 if (!data.ts || (Date.now() - data.ts) > 30000) return;
+                // 防止同一次廣播因 onSnapshot 重複觸發而重置動畫
+                if (_isDrawAnimating) return;
+                _isDrawAnimating = true;
 
                 const pool   = data.pool   || [];
                 const winner = data.winner || '';
+                const initiator = data.initiator || '成員';
+
+                // 更新標題：顯示發起人名字
+                const titleEl = document.getElementById('broadcast-draw-title');
+                if (titleEl) titleEl.innerText = `${initiator} 正在進行公平抽籤`;
 
                 // 渲染參與名單標籤
                 document.getElementById('broadcast-pool-tags').innerHTML = pool.map(n =>
@@ -1381,41 +1781,14 @@
                 ).join('');
 
                 // 顯示滾輪、隱藏結果
-                document.getElementById('broadcast-slot-machine').classList.remove('hidden');
-                document.getElementById('broadcast-winner-card').classList.add('hidden');
+                if (slotMachine) slotMachine.classList.remove('hidden');
+                if (winnerCard) winnerCard.classList.add('hidden');
                 modal.classList.remove('hidden');
 
-                // 建立滾動列表（與管理員端相同邏輯，15 批次確保滾動飽滿）
-                const strip = document.getElementById('broadcast-slot-strip');
-                let scrollList = [];
-                for (let i = 0; i < 15; i++) {
-                    scrollList = scrollList.concat([...pool].sort(() => Math.random() - 0.5));
-                }
-                scrollList.push(winner);
-                strip.innerHTML = scrollList.map(n => `<div class="slot-item">${n}</div>`).join('');
-                strip.style.transition = 'none';
-                strip.style.transform  = 'translateY(0)';
-                strip.offsetHeight;
-                const totalDistance = (scrollList.length - 1) * 80;
-                strip.style.transition = 'transform 6.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
-                strip.style.transform  = `translateY(-${totalDistance}px)`;
-
-                // 8.7 秒後切換為結果卡
-                const broadcastWinners = data.winners || [winner];
-                setTimeout(() => {
-                    document.getElementById('broadcast-slot-machine').classList.add('hidden');
-                    const card = document.getElementById('broadcast-winner-card');
-                    card.classList.remove('hidden');
-                    const nameEl = document.getElementById('broadcast-winner-name');
-                    if (broadcastWinners.length === 1) {
-                        nameEl.innerHTML = `<span class="text-4xl font-black text-[#7A8F81] tracking-tight">${broadcastWinners[0]}</span>`;
-                    } else {
-                        nameEl.innerHTML = `<div class="flex flex-wrap justify-center gap-2 mt-1">${
-                            broadcastWinners.map((w, i) => `<span class="bg-[#EAF2E8] text-[#2E3E2A] font-black px-4 py-2 rounded-2xl text-base">${i + 1}. ${w}</span>`).join('')
-                        }</div>`;
-                    }
-                    triggerWinnerConfetti();
-                }, 6700);
+                // 卡牌翻轉動畫（廣播版，依 winners 張數生成對應卡片，靜待 result 廣播接管）
+                const bContainer = document.getElementById('broadcast-flip-container');
+                const bWinners   = (data.winners && data.winners.length) ? data.winners : [winner];
+                createFlipCards(bContainer, bWinners, pool);
             }
         }
 
@@ -1430,16 +1803,22 @@
 
             const teamDocRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId);
             
-            const cleanMembers = members || [];
+            const cleanTeachers = teachers || [];
+            const cleanStudents = students || [];
+            const cleanMembers = [...cleanTeachers, ...cleanStudents];
             const cleanTitle = appConfig.title || "牛油果排班";
             const cleanLeaveData = leaveData || {};
             const cleanMonthAssignments = monthAssignments || {};
             const cleanScheduleModules = scheduleModules || {};
             const cleanLuckyDrawWinnersCount = luckyDrawWinnersCount || {};
             const cleanPreLeaveRecords = preLeaveRecords || [];
+            const cleanNotices = notices || [];
+            const cleanShiftEvents = shiftEvents || [];
 
             try {
                 await window.FirebaseCore.setDoc(teamDocRef, {
+                    teachers: cleanTeachers,
+                    students: cleanStudents,
                     members: cleanMembers,
                     title: cleanTitle,
                     leaveData: cleanLeaveData,
@@ -1447,6 +1826,8 @@
                     scheduleModules: cleanScheduleModules,
                     luckyDrawWinnersCount: cleanLuckyDrawWinnersCount,
                     preLeaveRecords: cleanPreLeaveRecords,
+                    notices: cleanNotices,
+                    shiftEvents: cleanShiftEvents,
                     overThreshold: appConfig.overThreshold ?? 3,
                     operationLogs: operationLogs || [],
                     updatedAt: new Date().getTime()
@@ -1469,6 +1850,7 @@
         };
 
         window.openTitleEditModal = function() {
+            if (!requireIdentity()) return;
             document.getElementById('app-title-input').value = appConfig.title || '牛油果排班';
             document.getElementById('title-edit-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('app-title-input')?.focus(), 100);
@@ -1538,7 +1920,7 @@
         let undoScheduleSnapshot = null;
 
         window.openScheduleClearModal = function() {
-            if (!isAdminMode) { showToast("🔑 需要管理員模式才能清除排班！"); return; }
+            if (!requireIdentity()) return;
             document.getElementById('clear-sched-year').value = appConfig.currentYear;
             document.getElementById('clear-sched-month').value = appConfig.currentMonth;
             document.getElementById('schedule-clear-modal').classList.remove('hidden');
@@ -1564,6 +1946,7 @@
                 closeScheduleClearModal();
                 showToast(`${y} 年 ${m} 月排班已清除`);
                 showUndoFloat('schedule', `${y}/${m} 排班已清除`);
+                appendLog('schedule', claimedIdentity || '成員', `${claimedIdentity || '成員'} 清除了 ${y} 年 ${m} 月排班結果`);
             });
         };
         window.undoClearSchedule = function() {
@@ -1585,7 +1968,7 @@
         let undoLeavesSnapshot = null;
 
         window.openLeaveClearModal = function() {
-            if (!isAdminMode) { showToast("🔑 需要管理員模式才能清除放假登記！"); return; }
+            if (!requireIdentity()) return;
             document.getElementById('clear-leave-year').value = appConfig.currentYear;
             document.getElementById('clear-leave-month').value = appConfig.currentMonth;
             document.getElementById('leave-clear-modal').classList.remove('hidden');
@@ -1615,6 +1998,7 @@
                 closeLeaveClearModal();
                 showToast(`${y} 年 ${m} 月放假登記已清除`);
                 showUndoFloat('leave', `${y}/${m} 放假登記已清除`);
+                appendLog('leave', claimedIdentity || '成員', `${claimedIdentity || '成員'} 清除了 ${y} 年 ${m} 月放假登記`);
             });
         };
         window.undoClearLeaves = function() {
@@ -1631,10 +2015,7 @@
         };
 
         function clearOnlySchedule() {
-            if (!isAdminMode) {
-                showToast("🔑 本操作需要管理員權限！請先啟用管理員解鎖。");
-                return;
-            }
+            if (!requireIdentity()) return;
             showCustomConfirm("清除排班結果", "您確定要清空工作台上的「排班結果」嗎？\n這會清除所有日曆格子上的名字與統計分析數據，但會【完整保留】您的成員名單、自定義任務以及辛苦登記好的放假表。", () => {
                 monthAssignments = {};
                 saveLocalData('avocado_assignments', {});
@@ -1643,14 +2024,12 @@
                 renderAnalysis();
                 uploadToCloud();
                 showToast("排班結果已清除");
+                appendLog('schedule', claimedIdentity || '成員', `${claimedIdentity || '成員'} 清除了排班結果`);
             });
         }
 
         function clearOnlyLeaves() {
-            if (!isAdminMode) {
-                showToast("🔑 本操作需要管理員權限！請先啟用管理員解鎖。");
-                return;
-            }
+            if (!requireIdentity()) return;
             showCustomConfirm("清空放假與預假登記", "您確定要清空整個月的所有「放假登記」與「預假記錄」嗎？\n清空後需要重新勾選排休與登載，此操作無法還原。\n（排班結果不受影響）", () => {
                 leaveData = {};
                 preLeaveRecords = [];
@@ -1663,14 +2042,12 @@
                 renderPreLeaveDropdowns();
                 uploadToCloud();
                 showToast("本月放假與預假登記已全數清空（排班結果保留）");
+                appendLog('leave', claimedIdentity || '成員', `${claimedIdentity || '成員'} 清空了本月放假與預假登記`);
             });
         }
 
         function clearOnlyTasks() {
-            if (!isAdminMode) {
-                showToast("🔑 本操作需要管理員權限！請先啟用管理員解鎖。");
-                return;
-            }
+            if (!requireIdentity()) return;
             showCustomConfirm("重設任務設定", "您確定要清空所有的「任務模組設定」嗎？\n清空後，6人、5人、4人及3人在崗模式的任務項目將全數歸零空白，您需要重新在系統設定中自定義任務名稱。", () => {
                 scheduleModules = {
                     "6": ["", "", "", "", "", ""],
@@ -1684,6 +2061,7 @@
                 renderModulesEditor();
                 uploadToCloud();
                 showToast("所有任務模組已成功清空");
+                appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 重設了所有任務模組`);
             });
         }
 
@@ -1713,24 +2091,8 @@
                 return;
             }
 
-            // 👤 智慧身分鎖定檢查
-            if (!claimedIdentity && !isAdminMode) {
-                showToast("💡 點休失敗：請先在假表最上方『認領您的身分』，才能點休格喔！");
-                
-                // 震盪提示身分認領區，幫助使用者發現認領下拉框
-                const select = document.getElementById('identity-claim-select');
-                if (select) {
-                    select.classList.add('ring-4', 'ring-[#7A8F81]', 'animate-bounce');
-                    setTimeout(() => select.classList.remove('ring-4', 'ring-[#7A8F81]', 'animate-bounce'), 1200);
-                }
-                return;
-            }
-
-            // 👤 唯讀阻斷：只能點選自己的請假格子，除非開啟了管理員模式
-            if (!isAdminMode && claimedIdentity !== n) {
-                showToast(`🚫 權限不足：您目前認領的身分是【${claimedIdentity}】，無法點選【${n}】的休假！ (代領請點選管理員解鎖)`);
-                return;
-            }
+            // 👤 身分認領守衛
+            if (!requireIdentity()) return;
 
             const currentStatus = (leaveData[d] || []).includes(n) ? "放假" : "在崗上班";
             const targetStatus = currentStatus === "放假" ? "上班" : "請假休息";
@@ -1785,10 +2147,7 @@
 
         // 優化防呆：刪除成員前必須經過智慧二次確認視窗
         window.requestRemoveMember = function(name) {
-            if (!isAdminMode) {
-                showToast("🔑 權限不足：請先啟用管理員模式，才能刪除成員！");
-                return;
-            }
+            if (!requireIdentity()) return;
             showCustomConfirm(
                 "⚠️ 刪除成員確認", 
                 `警告：您確定要永久刪除成員「${name}」嗎？\n此動作將同時清除該成員的放假登記、抽籤池中獎紀錄等，此操作無法還原！`, 
@@ -1799,12 +2158,16 @@
         };
 
         function removeMember(name) {
-            members = members.filter(m => m !== name);
-            
+            const typeLabel = teachers.includes(name) ? '老師' : '學生';
+            teachers = teachers.filter(m => m !== name);
+            students = students.filter(m => m !== name);
+            members  = [...teachers, ...students];
+
             // 如果剛好刪除了認領的身分，自動清空認領狀態
             if (claimedIdentity === name) {
                 claimedIdentity = '';
                 saveLocalData('avocado_claimed_identity', '');
+                updateIdentityDisplay();
             }
             
             renderMembersEdit();
@@ -1813,30 +2176,102 @@
             renderDrawQuickSelect();
             renderIdentitySelect();
             uploadToCloud();
-            showToast(`已成功移除成員：${name}`);
-            appendLog('member', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 移除成員：${name}`);
+            showToast(`已成功移除${typeLabel}：${name}`);
+            appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 移除${typeLabel}：${name}`);
         }
 
         // 快速初始化/渲染手動新增成員選單
         function renderDrawQuickSelect() {
             const selector = document.getElementById('draw-member-quick-select');
             if (!selector) return;
-            selector.innerHTML = '<option value="">-- 快速選擇 BBP 團隊成員加入 --</option>' + 
-                members.map(m => `<option value="${m}">${m}</option>`).join('');
+            selector.innerHTML = '<option value="">-- 快速選擇成員加入 --</option>' +
+                students.map(m => `<option value="${m}">${m}</option>`).join('');
         }
 
-        window.openMemberModal = function() {
-            if (!isAdminMode) {
-                showToast("🔑 需要管理員模式才能管理成員！");
-                return;
-            }
+        window.openMemberModal = function(defaultTab) {
+            if (!requireIdentity()) return;
             renderMembersEdit();
             document.getElementById('member-manage-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('new-member-input')?.focus(), 150);
+            // 切換到指定 Tab
+            const tab = defaultTab || 'teacher';
+            switchMemberModalTab(tab);
+            const focusId = tab === 'teacher' ? 'new-teacher-input' : 'new-student-input';
+            setTimeout(() => document.getElementById(focusId)?.focus(), 150);
+        };
+
+        window.switchMemberModalTab = function(tab) {
+            document.getElementById('member-modal-teacher-section').style.display = tab === 'teacher' ? '' : 'none';
+            document.getElementById('member-modal-student-section').style.display = tab === 'student' ? '' : 'none';
+            const tBtn = document.getElementById('member-tab-teacher');
+            const sBtn = document.getElementById('member-tab-student');
+            if (tab === 'teacher') {
+                tBtn.style.cssText = 'background:white;color:#5A7A56;box-shadow:0 1px 4px rgba(0,0,0,0.08)';
+                sBtn.style.cssText = 'color:#6B7280';
+            } else {
+                sBtn.style.cssText = 'background:white;color:#7A7A56;box-shadow:0 1px 4px rgba(0,0,0,0.08)';
+                tBtn.style.cssText = 'color:#6B7280';
+            }
         };
 
         window.closeMemberModal = function() {
             document.getElementById('member-manage-modal').classList.add('hidden');
+            // 若身分認領步驟正在顯示（從 overlay 開啟），重新整理下拉選單與空成員提示
+            const gsoStep2 = document.getElementById('gso-step-identity');
+            if (gsoStep2 && gsoStep2.style.display !== 'none') {
+                const gsoSel   = document.getElementById('gso-identity-select');
+                const gsoHint  = document.getElementById('gso-no-members-hint');
+                const gsoEnter = document.getElementById('gso-enter-btn');
+                if (members.length > 0) {
+                    if (gsoSel)   { gsoSel.innerHTML = buildMemberOptgroupHtml(claimedIdentity); gsoSel.classList.remove('hidden'); }
+                    if (gsoHint)  gsoHint.classList.add('hidden');
+                    if (gsoEnter) gsoEnter.classList.remove('hidden');
+                } else {
+                    if (gsoSel)   gsoSel.classList.add('hidden');
+                    if (gsoHint)  gsoHint.classList.remove('hidden');
+                    if (gsoEnter) gsoEnter.classList.add('hidden');
+                }
+            }
+        };
+
+        // ══════════════════════════════════════════
+        // 🎨 群組識別色（本機儲存，不同步）
+        // ══════════════════════════════════════════
+        const GROUP_COLOR_THEMES = {
+            sage:     { name: '鼠尾草綠', from: '#7A8F81', to: '#A3B5A8' },
+            blue:     { name: '霧霾藍',   from: '#6B82A0', to: '#9BB0C8' },
+            grey:     { name: '霧煙灰',   from: '#6E7880', to: '#96A4AE' },
+            yellow:   { name: '霧鵝黃',   from: '#A09A6A', to: '#C0BA90' },
+            lavender: { name: '霧薰衣草', from: '#8884A0', to: '#AEAAC0' },
+            celadon:  { name: '霧青瓷',   from: '#6A9092', to: '#90AEAD' },
+        };
+
+        function applyGroupColor(groupId) {
+            if (!groupId) return;
+            const savedColors = loadLocalData('avocado_group_colors', {});
+            const colorKey = savedColors[groupId] || 'sage';
+            const theme = GROUP_COLOR_THEMES[colorKey] || GROUP_COLOR_THEMES['sage'];
+            const styleEl = document.getElementById('group-color-style');
+            if (styleEl) {
+                styleEl.textContent = `
+                    .avocado-gradient { background: linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%) !important; }
+                    .theme-card-border { border-left-color: ${theme.from} !important; }
+                `;
+            }
+        }
+
+        window.setGroupColor = function(groupId, colorKey) {
+            const savedColors = loadLocalData('avocado_group_colors', {});
+            savedColors[groupId] = colorKey;
+            saveLocalData('avocado_group_colors', savedColors);
+            if (groupId === appConfig.teamId) applyGroupColor(groupId);
+            renderGroupSelectOverlay();
+            renderGroupsTab();
+        };
+
+        // 從身分認領 overlay 開啟成員管理 modal（跳過 requireIdentity，適用尚未有身分的新群組）
+        window.openMemberModalFromOverlay = function() {
+            document.getElementById('member-manage-modal').classList.remove('hidden');
+            switchMemberModalTab('teacher');
         };
 
         window.openOverThresholdModal = function() {
@@ -1860,19 +2295,23 @@
             showToast(`✅ 超休門檻已更新為 ${val} 人，已同步至雲端`);
         };
 
-        function addMember() {
-            if (!isAdminMode) {
-                showToast("🔑 權限不足：請先啟用管理員模式，才能新增成員！");
-                return;
-            }
-            const input = document.getElementById('new-member-input');
+        // type = 'teacher' | 'student'
+        window.addMember = function(type) {
+            const inputId = type === 'teacher' ? 'new-teacher-input' : 'new-student-input';
+            const input = document.getElementById(inputId);
+            if (!input) return;
             const name = input.value.trim();
             if (!name) return;
-            if (members.includes(name)) {
+            if (teachers.includes(name) || students.includes(name)) {
                 showToast("成員已存在");
                 return;
             }
-            members.push(name);
+            if (type === 'teacher') {
+                teachers.push(name);
+            } else {
+                students.push(name);
+            }
+            members = [...teachers, ...students];
             input.value = '';
             renderMembersEdit();
             renderLeaveTable();
@@ -1880,9 +2319,10 @@
             renderDrawQuickSelect();
             renderIdentitySelect();
             uploadToCloud();
-            showToast(`已新增成員：${name}`);
-            appendLog('member', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 新增成員：${name}`);
-        }
+            const typeLabel = type === 'teacher' ? '老師' : '學生';
+            showToast(`已新增${typeLabel}：${name}`);
+            appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 新增${typeLabel}：${name}`);
+        };
 
         // 切換分頁
         function switchTab(tabId) {
@@ -1922,6 +2362,19 @@
             if (tabId === 'groups') renderGroupsTab();
         }
 
+        // ── 身分認領守衛（所有操作必須先認領身分）──
+        function requireIdentity() {
+            if (claimedIdentity) return true;
+            showToast('💡 請先認領您的身分才能進行操作！');
+            // 開啟 overlay 並直接跳到身分認領步驟
+            const overlay = document.getElementById('group-select-overlay');
+            const closeBtn = document.getElementById('group-select-close-btn');
+            if (overlay) overlay.style.display = 'flex';
+            if (closeBtn) closeBtn.classList.remove('hidden');
+            if (typeof showGsoIdentityStep === 'function') showGsoIdentityStep();
+            return false;
+        }
+
         // ===== 操作日誌系統 =====
         function appendLog(type, actor, message) {
             const now = Date.now();
@@ -1942,6 +2395,8 @@
                 schedule: { bg: '#9FB8AC', text: '#1A3525', label: '排班生成' },
                 draw:     { bg: '#88AFB5', text: '#162830', label: '抽籤結果' },
                 member:   { bg: '#DBE9AB', text: '#213C1E', label: '成員管理' },
+                notice:   { bg: '#C8D8B8', text: '#2A3C20', label: '公告管理' },
+                shift:    { bg: '#B8CCD4', text: '#1A3040', label: '梯次登記' },
             };
 
             const cutoff  = Date.now() - 30 * 24 * 60 * 60 * 1000;
@@ -1959,7 +2414,7 @@
             });
 
             // 更新篩選按鈕 active 樣式
-            ['all','leave','preleave','schedule','draw','member'].forEach(k => {
+            ['all','leave','preleave','schedule','draw','member','notice','shift'].forEach(k => {
                 const btn = document.getElementById('lf-' + k);
                 if (!btn) return;
                 const isActive = (k === 'all' && !_logTypeFilter) || k === _logTypeFilter;
@@ -1984,6 +2439,222 @@
             }).join('');
         }
 
+        // ════════════════════════════════════════
+        // 🏠 群組選擇入口頁
+        // ════════════════════════════════════════
+
+        function renderGroupSelectOverlay() {
+            const overlay = document.getElementById('group-select-overlay');
+            if (!overlay || overlay.style.display === 'none') return;
+            const container = document.getElementById('group-select-cards');
+            if (!container) return;
+
+            // 同步標題
+            const titleEl = document.getElementById('group-select-app-title');
+            if (titleEl) titleEl.innerText = appConfig.title || '牛油果排班';
+
+            if (groups.length === 0) {
+                container.innerHTML = `<div class="text-center py-12">
+                    <i class="fas fa-circle-notch fa-spin text-3xl" style="color:#AFCDA8"></i>
+                    <p class="text-sm font-bold mt-4" style="color:#AFCDA8">正在從雲端載入群組清單…</p>
+                </div>`;
+                return;
+            }
+
+            const _savedGroupColors = loadLocalData('avocado_group_colors', {});
+            container.innerHTML = [
+                ...groups.map(g => {
+                    const isActive = g.id === appConfig.teamId;
+                    const safeGname = (g.name || '').replace(/"/g, '&quot;');
+                    const activeColorKey = _savedGroupColors[g.id] || 'sage';
+                    // 6個識別色點
+                    const colorDots = Object.entries(GROUP_COLOR_THEMES).map(([key, theme]) => {
+                        const isSel = key === activeColorKey;
+                        return `<button onclick="event.stopPropagation();setGroupColor('${g.id}','${key}')"
+                            title="${theme.name}"
+                            style="width:13px;height:13px;border-radius:50%;background:${theme.from};flex-shrink:0;
+                                   border:${isSel ? '2px solid #2E4A2A' : '2px solid transparent'};
+                                   box-shadow:${isSel ? '0 0 0 1.5px '+theme.from : 'none'};
+                                   transition:transform 0.15s"
+                            onmouseover="this.style.transform='scale(1.35)'" onmouseout="this.style.transform='scale(1)'"></button>`;
+                    }).join('');
+                    return `<div class="w-full rounded-2xl transition-all overflow-hidden"
+                        style="background:${isActive ? '#EAF2E8' : 'white'};border:2px solid ${isActive ? '#7A8F81' : '#D8E8D4'};box-shadow:0 2px 12px rgba(122,143,129,0.08)">
+                        <div class="flex items-center gap-2 px-4 py-3">
+                            <!-- 主要點擊區 -->
+                            <button onclick="selectGroupAndEnter('${g.id}')"
+                                class="flex items-center gap-3 flex-1 min-w-0 text-left py-1 active:scale-[0.97] transition-transform">
+                                <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shrink-0"
+                                    style="background:${isActive ? '#7A8F81' : '#EAF2E8'};color:${isActive ? '#fff' : '#5A7A56'}">${g.name.charAt(0)}</div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-black text-base truncate" style="color:#2E4A2A">${g.name}</h4>
+                                    <p class="text-xs font-bold mt-0.5" style="color:${isActive ? '#7A8F81' : '#9CA3AF'}">${isActive ? '✦ 目前使用中' : '點此進入'}</p>
+                                </div>
+                                <i class="fas fa-chevron-right shrink-0 mr-1" style="color:${isActive ? '#7A8F81' : '#AFCDA8'}"></i>
+                            </button>
+                            <!-- 管理按鈕 -->
+                            <div class="flex items-center gap-1 shrink-0 border-l pl-2" style="border-color:${isActive ? '#AFCDA8' : '#E5E7EB'}">
+                                <button onclick="event.stopPropagation();openRenameGroupModal(this.dataset.gid,this.dataset.gname)"
+                                    data-gid="${g.id}" data-gname="${safeGname}"
+                                    class="w-8 h-8 flex items-center justify-center rounded-xl transition"
+                                    style="color:#9CA3AF"
+                                    onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
+                                    title="重命名">
+                                    <i class="fas fa-pen text-xs"></i>
+                                </button>
+                                ${groups.length > 1
+                                    ? `<button onclick="event.stopPropagation();deleteGroup('${g.id}')"
+                                        class="w-8 h-8 flex items-center justify-center rounded-xl transition"
+                                        style="color:#FCA5A5"
+                                        onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
+                                        title="移除此群組">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                       </button>`
+                                    : `<div class="w-8 h-8"></div>`
+                                }
+                            </div>
+                        </div>
+                        <!-- 識別色選擇列 -->
+                        <div class="flex items-center gap-2 px-4 pb-2.5" style="border-top:1px solid ${isActive ? 'rgba(122,143,129,0.2)' : '#F0F4F0'}">
+                            <span class="text-[9px] font-black tracking-wide mt-2" style="color:#AFCDA8">識別色</span>
+                            <div class="flex items-center gap-1.5 mt-2">${colorDots}</div>
+                        </div>
+                    </div>`;
+                }),
+                // 新增群組 + 以ID加入 按鈕列
+                `<div class="flex gap-2 w-full">
+                    <button onclick="openAddGroupModal()"
+                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
+                        style="background:rgba(122,143,129,0.08);color:#5A7A56;border:2px dashed #AFCDA8"
+                        onmouseover="this.style.background='rgba(122,143,129,0.16)'" onmouseout="this.style.background='rgba(122,143,129,0.08)'">
+                        <i class="fas fa-plus text-xs"></i> 新增群組
+                    </button>
+                    <button onclick="openJoinGroupModal()"
+                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
+                        style="background:rgba(136,175,181,0.10);color:#2E6874;border:2px dashed #88AFB5"
+                        onmouseover="this.style.background='rgba(136,175,181,0.20)'" onmouseout="this.style.background='rgba(136,175,181,0.10)'">
+                        <i class="fas fa-link text-xs"></i> 以 ID 加入
+                    </button>
+                </div>`
+            ].join('');
+        }
+
+        window.showGroupSelectOverlay = function(allowClose = false) {
+            const overlay  = document.getElementById('group-select-overlay');
+            const closeBtn = document.getElementById('group-select-close-btn');
+            if (!overlay) return;
+            // 開啟群組頁前關閉廣播 modal，避免殘留在上層
+            document.getElementById('draw-broadcast-modal')?.classList.add('hidden');
+            overlay.style.display = 'flex';
+            if (closeBtn) closeBtn.classList.toggle('hidden', !allowClose);
+            renderGroupSelectOverlay();
+        };
+
+        window.hideGroupSelectOverlay = function() {
+            const overlay = document.getElementById('group-select-overlay');
+            if (!overlay) return;
+            overlay.style.display = 'none';
+        };
+
+        // 點擊群組卡片 → 先切群組，再顯示身分認領步驟
+        window.selectGroupAndEnter = async function(groupId) {
+            saveLocalData('avocado_active_group_id', groupId);
+            if (groupId !== appConfig.teamId) {
+                // 切換前先顯示 loading，避免畫面卡住
+                const cards = document.getElementById('group-select-cards');
+                if (cards) cards.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-circle-notch fa-spin text-3xl" style="color:#AFCDA8"></i>
+                        <p class="text-sm font-bold mt-4" style="color:#AFCDA8">正在載入群組資料…</p>
+                    </div>`;
+                await doSwitchGroup(groupId);
+            }
+            showGsoIdentityStep();
+        };
+
+        // 顯示步驟二：身分認領
+        window.showGsoIdentityStep = function() {
+            const step1 = document.getElementById('gso-step-group');
+            const step2 = document.getElementById('gso-step-identity');
+            if (!step2) return;
+
+            // 群組名稱
+            const g = groups.find(gr => gr.id === appConfig.teamId);
+            const nameEl = document.getElementById('gso-group-name-display');
+            if (nameEl) nameEl.innerText = g ? g.name : '群組';
+
+            // 填充成員名單（老師 / 學生 optgroup）
+            // 若 Firebase 尚未回應（成員為空），先顯示載入提示，待 onSnapshot 補填
+            const sel      = document.getElementById('gso-identity-select');
+            const hint     = document.getElementById('gso-no-members-hint');
+            const enterBtn = document.getElementById('gso-enter-btn');
+            if (members.length > 0) {
+                if (sel)      { sel.innerHTML = buildMemberOptgroupHtml(claimedIdentity); sel.classList.remove('hidden'); }
+                if (hint)     hint.classList.add('hidden');
+                if (enterBtn) enterBtn.classList.remove('hidden');
+            } else {
+                if (sel)      { sel.innerHTML = '<option value="">── 請選擇您的名字 ──</option>'; sel.classList.add('hidden'); }
+                if (hint)     hint.classList.remove('hidden');
+                if (enterBtn) enterBtn.classList.add('hidden');
+            }
+
+            // 切換步驟
+            if (step1) step1.style.display = 'none';
+            step2.style.display = 'flex';
+        };
+
+        // 返回步驟一：群組選擇
+        window.backToGroupStep = function() {
+            const step1 = document.getElementById('gso-step-group');
+            const step2 = document.getElementById('gso-step-identity');
+            if (step1) step1.style.display = '';
+            if (step2) step2.style.display = 'none';
+        };
+
+        // 確認身分並進入 App
+        window.enterAppFromOverlay = function() {
+            const identity = document.getElementById('gso-identity-select')?.value || '';
+            if (!identity) { showToast('⚠️ 請先選擇您的名字才能進入！'); return; }
+
+            // 認領身分
+            claimedIdentity = identity;
+            saveLocalData('avocado_claimed_identity', identity);
+            renderIdentitySelect();
+            renderLeaveTable();
+            renderPreLeaveDropdowns();
+
+            hideGroupSelectOverlay();
+            updateIdentityDisplay();
+        };
+
+        // 更新假表頁身分狀態顯示
+        function updateIdentityDisplay() {
+            // 假表頁隱藏元素（相容舊邏輯）
+            const el = document.getElementById('claimed-identity-display');
+            if (el) {
+                if (claimedIdentity) {
+                    el.innerText = claimedIdentity;
+                    el.style.background = '#EAF2E8';
+                    el.style.color = '#2E4A2A';
+                } else {
+                    el.innerText = '尚未認領';
+                    el.style.background = '#F3F4F6';
+                    el.style.color = '#9CA3AF';
+                }
+            }
+            // Nav 身分徽章（持久顯示）
+            const badge     = document.getElementById('identity-badge-display');
+            const badgeName = document.getElementById('identity-badge-name');
+            if (badge && badgeName) {
+                if (claimedIdentity) {
+                    badgeName.textContent = claimedIdentity;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
         window.setLogFilter = function(type) {
             _logTypeFilter = type;
             renderLogs();
@@ -2001,12 +2672,8 @@
         function toggleLuckyDrawCollapse() {
             const panel = document.getElementById('lucky-draw-panel');
             const arrow = document.getElementById('draw-arrow-icon');
-            // 抽籤介面僅限管理員操作，防止其他使用者查看抽籤過程
-            if (panel.classList.contains('hidden') && !isAdminMode) {
-                showToast("🔑 抽籤功能需要管理員模式才能使用！");
-                return;
-            }
             if (panel.classList.contains('hidden')) {
+                if (!requireIdentity()) return;
                 panel.classList.remove('hidden');
                 arrow.style.transform = 'rotate(180deg)';
                 renderDrawQuickSelect();
@@ -2014,7 +2681,7 @@
             } else {
                 panel.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
-                if (isAdminMode) broadcastDrawState('idle');
+                broadcastDrawState('idle');
             }
         }
 
@@ -2024,10 +2691,7 @@
 
         // 1. 點休表一鍵帶入抽籤連動橋樑（加入智慧排除與預先登記防護機制）
         window.triggerLuckyDrawBridge = function(dateKey, membersArray) {
-            if (!isAdminMode) {
-                showToast("🔑 抽籤功能需要管理員模式才能使用！");
-                return;
-            }
+            if (!requireIdentity()) return;
             // 切換/打開抽籤折疊面板
             const panel = document.getElementById('lucky-draw-panel');
             if (panel.classList.contains('hidden')) {
@@ -2227,7 +2891,6 @@
             const idleBlock = document.getElementById('draw-idle');
             const slotMachine = document.getElementById('draw-slot-machine');
             const winnerCard = document.getElementById('draw-winner-card');
-            const strip = document.getElementById('slot-strip');
             const drawBtn = document.getElementById('start-draw-btn');
             
             // 讀取當前膠囊抽籤池（若變數為空，則嘗試從手動輸入欄位反向解析）
@@ -2256,6 +2919,8 @@
 
             // 讀取抽取人數（不超過合格候選人數）
             const drawCount = Math.min(parseInt(document.getElementById('draw-count-select')?.value) || 1, allowedCandidates.length);
+
+            _isDrawInitiator = true; // 標記本機為發起人，不重複接收廣播
 
             idleBlock.classList.add('hidden');
             winnerCard.classList.add('hidden');
@@ -2288,23 +2953,11 @@
             const displayWinners = [...winners].sort(() => Math.random() - 0.5);
 
             // 廣播（動畫用最後一位得獎者滾輪）
-            broadcastDrawState('drawing', { pool: allowedCandidates, winners: displayWinners, winner: displayWinners[displayWinners.length - 1] });
+            broadcastDrawState('drawing', { pool: allowedCandidates, winners: displayWinners, winner: displayWinners[displayWinners.length - 1], initiator: claimedIdentity || '成員' });
 
-            // 洗牌滾動動畫（每段都重新打散，15 批次，滾至最後一位得獎者）
-            const lastWinner = displayWinners[displayWinners.length - 1];
-            let scrollList = [];
-            for (let i = 0; i < 15; i++) {
-                scrollList = scrollList.concat([...allowedCandidates].sort(() => Math.random() - 0.5));
-            }
-            scrollList.push(lastWinner);
-            strip.innerHTML = scrollList.map(name => `<div class="slot-item">${name}</div>`).join('');
-            strip.style.transition = 'none';
-            strip.style.transform = 'translateY(0)';
-            strip.offsetHeight;
-            const itemHeight = 80;
-            const totalDistance = (scrollList.length - 1) * itemHeight;
-            strip.style.transition = 'transform 6.5s cubic-bezier(0.15, 0.95, 0.3, 1)';
-            strip.style.transform = `translateY(-${totalDistance}px)`;
+            // 卡牌翻轉動畫（依 drawCount 動態生成對應張數的卡片）
+            const flipContainer = document.getElementById('flip-cards-container');
+            createFlipCards(flipContainer, displayWinners, allowedCandidates);
 
             setTimeout(() => {
                 slotMachine.classList.add('hidden');
@@ -2339,34 +2992,148 @@
                 });
                 document.getElementById('winner-rule-notice').innerText = notices.join('　|　') || '已自動記錄中獎次數 🎉';
                 uploadToCloud();
-                appendLog('draw', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 抽籤：${displayWinners.join('、')}（共 ${displayWinners.length} 人）`);
+                appendLog('draw', claimedIdentity || '成員', `${claimedIdentity || '成員'} 抽籤：${displayWinners.join('、')}（共 ${displayWinners.length} 人）`);
 
                 // 觸發高質感噴灑紙屑
                 triggerWinnerConfetti();
+
+                // 廣播「結果」給同群組所有人（phase: 'result'）
+                broadcastDrawState('result', { winners: displayWinners });
 
                 drawBtn.disabled = false;
                 drawBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 drawBtn.innerHTML = `<i class="fas fa-random text-lg"></i> 開始公平抽籤`;
 
-                // 30 秒後自動將廣播狀態歸零，避免後續開啟網頁的人重播舊抽籤
-                setTimeout(() => broadcastDrawState('idle'), 30000);
-            }, 6700);
+                // 60 秒後歸零廣播；同時重置發起人旗標（讓下一次能正常廣播）
+                setTimeout(() => {
+                    broadcastDrawState('idle');
+                    _isDrawInitiator = false;
+                }, 60000);
+            // 多張卡每張錯開 150ms，需等最後一張翻完才切換結果卡
+            }, 6700 + (drawCount - 1) * 150);
         };
+
+        // 建立翻牌時間表：快→慢，總時長約 6.1 秒
+        function buildFlipSchedule() {
+            const times = [];
+            let t = 0;
+            while (t + 100 <= 1800) { t += 100; times.push(t); }   // 18 次，快速
+            while (t + 185 <= 3465) { t += 185; times.push(t); }   //  9 次，中速
+            while (t + 320 <= 5065) { t += 320; times.push(t); }   //  5 次，慢速
+            t += 520; times.push(t);                                //  1 次，很慢
+            t += 520; times.push(t);                                //  1 次，得獎翻牌
+            return times; // 共 34 次，最後一次約在 t=6105ms
+        }
+
+        // 執行卡牌翻轉動畫（startDelay：此張卡延遲啟動的毫秒數，用於多卡錯開）
+        function runFlipAnimation(innerEl, faceAEl, faceBEl, pool, winner, onDone, startDelay = 0) {
+            if (!innerEl || !faceAEl || !faceBEl) return;
+            const schedule = buildFlipSchedule();
+            const totalFlips = schedule.length;
+
+            let shuffled = [...pool].sort(() => Math.random() - 0.5);
+            let idx = 0;
+            function nextName() {
+                if (idx >= shuffled.length) { shuffled = [...pool].sort(() => Math.random() - 0.5); idx = 0; }
+                return shuffled[idx++];
+            }
+
+            // 重置狀態
+            innerEl.style.transition = 'none';
+            innerEl.style.transform  = 'rotateY(0deg)';
+            faceAEl.textContent = '✦';
+            faceBEl.textContent = '✦';
+
+            schedule.forEach((t, i) => {
+                const flipN  = i + 1;
+                const isLast = flipN === totalFlips;
+                const name   = isLast ? winner : nextName();
+
+                // 每段翻牌速度（過渡時長要小於間隔，確保每次完整翻完才啟動下一次）
+                let transMs = 80;
+                if (i >= 18 && i < 27) transMs = 145;
+                else if (i >= 27 && i < 32) transMs = 255;
+                else if (i >= 32) transMs = 420;
+
+                setTimeout(() => {
+                    // 預先把即將翻入視線的那一面設好文字
+                    const incomingEl = flipN % 2 === 1 ? faceBEl : faceAEl;
+                    incomingEl.textContent = name;
+                    innerEl.style.transition = `transform ${transMs}ms ease-in-out`;
+                    innerEl.style.transform  = `rotateY(${flipN * 180}deg)`;
+
+                    if (isLast) {
+                        setTimeout(() => { if (onDone) onDone(); }, transMs + 150);
+                    }
+                }, t + startDelay);
+            });
+        }
+
+        // 依得獎人數動態建立翻牌卡片並啟動動畫
+        function createFlipCards(container, winners, pool) {
+            if (!container) return;
+            container.innerHTML = '';
+            const count = winners.length;
+
+            // 根據卡片數量自動調整寬高與字級
+            const w  = count === 1 ? 240 : count === 2 ? 200 : count <= 4 ? 158 : 120;
+            const h  = count === 1 ? 108 : count === 2 ? 96  : count <= 4 ? 88  : 78;
+            const fs = count === 1 ? '30px' : count === 2 ? '26px' : count <= 4 ? '22px' : '18px';
+
+            winners.forEach((winner, i) => {
+                const scene = document.createElement('div');
+                scene.className    = 'flip-card-scene';
+                scene.style.width  = `${w}px`;
+                scene.style.height = `${h}px`;
+
+                const inner = document.createElement('div');
+                inner.className = 'flip-card-inner';
+
+                const faceA = document.createElement('div');
+                faceA.className      = 'flip-face flip-face-a';
+                faceA.style.fontSize = fs;
+                faceA.textContent    = '✦';
+
+                const faceB = document.createElement('div');
+                faceB.className      = 'flip-face flip-face-b';
+                faceB.style.fontSize = fs;
+                faceB.textContent    = '✦';
+
+                inner.appendChild(faceA);
+                inner.appendChild(faceB);
+                scene.appendChild(inner);
+                container.appendChild(scene);
+
+                // 每張卡錯開 150ms 啟動，製造層次感
+                runFlipAnimation(inner, faceA, faceB, pool, winner, () => {}, i * 150);
+            });
+        }
 
         function triggerWinnerConfetti() {
             var duration = 2.5 * 1000;
             var end = Date.now() + duration;
             // 全新高雅莫蘭迪綠配色組合：深莫蘭迪綠、淡莫蘭迪綠、暖米茶色、純白
             const morandiColors = ['#7A8F81', '#A3B5A8', '#EBD8C9', '#ffffff'];
+            // 建立專屬高層級 canvas（不用 worker），確保紙屑顯示在廣播視窗最前方
+            const cnv = document.createElement('canvas');
+            cnv.style.position = 'fixed';
+            cnv.style.top = '0';
+            cnv.style.left = '0';
+            cnv.style.width = '100%';
+            cnv.style.height = '100%';
+            cnv.style.pointerEvents = 'none';
+            cnv.style.zIndex = '99999';
+            document.body.appendChild(cnv);
+            const myConfetti = confetti.create(cnv, { resize: true, useWorker: false });
             (function frame() {
-                confetti({
+                myConfetti({
                     particleCount: 4,
                     angle: 60,
                     spread: 55,
                     origin: { x: 0 },
                     colors: morandiColors
                 });
-                confetti({
+                myConfetti({
                     particleCount: 4,
                     angle: 120,
                     spread: 55,
@@ -2375,6 +3142,9 @@
                 });
                 if (Date.now() < end) {
                     requestAnimationFrame(frame);
+                } else {
+                    // 動畫結束後清理 canvas
+                    setTimeout(() => { myConfetti.reset(); cnv.remove(); }, 1000);
                 }
             }());
         }
@@ -2393,6 +3163,560 @@
                 arrow.style.transform = 'rotate(0deg)';
             }
         }
+
+        // ============================================================
+        //  📋 梯次登記
+        // ============================================================
+        let _shiftRegEventIdx = null;
+        let _shiftRegSelectedDays = [];
+
+        window.toggleShiftEventsCollapse = function() {
+            const panel = document.getElementById('shift-events-panel');
+            const arrow = document.getElementById('shift-events-arrow-icon');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+                renderShiftEvents();
+            } else {
+                panel.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        function renderShiftEvents() {
+            const container  = document.getElementById('shift-events-list');
+            const emptyState = document.getElementById('shift-events-empty');
+            if (!container) return;
+            if (!shiftEvents || shiftEvents.length === 0) {
+                container.innerHTML = '';
+                emptyState?.classList.remove('hidden');
+                return;
+            }
+            emptyState?.classList.add('hidden');
+
+            container.innerHTML = shiftEvents.map((ev, idx) => {
+                const regs     = ev.registrations || {};
+                const regCount = Object.keys(regs).length;
+                const myDates  = regs[claimedIdentity] || [];
+                const iReg     = myDates.length > 0;
+                const regRows  = Object.entries(regs).map(([name, dates]) => {
+                    const ds = dates.slice().sort().map(d => d.slice(5).replace('-','/')).join('、');
+                    return `<div class="flex items-start gap-2 text-xs py-0.5">
+                        <span class="font-black shrink-0" style="color:#3D5E39;min-width:3.5rem">${escapeHtml(name)}</span>
+                        <span class="text-gray-500 font-bold">${ds}</span>
+                    </div>`;
+                }).join('');
+                return `
+                <div class="rounded-2xl border border-[#C4DABD]/60 overflow-hidden" style="background:#FAFCFA">
+                    <div class="px-5 py-4 flex items-start gap-3">
+                        <div class="flex-1 min-w-0 space-y-1.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-black text-sm text-gray-800">${escapeHtml(ev.name)}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#E3EDDF;color:#3D5E39">${regCount} 人已登記</span>
+                                ${iReg ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#B8D8A8;color:#2A4A22">🌿 我已登記 ${myDates.length} 天</span>` : ''}
+                            </div>
+                            ${ev.desc ? `<p class="text-xs text-gray-500 font-bold" style="word-break:break-word">${escapeHtml(ev.desc)}</p>` : ''}
+                            <div class="flex items-center gap-2 flex-wrap mt-1">
+                                <button onclick="openShiftRegisterModal(${idx})"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black transition"
+                                    style="background:${iReg ? '#B8D8A8' : '#7A8F81'};color:${iReg ? '#2A4A22' : '#fff'}"
+                                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                                    <i class="fas fa-calendar-check text-[10px]"></i> ${iReg ? '修改我的登記' : '登記日期'}
+                                </button>
+                                ${regCount > 0 ? `
+                                <button onclick="toggleShiftRegList(this,'shift-reglist-${idx}')"
+                                    class="inline-flex items-center gap-1 text-[11px] font-black transition" style="color:#6A8C72">
+                                    <i class="fas fa-users text-[10px]"></i>
+                                    <span>查看名單</span>
+                                    <i class="fas fa-chevron-down text-[9px] ml-0.5"></i>
+                                </button>` : `<span class="text-[11px] font-bold" style="color:#C0D4BC">尚無人登記</span>`}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="openShiftEventModal(${idx})" title="編輯" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#E3EDDF;color:#5A7A56" onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
+                                <i class="fas fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="deleteShiftEvent(${idx})" title="刪除" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#F7EAED;color:#8C4A58" onmouseover="this.style.background='#EEDCE0'" onmouseout="this.style.background='#F7EAED'">
+                                <i class="fas fa-trash-alt text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="shift-reglist-${idx}" class="hidden px-5 pb-4 space-y-0.5 border-t border-[#E8F2E4]">
+                        ${regRows || '<p class="text-xs text-gray-400 py-2">尚無登記</p>'}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.openShiftEventModal = function(editIdx) {
+            const modal   = document.getElementById('shift-event-modal');
+            const nameEl  = document.getElementById('shift-event-name');
+            const descEl  = document.getElementById('shift-event-desc');
+            const idEl    = document.getElementById('shift-event-edit-id');
+            const titleEl = document.getElementById('shift-event-modal-title');
+            if (editIdx !== null && editIdx !== undefined && shiftEvents[editIdx]) {
+                const ev = shiftEvents[editIdx];
+                titleEl.textContent = '編輯梯次';
+                idEl.value    = String(editIdx);
+                nameEl.value  = ev.name || '';
+                descEl.value  = ev.desc || '';
+            } else {
+                titleEl.textContent = '新增梯次';
+                idEl.value   = '';
+                nameEl.value = '';
+                descEl.value = '';
+            }
+            modal.classList.remove('hidden');
+        };
+
+        window.closeShiftEventModal = function() {
+            document.getElementById('shift-event-modal').classList.add('hidden');
+        };
+
+        window.saveShiftEvent = function() {
+            const name  = (document.getElementById('shift-event-name').value || '').trim();
+            const desc  = (document.getElementById('shift-event-desc').value || '').trim();
+            const idVal = document.getElementById('shift-event-edit-id').value;
+            if (!name) { showToast('請輸入梯次名稱'); return; }
+            const actor = claimedIdentity || '管理員';
+            if (idVal !== '' && shiftEvents[Number(idVal)]) {
+                shiftEvents[Number(idVal)].name = name;
+                shiftEvents[Number(idVal)].desc = desc;
+                appendLog('shift', actor, `${actor} 編輯了梯次「${name}」`);
+            } else {
+                shiftEvents.unshift({ id: String(Date.now()), name, desc, createdAt: Date.now(), registrations: {} });
+                appendLog('shift', actor, `${actor} 新增了梯次「${name}」`);
+            }
+            closeShiftEventModal();
+            renderShiftEvents();
+            uploadToCloud();
+            showToast('梯次已儲存 ✅');
+        };
+
+        window.deleteShiftEvent = function(idx) {
+            const evName = shiftEvents[idx]?.name || '（無名稱）';
+            showCustomConfirm('刪除梯次', `確定要刪除梯次「${evName}」嗎？所有成員登記記錄將一併移除，放假登記也會同步清除。`, () => {
+                _removeShiftEventFromLeave(shiftEvents[idx]);
+                shiftEvents.splice(idx, 1);
+                appendLog('shift', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 刪除了梯次「${evName}」`);
+                renderShiftEvents();
+                renderLeaveTable();
+                uploadToCloud();
+                showToast('梯次已刪除');
+            });
+        };
+
+        window.openShiftRegisterModal = function(eventIdx) {
+            if (!claimedIdentity) { showToast('請先認領身分才能登記 👤'); return; }
+            _shiftRegEventIdx = eventIdx;
+            const ev = shiftEvents[eventIdx];
+            _shiftRegSelectedDays = [...((ev.registrations || {})[claimedIdentity] || [])];
+            document.getElementById('shift-reg-event-name').textContent  = ev.name;
+            document.getElementById('shift-reg-member-name').textContent = claimedIdentity;
+            _renderShiftRegCalendar();
+            document.getElementById('shift-register-modal').classList.remove('hidden');
+        };
+
+        window.closeShiftRegisterModal = function() {
+            document.getElementById('shift-register-modal').classList.add('hidden');
+            _shiftRegEventIdx = null;
+            _shiftRegSelectedDays = [];
+        };
+
+        function _renderShiftRegCalendar() {
+            const { currentYear: y, currentMonth: m } = appConfig;
+            const container = document.getElementById('shift-reg-calendar');
+            if (!container) return;
+            const daysInMonth = new Date(y, m, 0).getDate();
+            const firstDay    = new Date(y, m - 1, 1).getDay();
+            const dayNames    = ['日','一','二','三','四','五','六'];
+            let html = `<p class="text-[10px] font-bold text-center text-gray-400 mb-2">${y} 年 ${m} 月</p>`;
+            html += `<div class="grid grid-cols-7 gap-1 mb-1">`;
+            dayNames.forEach(d => { html += `<div class="text-[10px] font-black text-center text-gray-400">${d}</div>`; });
+            html += `</div><div class="grid grid-cols-7 gap-1">`;
+            for (let i = 0; i < firstDay; i++) html += `<div></div>`;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dk  = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const sel = _shiftRegSelectedDays.includes(dk);
+                html += `<button onclick="toggleShiftRegDay('${dk}')" class="w-full aspect-square rounded-xl text-xs font-black transition flex items-center justify-center"
+                    style="background:${sel ? '#7A8F81' : '#F0F4F0'};color:${sel ? '#fff' : '#4A5568'}">${d}</button>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+            const badge = document.getElementById('shift-reg-selected-badge');
+            if (badge) {
+                badge.textContent = _shiftRegSelectedDays.length > 0
+                    ? `已選 ${_shiftRegSelectedDays.length} 天：${_shiftRegSelectedDays.slice().sort().map(d => d.slice(5).replace('-','/')).join('、')}`
+                    : '尚未選擇任何日期';
+            }
+        }
+
+        window.toggleShiftRegDay = function(dateKey) {
+            const i = _shiftRegSelectedDays.indexOf(dateKey);
+            if (i === -1) _shiftRegSelectedDays.push(dateKey);
+            else _shiftRegSelectedDays.splice(i, 1);
+            _renderShiftRegCalendar();
+        };
+
+        window.saveShiftRegistration = function() {
+            if (_shiftRegEventIdx === null || !shiftEvents[_shiftRegEventIdx]) return;
+            if (!claimedIdentity) { showToast('請先認領身分'); return; }
+            const ev       = shiftEvents[_shiftRegEventIdx];
+            const oldDates = ((ev.registrations || {})[claimedIdentity]) || [];
+            // 移除舊日期
+            oldDates.forEach(dk => {
+                if (leaveData[dk]) leaveData[dk] = leaveData[dk].filter(n => n !== claimedIdentity);
+            });
+            // 加入新日期
+            _shiftRegSelectedDays.forEach(dk => {
+                if (!leaveData[dk]) leaveData[dk] = [];
+                if (!leaveData[dk].includes(claimedIdentity)) leaveData[dk].push(claimedIdentity);
+            });
+            if (!ev.registrations) ev.registrations = {};
+            if (_shiftRegSelectedDays.length > 0) {
+                ev.registrations[claimedIdentity] = [..._shiftRegSelectedDays];
+            } else {
+                delete ev.registrations[claimedIdentity];
+            }
+            const cnt = _shiftRegSelectedDays.length;
+            appendLog('shift', claimedIdentity, `${claimedIdentity} 在梯次「${ev.name}」登記了 ${cnt} 天`);
+            closeShiftRegisterModal();
+            renderShiftEvents();
+            renderLeaveTable();
+            uploadToCloud();
+            showToast(cnt > 0 ? `已登記 ${cnt} 天，並同步至放假表 ✅` : '已清除登記');
+        };
+
+        function _removeShiftEventFromLeave(ev) {
+            if (!ev || !ev.registrations) return;
+            Object.entries(ev.registrations).forEach(([member, dates]) => {
+                dates.forEach(dk => {
+                    if (leaveData[dk]) leaveData[dk] = leaveData[dk].filter(n => n !== member);
+                });
+            });
+        }
+
+        window.toggleShiftRegList = function(btn, panelId) {
+            const panel  = document.getElementById(panelId);
+            if (!panel) return;
+            const hidden = panel.classList.contains('hidden');
+            const chev   = btn.querySelector('.fa-chevron-down, .fa-chevron-up');
+            if (hidden) {
+                panel.classList.remove('hidden');
+                if (chev) { chev.classList.remove('fa-chevron-down'); chev.classList.add('fa-chevron-up'); }
+            } else {
+                panel.classList.add('hidden');
+                if (chev) { chev.classList.remove('fa-chevron-up'); chev.classList.add('fa-chevron-down'); }
+            }
+        };
+
+        // ============================================================
+        //  📢 公告佈告欄
+        // ============================================================
+        window.toggleNoticeBoardCollapse = function() {
+            const panel = document.getElementById('notice-board-panel');
+            const arrow = document.getElementById('notice-board-arrow-icon');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+                renderNotices();
+            } else {
+                panel.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        function renderNotices() {
+            const container = document.getElementById('notice-list-container');
+            const emptyState = document.getElementById('notice-empty-state');
+            if (!container) return;
+
+            if (!notices || notices.length === 0) {
+                container.innerHTML = '';
+                emptyState?.classList.remove('hidden');
+                return;
+            }
+            emptyState?.classList.add('hidden');
+
+            container.innerHTML = notices.map((n, idx) => {
+                // 相容舊資料（有 title 欄位）：合併顯示
+                const bodyText   = [n.title, n.body].filter(Boolean).join('\n').trim();
+                const hasBody    = !!bodyText;
+                const hasImage   = !!(n.image && n.image.trim());
+                const readBy     = n.readBy || [];
+                const iRead      = !!(claimedIdentity && readBy.includes(claimedIdentity));
+                const readCount  = readBy.length;
+                const dateStr    = n.createdAt ? new Date(n.createdAt).toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
+                const readTags   = readBy.map(name =>
+                    `<span class="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style="background:#D4E8CC;color:#2E5030">🌿 ${escapeHtml(name)}</span>`
+                ).join('');
+                return `
+                <div class="rounded-2xl border border-[#C4DABD]/60" style="background:#FAFCFA;max-width:540px">
+                    <div class="px-4 py-3.5 flex items-start gap-2.5">
+                        <!-- 📣 圖示 -->
+                        <i class="fas fa-bullhorn text-[#7A8F81] text-xs mt-1 shrink-0"></i>
+                        <!-- 主體：內文 + metadata 列 -->
+                        <div class="flex-1 min-w-0 space-y-2">
+                            <!-- 公告內文 -->
+                            ${hasBody
+                                ? `<p class="text-sm text-gray-700 font-bold leading-relaxed whitespace-pre-wrap" style="word-break:break-word;overflow-wrap:anywhere">${escapeHtml(bodyText)}</p>`
+                                : `<span class="inline-block text-xs text-gray-400 italic px-2 py-0.5 rounded-md" style="background:#F3F5F3">（無內容）</span>`}
+                            <!-- metadata 列：日期 · 附圖 · 已讀 · 已讀人數 -->
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${dateStr ? `<span class="text-[10px] text-gray-400 font-bold">${dateStr}</span>` : ''}
+                                ${hasImage ? `
+                                <button onclick="toggleNoticeImage(this,'notice-img-${idx}')" title="查看附圖"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition"
+                                    style="background:#E3EDDF;color:#5A7A56"
+                                    onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
+                                    <i class="fas fa-image"></i><span>附圖</span><i class="fas fa-chevron-down text-[8px] ml-0.5"></i>
+                                </button>` : ''}
+                                <button onclick="toggleNoticeRead(${idx})"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition select-none"
+                                    style="background:${iRead ? '#B8D8A8' : '#F0F5EE'};color:${iRead ? '#2A4A22' : '#7A9080'};border:1px solid ${iRead ? '#8CC07A' : '#C4DABD'}"
+                                    title="${iRead ? '取消已讀標記' : '標記我已讀此公告'}">
+                                    <span style="font-size:0.8rem;line-height:1">${iRead ? '🌿' : '🪴'}</span>
+                                    <span>${iRead ? '已讀' : '標記已讀'}</span>
+                                </button>
+                                ${readCount > 0 ? `
+                                <button onclick="toggleNoticeReadList(this,'notice-readlist-${idx}')"
+                                    class="inline-flex items-center gap-1 text-[10px] font-black transition"
+                                    style="color:#6A8C72">
+                                    <i class="fas fa-eye text-[9px]"></i>
+                                    <span>${readCount} 人已讀</span>
+                                    <i class="fas fa-chevron-down text-[8px] ml-0.5"></i>
+                                </button>` : `<span class="text-[10px] font-bold" style="color:#C0D4BC">尚無人已讀</span>`}
+                            </div>
+                        </div>
+                        <!-- 右側：✏️ 🗑️ -->
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="openAddNoticeModal(${idx})" title="編輯" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#E3EDDF;color:#5A7A56" onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
+                                <i class="fas fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="deleteNotice(${idx})" title="刪除" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#F7EAED;color:#8C4A58" onmouseover="this.style.background='#EEDCE0'" onmouseout="this.style.background='#F7EAED'">
+                                <i class="fas fa-trash-alt text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 附圖折疊區 -->
+                    ${hasImage ? `
+                    <div id="notice-img-${idx}" class="hidden px-4 pb-4">
+                        <img src="${n.image}" alt="公告附圖" class="max-w-full rounded-2xl border border-[#C4DABD]/60 object-contain" loading="lazy" style="max-height:380px">
+                    </div>` : ''}
+                    <!-- 已讀名單折疊區 -->
+                    ${readCount > 0 ? `
+                    <div id="notice-readlist-${idx}" class="hidden px-4 pb-3">
+                        <div class="flex flex-wrap gap-1.5">${readTags}</div>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        window.toggleNoticeImage = function(btn, panelId) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            const chevron  = btn.querySelector('.fa-chevron-down, .fa-chevron-up');
+            const label    = btn.querySelector('span');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                if (chevron) { chevron.classList.remove('fa-chevron-down'); chevron.classList.add('fa-chevron-up'); }
+                if (label) label.textContent = '收起';
+                btn.style.background = '#C4DABD';
+            } else {
+                panel.classList.add('hidden');
+                if (chevron) { chevron.classList.remove('fa-chevron-up'); chevron.classList.add('fa-chevron-down'); }
+                if (label) label.textContent = '附圖';
+                btn.style.background = '#E3EDDF';
+            }
+        };
+
+        // 已讀標記切換
+        window.toggleNoticeRead = function(idx) {
+            if (!claimedIdentity) {
+                showToast('請先認領身分才能標記已讀 👤');
+                return;
+            }
+            if (!notices[idx]) return;
+            if (!notices[idx].readBy) notices[idx].readBy = [];
+            const pos = notices[idx].readBy.indexOf(claimedIdentity);
+            if (pos === -1) {
+                notices[idx].readBy.push(claimedIdentity);
+                showToast('已標記已讀 🌿');
+            } else {
+                notices[idx].readBy.splice(pos, 1);
+                showToast('已取消已讀標記');
+            }
+            renderNotices();
+            uploadToCloud();
+        };
+
+        // 已讀名單展開/收起
+        window.toggleNoticeReadList = function(btn, panelId) {
+            const panel   = document.getElementById(panelId);
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            const chevron  = btn.querySelector('.fa-chevron-down, .fa-chevron-up');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                if (chevron) { chevron.classList.remove('fa-chevron-down'); chevron.classList.add('fa-chevron-up'); }
+            } else {
+                panel.classList.add('hidden');
+                if (chevron) { chevron.classList.remove('fa-chevron-up'); chevron.classList.add('fa-chevron-down'); }
+            }
+        };
+
+        // 轉義 HTML 特殊字符防 XSS
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        let _noticeImageBase64 = null; // 暫存 base64 圖片
+
+        window.openAddNoticeModal = function(editIdx) {
+            const modal = document.getElementById('notice-modal');
+            const titleInput = document.getElementById('notice-input-title');
+            const bodyInput  = document.getElementById('notice-input-body');
+            const idInput    = document.getElementById('notice-edit-id');
+            const preview    = document.getElementById('notice-image-preview');
+            const previewWrap= document.getElementById('notice-image-preview-wrap');
+            const modalTitle = document.getElementById('notice-modal-title');
+
+            _noticeImageBase64 = null;
+
+            if (editIdx !== null && editIdx !== undefined && notices[editIdx]) {
+                const n = notices[editIdx];
+                modalTitle.textContent = '編輯公告';
+                idInput.value          = String(editIdx);
+                // 相容舊資料：title+body 合併顯示；新資料只有 body
+                bodyInput.value = [n.title, n.body].filter(Boolean).join('\n');
+                if (n.image) {
+                    _noticeImageBase64 = n.image;
+                    preview.src        = n.image;
+                    previewWrap.classList.remove('hidden');
+                } else {
+                    previewWrap.classList.add('hidden');
+                    preview.src = '';
+                }
+            } else {
+                modalTitle.textContent = '新增公告';
+                idInput.value          = '';
+                bodyInput.value        = '';
+                previewWrap.classList.add('hidden');
+                preview.src = '';
+            }
+            document.getElementById('notice-image-input').value = '';
+            modal.classList.remove('hidden');
+        };
+
+        window.closeNoticeModal = function() {
+            document.getElementById('notice-modal').classList.add('hidden');
+            _noticeImageBase64 = null;
+        };
+
+        window.handleNoticeImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            _loadNoticeImageFile(file);
+        };
+
+        window.handleNoticeImagePaste = function(event) {
+            // 只在 notice-modal 可見時才處理
+            const modal = document.getElementById('notice-modal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            const items = event.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    event.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) _loadNoticeImageFile(file);
+                    break;
+                }
+            }
+        };
+
+        // 通用：讀取圖片 File → base64 並更新預覽
+        function _loadNoticeImageFile(file) {
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('圖片大小請勿超過 2MB');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                _noticeImageBase64 = e.target.result;
+                const preview = document.getElementById('notice-image-preview');
+                const previewWrap = document.getElementById('notice-image-preview-wrap');
+                preview.src = _noticeImageBase64;
+                previewWrap.classList.remove('hidden');
+                showToast('圖片已載入 🖼️');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.clearNoticeImage = function() {
+            _noticeImageBase64 = null;
+            const preview = document.getElementById('notice-image-preview');
+            const previewWrap = document.getElementById('notice-image-preview-wrap');
+            preview.src = '';
+            previewWrap.classList.add('hidden');
+            document.getElementById('notice-image-input').value = '';
+        };
+
+        window.saveNotice = function() {
+            const rawVal   = (document.getElementById('notice-input-body').value || '').trim();
+            const idVal    = document.getElementById('notice-edit-id').value;
+
+            if (!rawVal && !_noticeImageBase64) {
+                showToast('請輸入公告內容或上傳圖片');
+                return;
+            }
+
+            const entry = {
+                title:     '',
+                body:      rawVal,
+                image:     _noticeImageBase64 || '',
+                createdAt: Date.now(),
+                readBy:    []
+            };
+
+            // 取前 20 字作日誌摘要
+            const logPreview = rawVal.slice(0, 20) + (rawVal.length > 20 ? '…' : '');
+            const actor = claimedIdentity || '管理員';
+            let logMsg = '';
+            if (idVal !== '' && notices[Number(idVal)]) {
+                entry.createdAt = notices[Number(idVal)].createdAt;
+                entry.readBy    = notices[Number(idVal)].readBy || [];
+                notices[Number(idVal)] = entry;
+                logMsg = `${actor} 編輯了公告「${logPreview}」`;
+            } else {
+                notices.unshift(entry);
+                logMsg = `${actor} 新增了公告「${logPreview}」`;
+            }
+
+            appendLog('notice', claimedIdentity || '管理員', logMsg);
+            closeNoticeModal();
+            renderNotices();
+            uploadToCloud();
+            showToast('公告已儲存 📢');
+        };
+
+        window.deleteNotice = function(idx) {
+            showCustomConfirm('刪除公告', '確定要刪除這則公告嗎？此操作無法還原。', () => {
+                const actor2  = claimedIdentity || '管理員';
+                const preview = (notices[idx]?.body || notices[idx]?.title || '').slice(0, 20);
+                notices.splice(idx, 1);
+                appendLog('notice', actor2, `${actor2} 刪除了公告「${preview || '（無內容）'}」`);
+                renderNotices();
+                uploadToCloud();
+                showToast('公告已刪除');
+            });
+        };
 
         function clearSelectedPreLeaveDays() {
             selectedPreLeaveDays = [];
@@ -2447,15 +3771,13 @@
             if (!memberSelect || !calContainer || !calTitle) return;
             const { currentYear: y, currentMonth: m } = appConfig;
             calTitle.innerText = `${y}年${m}月`;
-            memberSelect.innerHTML = members.map(name => `<option value="${name}">${name}</option>`).join('');
+            memberSelect.innerHTML = students.map(name => `<option value="${name}">${name}</option>`).join('');
             
-            // 👤 智慧預假選取鎖定防護
-            if (claimedIdentity && !isAdminMode) {
+            // 預設選取自己認領的身分（可自行更改）
+            if (claimedIdentity) {
                 memberSelect.value = claimedIdentity;
-                memberSelect.disabled = true;
-            } else {
-                memberSelect.disabled = false;
             }
+            memberSelect.disabled = false;
 
             const daysInMonth = new Date(y, m, 0).getDate();
             const firstDayIndex = new Date(y, m - 1, 1).getDay();
@@ -2551,15 +3873,9 @@
                     : `${item.startDay} - ${item.endDay}日`;
                 const idsPayload = item.rawIds.join(',');
                 
-                // 👤 預假刪除按鈕鎖定：非本人且非管理員則不允許刪除
-                const canDelete = isAdminMode || claimedIdentity === item.member;
-                const deleteBtnHtml = canDelete ? `
+                const deleteBtnHtml = `
                     <button onclick="deletePreLeaveSegment('${idsPayload}')" class="w-8 h-8 text-[#AFCDA8] hover:text-red-500 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors">
                         <i class="fas fa-trash-alt text-sm"></i>
-                    </button>
-                ` : `
-                    <button onclick="showToast('🚫 您只能刪除屬於您自己的預假登記！')" class="w-8 h-8 text-gray-200 cursor-not-allowed flex items-center justify-center">
-                        <i class="fas fa-lock text-xs"></i>
                     </button>
                 `;
 
@@ -2581,6 +3897,7 @@
         }
 
         window.addPreLeaveRecord = function() {
+            if (!requireIdentity()) return;
             const member = document.getElementById('pre-leave-member-select').value;
             const noteInput = document.getElementById('pre-leave-note-input');
             const note = noteInput.value.trim();
@@ -2591,12 +3908,6 @@
             }
             if (!member) {
                 showToast("請選擇預假成員！");
-                return;
-            }
-
-            // 👤 預假登記本人權限安全檢查
-            if (!isAdminMode && claimedIdentity !== member) {
-                showToast(`🚫 權限鎖定：您目前的身分是【${claimedIdentity}】，只能為自己登記預假喔！`);
                 return;
             }
 
@@ -2640,6 +3951,7 @@
         }
 
         window.deletePreLeaveSegment = function(idsString) {
+            if (!requireIdentity()) return;
             const ids = idsString.split(',');
             if (ids.length === 0) return;
             // 先記錄將被刪除的資訊，供日誌使用
@@ -2691,8 +4003,22 @@
             hHtml += `<th class="sticky-col-total border-b" style="${thBase}width:70px;min-width:70px;padding:0 6px;font-size:11px;">總天數</th></tr>`;
             header.innerHTML = hHtml;
 
-            // ── 表身：一列一人 ──
-            body.innerHTML = members.map(name => {
+            // ── 梯次備註查找表：{ dateKey: { memberName: eventName } } ──
+            const shiftNoteMap = {};
+            (shiftEvents || []).forEach(ev => {
+                Object.entries(ev.registrations || {}).forEach(([member, dates]) => {
+                    dates.forEach(dk => {
+                        if (!shiftNoteMap[dk]) shiftNoteMap[dk] = {};
+                        // 若同一人同日有多個梯次，以逗號串接
+                        shiftNoteMap[dk][member] = shiftNoteMap[dk][member]
+                            ? shiftNoteMap[dk][member] + '、' + ev.name
+                            : ev.name;
+                    });
+                });
+            });
+
+            // ── 表身：只顯示學生（老師不列入放假登記）──
+            body.innerHTML = students.map(name => {
                 let offDaysCount = 0;
                 const isClaimed = claimedIdentity === name;
                 const stickyStyle = isClaimed
@@ -2716,9 +4042,11 @@
                                  title="${name} 預假備註：${preLeaveObj.note}">休</div>
                         </td>`;
                     } else {
+                        const shiftNote = (shiftNoteMap[dKey] || {})[name];
                         row += `<td class="p-0 border-b border-l border-gray-100">
                             <div onclick="toggleLeave('${dKey}','${name}')"
-                                 class="leave-cell ${isManualOff ? 'is-off text-xs' : ''}">${isManualOff ? '休' : ''}</div>
+                                 class="leave-cell ${isManualOff ? 'is-off text-xs' : ''}"
+                                 ${isManualOff && shiftNote ? `title="梯次：${shiftNote}"` : ''}>${isManualOff ? '休' : ''}</div>
                         </td>`;
                     }
                 }
@@ -2737,7 +4065,7 @@
                 const preLeaveList  = preLeaveRecords.filter(r => r.dateKey === dKey).map(r => r.member);
                 const allOffForDay  = Array.from(new Set([...manualOffList, ...preLeaveList]));
                 const offCount  = allOffForDay.length;
-                const workCount = members.length - offCount;
+                const workCount = students.length - offCount;
 
                 if (offCount >= appConfig.overThreshold) {
                     const listPayload = JSON.stringify(allOffForDay).replace(/"/g, '&quot;');
@@ -2813,10 +4141,7 @@
 
         // 儲存自定義任務模組
         window.saveModules = function() {
-            if (!isAdminMode) {
-                showToast("🔑 權限鎖定：自定義任務模組為敏感權限，請先啟用管理員模式！");
-                return;
-            }
+            if (!requireIdentity()) return;
             Object.keys(scheduleModules).forEach(key => {
                 const inputs = document.querySelectorAll(`.task-input-${key}`);
                 if (inputs.length > 0) {
@@ -2829,13 +4154,11 @@
             renderAnalysis();
             uploadToCloud();
             showToast("任務模組設定已儲存");
+            appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 儲存了任務模組設定`);
         }
 
         window.addNewModule = function() {
-            if (!isAdminMode) {
-                showToast("🔑 需要管理員模式才能新增人數模式！");
-                return;
-            }
+            if (!requireIdentity()) return;
             const input = prompt("請輸入新增的在崗人數（例如：7）：");
             if (!input) return;
             const count = parseInt(input.trim());
@@ -2851,15 +4174,13 @@
             scheduleModules[key] = Array.from({ length: count }, (_, i) => `任務 ${i + 1}`);
             renderModulesEditor();
             showToast(`已新增 ${count} 人在崗模式（共 ${count} 項任務），請填入任務內容後按「儲存」`);
+            appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 新增了 ${count} 人在崗任務模式`);
         };
 
         let _currentEditModuleKey = null;
 
         window.openModuleEditor = function(key) {
-            if (!isAdminMode) {
-                showToast("🔑 需要管理員模式才能編輯任務模組！");
-                return;
-            }
+            if (!requireIdentity()) return;
             _currentEditModuleKey = key;
             const tasks = scheduleModules[key] || [];
             document.getElementById('module-edit-title').innerText = `${key} 人在崗模式 · 任務編輯`;
@@ -2910,22 +4231,28 @@
             renderAnalysis();
             uploadToCloud();
             showToast(`${_currentEditModuleKey} 人模式已更新`);
+            appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 編輯了 ${_currentEditModuleKey} 人在崗任務模式`);
             closeModuleEditModal();
         };
 
         window.deleteModule = function(key) {
-            if (!isAdminMode) {
-                showToast("🔑 需要管理員模式才能刪除人數模式！");
-                return;
-            }
-            delete scheduleModules[key];
-            allTaskNames = Object.keys(scheduleModules)
-                .sort((a, b) => Number(b) - Number(a))
-                .flatMap(k => scheduleModules[k] || []);
-            renderModulesEditor();
-            renderAnalysis();
-            uploadToCloud();
-            showToast(`已刪除 ${key} 人模式`);
+            if (!requireIdentity()) return;
+            const taskCount = (scheduleModules[key] || []).filter(t => t).length;
+            showCustomConfirm(
+                `刪除 ${key} 人在崗模式`,
+                `確定要刪除「${key} 人在崗模式」嗎？\n目前已設定 ${taskCount} 項任務名稱將一併移除，此操作無法復原。`,
+                () => {
+                    delete scheduleModules[key];
+                    allTaskNames = Object.keys(scheduleModules)
+                        .sort((a, b) => Number(b) - Number(a))
+                        .flatMap(k => scheduleModules[k] || []);
+                    renderModulesEditor();
+                    renderAnalysis();
+                    uploadToCloud();
+                    showToast(`已刪除 ${key} 人模式`);
+                    appendLog('member', claimedIdentity || '成員', `${claimedIdentity || '成員'} 刪除了 ${key} 人在崗任務模式`);
+                }
+            );
         };
 
         // 任務分析面板（全動態單一表格）
@@ -2935,16 +4262,24 @@
             if (!thead || !matrixBody) return;
 
             const stdKeys = ["6", "5", "4", "3"];
-            // 列顏色：同色系 #f3f6f3→#7A8F81，人數越多越淺
-            const modeColorMap = {
-                "6": { bg: '#EAF2E8', text: '#3D5E39' },
-                "5": { bg: '#D8E8D4', text: '#335430' },
-                "4": { bg: '#C4DABD', text: '#2A4826' },
-                "3": { bg: '#AFCDA8', text: '#213C1E' },
-            };
-            const customModeColor = { bg: '#96BC8E', text: '#183010' };
-            const emptyCell = { bg: '#E2EDE0', text: '#7A9876' };
+            // 漸層色板：同系莫蘭迪霧感，人數越多越深、越少越淺（柔和不突兀）
+            const gradientPalette = [
+                { bg: '#47604F', text: '#ffffff' }, // 最多人：深煙霧綠
+                { bg: '#5A7363', text: '#ffffff' }, // 深鼠尾草
+                { bg: '#6D8776', text: '#ffffff' }, // 中段鼠尾草
+                { bg: '#809A88', text: '#ffffff' }, // 標準霧綠（接近導覽列色）
+                { bg: '#96ADA0', text: '#ffffff' }, // 灰綠
+                { bg: '#ADBFB4', text: '#263830' }, // 淺霧綠
+                { bg: '#C3D2C9', text: '#263830' }, // 霧白綠
+                { bg: '#D9E4DE', text: '#263830' }, // 最少人：極淺霧綠
+            ];
+            const emptyCell = { bg: '#EBF0EC', text: '#A0B0A6' };
             const allKeys = Object.keys(scheduleModules).sort((a, b) => Number(b) - Number(a));
+            // 依人數由多到少自動分配漸層色（支援任意模式數量）
+            const modeColorMap = {};
+            allKeys.forEach((key, idx) => {
+                modeColorMap[key] = gradientPalette[Math.min(idx, gradientPalette.length - 1)];
+            });
 
             // 計算最大欄數
             const maxCols = Math.max(6, ...allKeys.map(k => (scheduleModules[k] || []).length));
@@ -2953,7 +4288,7 @@
             let statsByTask = {};
             let statsByCat = {};
             const _allTasks = Object.values(scheduleModules).flat();
-            members.forEach(m => {
+            students.forEach(m => {
                 statsByTask[m] = {};
                 statsByCat[m] = {};
                 for (let i = 0; i < maxCols; i++) statsByCat[m][i] = 0;
@@ -2977,8 +4312,8 @@
             });
 
             // 平均天數
-            const totals = members.map(m => Object.values(statsByTask[m]).reduce((s, v) => s + (v || 0), 0));
-            const avg = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / members.length : 0;
+            const totals = students.map(m => Object.values(statsByTask[m]).reduce((s, v) => s + (v || 0), 0));
+            const avg = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / students.length : 0;
             document.getElementById('avg-info').innerHTML = `
                 <span class="text-xs font-bold text-gray-400">平均分配天數:</span>
                 <span class="text-xl font-black text-gray-700 ml-1">${avg.toFixed(1)}</span>`;
@@ -2989,7 +4324,7 @@
                 const tasks = scheduleModules[key] || [];
                 if (tasks.length === 0) return;
                 const isCustom = !stdKeys.includes(key);
-                const mc = isCustom ? customModeColor : (modeColorMap[key] || { bg: '#E5E7EB', text: '#374151' });
+                const mc = modeColorMap[key] || gradientPalette[gradientPalette.length - 1];
 
                 let cells = '';
                 if (isCustom) {
@@ -3024,8 +4359,8 @@
                 </tr>`;
             thead.innerHTML = theadHtml;
 
-            // tbody：成員資料行
-            matrixBody.innerHTML = members.map(m => `
+            // tbody：只顯示學生（老師不列入任務分析）
+            matrixBody.innerHTML = students.map(m => `
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="p-3 bg-slate-100 border border-slate-200 text-slate-800 font-bold sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">${m}</td>
                     ${Array.from({ length: maxCols }, (_, col) => {
@@ -3050,7 +4385,7 @@
                 let dayHtml = `<div class="calendar-day"><div class="day-label ${isWeekend ? 'text-red-500 bg-red-50' : 'text-gray-700'}"><span>${d} <span class="text-[10px] opacity-40 uppercase">${["SUN","MON","TUE","WED","THU","FRI","SAT"][dateObj.getDay()]}</span></span></div><div class="flex-1 py-1">`;
                 if (tasks) {
                     tasks.forEach(t => { 
-                        dayHtml += `<div class="task-strip"><span class="task-name">${t.ruleName}</span><span class="task-user">${t.userName}</span></div>`; 
+                        dayHtml += `<div class="task-strip" title="${t.ruleName}　${t.userName}"><span class="task-name">${t.ruleName}</span><span class="task-user">${t.userName}</span></div>`;
                     });
                 } else {
                     dayHtml += `<div class="h-full flex items-center justify-center text-[10px] text-gray-300 italic">人力不足</div>`;
@@ -3061,6 +4396,7 @@
 
         // Backtracking 月度公平排班演算法
         window.runAutoScheduleFullMonthAndSave = function() {
+            if (!requireIdentity()) return;
             const { currentYear: y, currentMonth: m } = appConfig;
             const daysInMonth = new Date(y, m, 0).getDate();
             const newMonthlyData = {};
@@ -3072,7 +4408,8 @@
             const _maxCatIdx = Math.max(5, ...Object.keys(scheduleModules).flatMap(k =>
                 (scheduleModules[k] || []).map((_, i) => getCategoryIndex(k, i))
             ));
-            members.forEach(mem => {
+            // 排班只排學生，老師不列入
+            students.forEach(mem => {
                 categoryTaskCount[mem] = {};
                 lastTakenDayByCat[mem] = {};
                 for (let i = 0; i <= _maxCatIdx; i++) {
@@ -3086,20 +4423,25 @@
             for (let d = 1; d <= daysInMonth; d++) {
                 const dKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const offList = leaveData[dKey] || [];
-                const available = members.filter(member => !offList.includes(member));
+                // 每天先做隨機洗牌，確保每次生成排班結果不同
+                const available = students.filter(member => !offList.includes(member))
+                    .sort(() => Math.random() - 0.5);
                 
-                if (available.length < 3) { 
-                    newMonthlyData[dKey] = null; 
-                    continue; 
+                if (available.length < 3) {
+                    newMonthlyData[dKey] = null;
+                    continue;
                 }
 
                 const _sortedModKeys = Object.keys(scheduleModules)
                     .map(Number).filter(n => !isNaN(n) && n >= 3)
                     .sort((a, b) => b - a);
-                let moduleKey = String(_sortedModKeys[_sortedModKeys.length - 1] || 3);
+
+                // 找出能套用的最大模式；若連最小模式都塞不下，跳過此天
+                let moduleKey = null;
                 for (const _mk of _sortedModKeys) {
                     if (available.length >= _mk) { moduleKey = String(_mk); break; }
                 }
+                if (!moduleKey) { newMonthlyData[dKey] = null; continue; }
                                  
                 const currentTasks = scheduleModules[moduleKey];
                 const K = currentTasks.length;
@@ -3107,9 +4449,10 @@
                 let bestAssignment = null;
                 let minCost = Infinity;
 
-                function search(taskIndex, currentAssignment, usedMembers, currentCost) {
-                    if (currentCost >= minCost) return; 
-                    
+                // externalCooldown：所有外部冷卻天數（嚴格=3，放寬=0）
+                const search = (taskIndex, currentAssignment, usedMembers, currentCost, externalCooldown) => {
+                    if (currentCost >= minCost) return;
+
                     if (taskIndex === K) {
                         minCost = currentCost;
                         bestAssignment = [...currentAssignment];
@@ -3118,33 +4461,39 @@
 
                     const catIdx = getCategoryIndex(moduleKey, taskIndex);
                     const taskName = currentTasks[taskIndex];
-                    const isExternalTask = taskName.startsWith('所有外部');
+                    const isExternalTask = taskName.includes('所有外部');
                     for (let mVal of available) {
                         if (usedMembers.has(mVal)) continue;
 
-                        // 所有外部冷卻規則：距上次所有外部任務必須至少隔兩天（含休假日）
-                        if (isExternalTask && (d - lastExternalDay[mVal]) < 2) continue;
+                        // 所有外部冷卻規則（可放寬）
+                        if (isExternalTask && (d - lastExternalDay[mVal]) < externalCooldown) continue;
 
                         let cost = categoryTaskCount[mVal][catIdx] * 1000;
                         const daysSinceLast = d - lastTakenDayByCat[mVal][catIdx];
-                        
-                        if (daysSinceLast === 1) cost += 1000000; 
-                        else if (daysSinceLast === 2) cost += 100000; 
-                        
-                        cost += totalWorkingDays[mVal] * 10; 
-                        cost -= lastTakenDayByCat[mVal][catIdx] * 0.1; 
+
+                        if (daysSinceLast === 1) cost += 1000000;
+                        else if (daysSinceLast === 2) cost += 100000;
+
+                        cost += totalWorkingDays[mVal] * 10;
+                        cost -= lastTakenDayByCat[mVal][catIdx] * 0.1;
 
                         usedMembers.add(mVal);
                         currentAssignment.push(mVal);
-                        
-                        search(taskIndex + 1, currentAssignment, usedMembers, currentCost + cost);
-                        
-                        currentAssignment.pop(); 
+
+                        search(taskIndex + 1, currentAssignment, usedMembers, currentCost + cost, externalCooldown);
+
+                        currentAssignment.pop();
                         usedMembers.delete(mVal);
                     }
-                }
+                };
 
-                search(0, [], new Set(), 0);
+                // 第一次：嚴格冷卻（隔2天）
+                search(0, [], new Set(), 0, 3);
+                // 若失敗（符合外部資格的人不夠），放寬冷卻重試，避免出現「待定」
+                if (!bestAssignment) {
+                    minCost = Infinity;
+                    search(0, [], new Set(), 0, 0);
+                }
 
                 const dayPlan = [];
                 if (bestAssignment) {
@@ -3157,7 +4506,7 @@
                         lastTakenDayByCat[picked][catIdx] = d;
                         totalWorkingDays[picked]++;
                         // 記錄所有外部任務的最後日期，供冷卻規則使用
-                        if (taskName.startsWith('所有外部')) lastExternalDay[picked] = d;
+                        if (taskName.includes('所有外部')) lastExternalDay[picked] = d;
                     });
                 } else {
                     currentTasks.forEach(taskName => {
@@ -3166,31 +4515,32 @@
                 }
                 newMonthlyData[dKey] = dayPlan;
             }
+            _lastScheduleGenTime = Date.now(); // 記錄生成時間，防 Firebase 舊快照覆蓋
             monthAssignments = newMonthlyData;
             renderCalendar();
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('calendar-view').classList.remove('hidden');
 
+            // 按鈕短暫回饋「✓ 排班完成」
+            const _schedBtn = document.getElementById('main-schedule-btn');
+            if (_schedBtn) {
+                const _origHtml = _schedBtn.innerHTML;
+                _schedBtn.innerHTML = '<i class="fas fa-check mr-2"></i>排班完成';
+                _schedBtn.style.filter = 'brightness(0.92)';
+                setTimeout(() => { _schedBtn.innerHTML = _origHtml; _schedBtn.style.filter = ''; }, 1200);
+            }
+
             uploadToCloud();
-            appendLog('schedule', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 已生成 ${appConfig.currentYear} 年 ${appConfig.currentMonth} 月排班表`);
+            appendLog('schedule', claimedIdentity || '成員', `${claimedIdentity || '成員'} 已生成 ${appConfig.currentYear} 年 ${appConfig.currentMonth} 月排班表`);
         }
 
         // ════════════════════════════════════════
         // 🏷️ 群組管理
         // ════════════════════════════════════════
 
-        // 🔒 群組 tab 僅管理員可見
+        // 群組齒輪鍵對所有成員開放，不需管理員權限
         function updateGroupTabVisibility() {
-            const btn = document.getElementById('btn-groups');
-            if (!btn) return;
-            btn.style.display = isAdminMode ? '' : 'none';
-            // 若目前正在群組頁且退出管理員，自動跳回工作台
-            if (!isAdminMode) {
-                const groupsTab = document.getElementById('tab-groups');
-                if (groupsTab && !groupsTab.classList.contains('hidden')) {
-                    switchTab('dashboard');
-                }
-            }
+            // 齒輪鍵永遠可見，無需根據 isAdminMode 控制
         }
 
         // ☁️ 群組登錄簿雲端同步（獨立 registry 文件，所有裝置共用）
@@ -3213,6 +4563,7 @@
                 saveLocalData('avocado_groups', groups);
                 renderGroupsTab();
                 updateGroupNavDisplay();
+                renderGroupSelectOverlay(); // 若群組選擇頁正開著，同步更新清單
             }, (err) => { console.error('群組登錄簿同步錯誤:', err); });
         }
 
@@ -3244,7 +4595,7 @@
             const nameEl = document.getElementById('active-group-name');
             const displayEl = document.getElementById('active-group-display');
             if (nameEl && g) nameEl.innerText = g.name;
-            if (displayEl) displayEl.classList.toggle('hidden', groups.length <= 1);
+            if (displayEl) displayEl.classList.toggle('hidden', groups.length === 0);
         }
 
         function renderGroupsTab() {
@@ -3296,7 +4647,7 @@
         window.closeAddGroupModal = function() {
             document.getElementById('add-group-modal').classList.add('hidden');
         };
-        window.confirmAddGroup = function() {
+        window.confirmAddGroup = async function() {
             const name = document.getElementById('new-group-name-input').value.trim();
             if (!name) { showToast('⚠️ 請輸入群組名稱'); return; }
             const newId = 'group-' + Date.now() + '-' + Math.random().toString(36).substr(2,5);
@@ -3305,11 +4656,87 @@
             closeAddGroupModal();
             renderGroupsTab();
             updateGroupNavDisplay();
-            syncGroupsToCloud();
-            showToast(`✅ 群組「${name}」已建立，點擊切換按鈕即可使用`);
+            renderGroupSelectOverlay(); // 若群組選擇頁正開著，即時更新卡片
+            showToast(`⏳ 正在同步群組「${name}」…`);
+            await syncGroupsToCloud();
+            showToast(`✅ 群組「${name}」已建立並同步給所有人`);
+        };
+
+        // ── 以 ID 加入群組 ──
+        window.openJoinGroupModal = function() {
+            document.getElementById('join-group-id-input').value   = '';
+            document.getElementById('join-group-name-input').value = '';
+            const status = document.getElementById('join-group-status');
+            status.className = 'hidden text-xs font-bold mb-3 px-3 py-2 rounded-xl';
+            status.innerText = '';
+            document.getElementById('join-group-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('join-group-id-input')?.focus(), 100);
+        };
+        window.closeJoinGroupModal = function() {
+            document.getElementById('join-group-modal').classList.add('hidden');
+        };
+        window.confirmJoinGroup = async function() {
+            const rawId = document.getElementById('join-group-id-input').value.trim().replace(/^"+|"+$/g,'');
+            const name  = document.getElementById('join-group-name-input').value.trim();
+            const status = document.getElementById('join-group-status');
+            const btn    = document.getElementById('join-group-confirm-btn');
+
+            if (!rawId) { showToast('⚠️ 請貼上群組 ID'); return; }
+            if (!name)  { showToast('⚠️ 請輸入顯示名稱'); return; }
+
+            // 不允許重複加入
+            if (groups.find(g => g.id === rawId)) {
+                showToast('⚠️ 此群組 ID 已在清單中');
+                return;
+            }
+
+            // 顯示驗證中狀態
+            status.className = 'text-xs font-bold mb-3 px-3 py-2 rounded-xl';
+            status.style.background = '#F0F9F0'; status.style.color = '#5A7A56';
+            status.innerText = '⏳ 正在從雲端驗證 ID…';
+            btn.disabled = true;
+
+            let cloudName = null;
+            if (isCloudReady && db) {
+                try {
+                    const { doc, getDoc } = window.FirebaseCore;
+                    // 嘗試讀取 groups_registry 中的此 ID
+                    const regRef = doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'groups_registry');
+                    const snap   = await getDoc(regRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const found = (data.groups || []).find(g => g.id === rawId);
+                        if (found) cloudName = found.name;
+                    }
+                } catch(e) { /* 網路失敗時仍允許本機加入 */ }
+            }
+
+            btn.disabled = false;
+
+            if (cloudName) {
+                // 找到雲端記錄，用雲端名稱（若使用者沒改名就用雲端的）
+                const finalName = name || cloudName;
+                status.style.background = '#EAF2E8'; status.style.color = '#2E6030';
+                status.innerText = `✅ 已驗證！雲端名稱：「${cloudName}」`;
+                groups.push({ id: rawId, name: finalName, createdAt: Date.now() });
+            } else {
+                // 雲端找不到（可能網路離線或已刪除），仍允許本機加入
+                status.style.background = '#FEF9EC'; status.style.color = '#7A5C00';
+                status.innerText = '⚠️ 雲端無此記錄，仍以本機方式加入（連線後自動驗證）';
+                groups.push({ id: rawId, name, createdAt: Date.now() });
+            }
+
+            saveLocalData('avocado_groups', groups);
+            renderGroupsTab();
+            updateGroupNavDisplay();
+            renderGroupSelectOverlay();
+            await syncGroupsToCloud();
+            closeJoinGroupModal();
+            showToast(`✅ 已加入群組「${name}」，點選卡片即可進入`);
         };
 
         window.openRenameGroupModal = function(id, currentName) {
+            if (!requireIdentity()) return;
             try {
                 const inp = document.getElementById('rename-group-input');
                 const hidId = document.getElementById('rename-group-id');
@@ -3353,11 +4780,10 @@
             if (!group || groupId === appConfig.teamId) return;
 
             _isSwitchingGroup = true; // 🔒 啟動切換保護，禁止空資料覆寫 Firestore
-            showToast(`正在切換至「${group.name}」…`);
 
-            // 先儲存目前群組的資料
+            // 背景儲存目前群組資料，不阻塞 UI（fire-and-forget）
             if (isCloudReady && auth && auth.currentUser) {
-                try { await uploadToCloud(); } catch(e) {}
+                uploadToCloud().catch(() => {});
             }
 
             // 切換 teamId
@@ -3365,17 +4791,25 @@
             saveLocalData('avocado_active_group_id', groupId);
 
             // 重置記憶體資料
+            teachers              = [];
+            students              = [];
             members               = [];
             leaveData             = {};
             monthAssignments      = {};
             preLeaveRecords       = [];
+            notices               = [];
+            shiftEvents           = [];
             luckyDrawWinnersCount = {};
             operationLogs         = [];
             selectedPreLeaveDays  = [];
             currentDrawPool       = [];
             claimedIdentity       = '';
             isAdminMode           = false;
+            _isDrawInitiator      = false; // 切換群組後清除抽籤發起人旗標
+            _isDrawAnimating      = false; // 切換群組後清除動畫進行中旗標
+            document.getElementById('draw-broadcast-modal')?.classList.add('hidden');
             updateGroupTabVisibility();
+            updateIdentityDisplay(); // 更新假表頁身分狀態顯示
 
             // 重置 UI 狀態
             const adminBtn = document.getElementById('admin-mode-btn');
@@ -3402,12 +4836,14 @@
             }
 
             updateGroupNavDisplay();
+            applyGroupColor(groupId);   // 套用此群組的識別色
             renderGroupsTab();
             switchTab('dashboard');
             setTimeout(() => showToast(`✅ 已切換至「${group.name}」`), 600);
         };
 
         window.deleteGroup = function(groupId) {
+            if (!requireIdentity()) return;
             const group = groups.find(g => g.id === groupId);
             if (!group) return;
 
@@ -3416,7 +4852,7 @@
             const confirmTitle = isTestGroup ? '⚠️ 完整刪除測試群組' : '移除群組';
             const confirmMsg   = isTestGroup
                 ? `「${group.name}」是測試群組，確定要完整刪除嗎？\n\n將同步清除：\n・本機群組清單\n・Firestore 排班/成員/假表資料\n・groups_registry 登錄簿\n\n此操作無法復原。`
-                : `確定要從清單中移除「${group.name}」嗎？\n（只從本機清單移除，不刪除雲端資料，之後可重新輸入相同 ID 找回）`;
+                : `確定要從清單中移除「${group.name}」嗎？\n只從本機清單移除，不刪除雲端資料。\n\n群組 ID（請先記下）：\n${group.id}\n\n日後可憑此 ID 重新加入找回資料。`;
 
             showCustomConfirm(confirmTitle, confirmMsg, async () => {
                 // 1. 本機清單移除
@@ -3472,13 +4908,84 @@
             renderPreLeaveList();
             renderDrawQuickSelect();
             renderIdentitySelect();
-            
+            updateIdentityDisplay();
+            applyGroupColor(appConfig.teamId); // 還原本機儲存的群組識別色
+
             initGroups();
+
+            // 每次開啟都顯示群組選擇入口頁；
+            // 若已有儲存的群組 → 允許直接關閉（右上角 ✕）；首次使用 → 必須選一個
+            const _initSavedGroup = loadLocalData('avocado_active_group_id', '');
+            showGroupSelectOverlay(!!_initSavedGroup);
 
             if (window.FirebaseCore && typeof window.initFirebase === 'function') {
                 window.initFirebase();
             }
         };
     </script>
+
+    <!-- 🏠 群組選擇入口頁 Overlay -->
+    <div id="group-select-overlay" class="fixed inset-0 z-[900] flex-col items-center justify-center px-4" style="display:none;background:linear-gradient(160deg,#cfe8cb 0%,#f0f5f0 55%,#e2efe2 100%)">
+        <!-- 關閉按鈕（有已選群組時才顯示） -->
+        <button id="group-select-close-btn" onclick="hideGroupSelectOverlay()" class="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-xl font-black text-lg transition hover:bg-black/10 hidden" style="color:rgba(46,74,42,0.45)">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- ══ 步驟一：選擇群組 ══ -->
+        <div id="gso-step-group" class="w-full flex flex-col items-center">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-3 select-none">🥑</div>
+                <h1 id="group-select-app-title" class="text-3xl font-black tracking-tight" style="color:#2E4A2A">牛油果排班</h1>
+                <p class="text-sm font-bold mt-2" style="color:#7A8F81">請選擇您所在的群組以繼續</p>
+            </div>
+            <div id="group-select-cards" class="w-full space-y-3" style="max-width:420px">
+                <div class="text-center py-12">
+                    <i class="fas fa-circle-notch fa-spin text-3xl" style="color:#AFCDA8"></i>
+                    <p class="text-sm font-bold mt-4" style="color:#AFCDA8">正在從雲端載入群組清單…</p>
+                </div>
+            </div>
+            <p class="text-[11px] font-bold mt-7 text-center" style="color:#AFCDA8;max-width:320px">所有成員均可新增、重命名或刪除群組<br>右上角齒輪鍵可隨時開啟此頁面</p>
+        </div>
+
+        <!-- ══ 步驟二：認領身分 ══ -->
+        <div id="gso-step-identity" class="w-full flex-col items-center" style="display:none;max-width:420px;margin:0 auto;overflow-y:auto;max-height:calc(100vh - 80px)">
+            <!-- 返回 -->
+            <button onclick="backToGroupStep()" class="self-start mb-5 flex items-center gap-1.5 text-sm font-black transition-colors" style="color:rgba(46,74,42,0.45)" onmouseover="this.style.color='#2E4A2A'" onmouseout="this.style.color='rgba(46,74,42,0.45)'">
+                <i class="fas fa-chevron-left text-xs"></i> 重新選擇群組
+            </button>
+            <!-- 標題 -->
+            <div class="text-center mb-7 w-full">
+                <div class="text-4xl mb-2 select-none">👋</div>
+                <h2 class="text-2xl font-black" style="color:#2E4A2A">請認領您的身分</h2>
+                <p class="text-sm font-bold mt-1.5" style="color:#7A8F81">進入「<span id="gso-group-name-display">群組</span>」前，請選擇您的名字</p>
+            </div>
+            <!-- 成員選取（老師 / 學生 optgroup） -->
+            <select id="gso-identity-select"
+                class="w-full px-4 py-3.5 rounded-2xl font-black text-base outline-none appearance-none cursor-pointer mb-6"
+                style="background:white;border:2px solid #AFCDA8;color:#2E4A2A">
+                <option value="">── 請選擇您的名字 ──</option>
+            </select>
+            <!-- 新群組尚無成員：快速入口提示卡 -->
+            <div id="gso-no-members-hint" class="hidden w-full mb-6 rounded-2xl p-5 text-center flex flex-col items-center gap-3" style="background:linear-gradient(135deg,#F3F6F3,#EAF2E8);border:2px dashed #AFCDA8">
+                <div style="font-size:2rem">🌱</div>
+                <p class="font-black text-sm" style="color:#4f6e57">此群組尚無成員名單</p>
+                <p class="text-xs font-bold" style="color:#7A8F81">請先新增老師或學生，才能選擇名字進入</p>
+                <button onclick="openMemberModalFromOverlay()"
+                    class="mt-1 px-5 py-2.5 rounded-xl font-black text-sm text-white transition-all active:scale-[0.97]"
+                    style="background:linear-gradient(135deg,#7A8F81 0%,#A3B5A8 100%);box-shadow:0 3px 12px rgba(122,143,129,0.35)"
+                    onmouseover="this.style.filter='brightness(1.07)'" onmouseout="this.style.filter=''">
+                    <i class="fas fa-gear mr-1.5"></i>立即新增成員
+                </button>
+            </div>
+            <!-- 進入 -->
+            <button id="gso-enter-btn" onclick="enterAppFromOverlay()"
+                class="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-[0.97]"
+                style="background:linear-gradient(135deg,#7A8F81 0%,#A3B5A8 100%);box-shadow:0 4px 16px rgba(122,143,129,0.35)"
+                onmouseover="this.style.filter='brightness(1.07)'" onmouseout="this.style.filter=''">
+                <i class="fas fa-arrow-right mr-2"></i>進入
+            </button>
+            <p class="text-[10px] font-bold mt-5 text-center" style="color:#AFCDA8;max-width:320px">選擇您的名字後即可進入使用所有功能</p>
+        </div>
+    </div>
 </body>
 </html>
