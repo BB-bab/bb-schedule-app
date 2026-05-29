@@ -4807,6 +4807,11 @@
             isAdminMode           = false;
             _isDrawInitiator      = false; // 切換群組後清除抽籤發起人旗標
             _isDrawAnimating      = false; // 切換群組後清除動畫進行中旗標
+
+            // 立即將清空後的狀態寫入 localStorage，防止舊群組的預假/公告/梯次等資料
+            // 在 Firebase 回應前被誤讀（尤其是預假全覽跨群組污染問題）
+            saveAllDataToLocalStorage();
+
             document.getElementById('draw-broadcast-modal')?.classList.add('hidden');
             updateGroupTabVisibility();
             updateIdentityDisplay(); // 更新假表頁身分狀態顯示
