@@ -421,6 +421,13 @@
                     <p class="text-[10px] text-gray-400 font-bold">自動避開連日重複任務</p>
                 </div>
             </div>
+            <!-- 👤 成員篩選膠囊列 -->
+            <div id="member-filter-bar" class="hidden">
+                <div id="member-filter-pills" class="flex gap-1.5 items-center overflow-x-auto pb-1 py-0.5" style="scrollbar-width:none"></div>
+            </div>
+            <!-- 📋 個人月覽摘要卡 -->
+            <div id="member-summary-card" class="hidden"></div>
+
             <div id="calendar-view" class="hidden"><div class="calendar-grid" id="calendar-container"></div></div>
             <div id="empty-state" class="h-[50vh] flex flex-col items-center justify-center text-gray-300">
                 <i class="fas fa-magic text-6xl opacity-10 mb-6"></i>
@@ -1134,7 +1141,11 @@
                 <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
             </div>
             <p class="text-xs text-gray-400 font-bold mb-4">輸入群組名稱，建立後可在群組頁切換使用</p>
-            <input type="text" id="new-group-name-input" class="input-minimal w-full mb-4 font-black" placeholder="例：早班、晚班、A組…" maxlength="20">
+            <input type="text" id="new-group-name-input" class="input-minimal w-full mb-3 font-black" placeholder="例：早班-A組、晚班-B組…" maxlength="20">
+            <label class="text-[11px] font-black text-gray-400 mb-1 block">所屬分類（可選）</label>
+            <select id="new-group-category-input" class="input-minimal w-full mb-4 font-black">
+                <option value="">── 不分類 ──</option>
+            </select>
             <div class="flex gap-2">
                 <button onclick="closeAddGroupModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold text-xs transition">取消</button>
                 <button onclick="confirmAddGroup()" class="flex-1 text-white py-2.5 rounded-xl font-black text-xs transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">建立群組</button>
@@ -1155,6 +1166,55 @@
                 <button onclick="closeRenameGroupModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold text-xs transition">取消</button>
                 <button onclick="confirmRenameGroup()" class="flex-1 text-white py-2.5 rounded-xl font-black text-xs transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 🏷️ 新增／重命名分類 Modal -->
+    <div id="category-edit-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[960] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h4 id="category-edit-title" class="font-black text-base text-gray-800">新增分類</h4>
+                <button onclick="closeCategoryEditModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <input type="text" id="category-edit-input" class="input-minimal w-full mb-4 font-black" placeholder="輸入分類名稱，例：早班、晚班…" maxlength="16">
+            <input type="hidden" id="category-edit-id">
+            <div class="flex gap-2">
+                <button onclick="closeCategoryEditModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold text-xs transition">取消</button>
+                <button onclick="confirmCategoryEdit()" class="flex-1 text-white py-2.5 rounded-xl font-black text-xs transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚙️ 分類管理 Modal -->
+    <div id="cat-manage-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[955] hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100 flex flex-col" style="max-height:80vh">
+            <div class="flex items-center justify-between px-6 pt-5 pb-3 shrink-0">
+                <h4 class="font-black text-base text-gray-800">🏷️ 分類管理</h4>
+                <button onclick="closeCatManageModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <div id="cat-manage-body" class="overflow-y-auto flex-1 px-4 pb-2"></div>
+            <div class="px-4 pb-5 pt-3 shrink-0" style="border-top:1px solid #F0F4F0">
+                <button onclick="openAddCategoryFromManage()"
+                    class="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl font-black text-sm transition"
+                    style="background:rgba(122,143,129,0.08);color:#5A7A56;border:2px dashed #AFCDA8"
+                    onmouseover="this.style.background='rgba(122,143,129,0.16)'" onmouseout="this.style.background='rgba(122,143,129,0.08)'">
+                    <i class="fas fa-plus text-xs"></i> 新增分類
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🏷️ 設定群組分類 Modal -->
+    <div id="assign-category-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[955] hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full mx-4 shadow-2xl border border-gray-100">
+            <div class="flex items-center justify-between mb-1">
+                <h4 class="font-black text-base text-gray-800">🏷️ 設定分類</h4>
+                <button onclick="closeAssignCategoryModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
+            </div>
+            <p class="text-xs font-bold mb-4" style="color:#9CA3AF">群組：<span id="assign-cat-group-name" class="text-gray-600"></span></p>
+            <input type="hidden" id="assign-cat-group-id">
+            <div id="assign-cat-options" class="space-y-1.5 mb-4 max-h-60 overflow-y-auto"></div>
+            <button onclick="closeAssignCategoryModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2.5 rounded-xl font-black text-xs transition">關閉</button>
         </div>
     </div>
 
@@ -1254,6 +1314,8 @@
         // 📋 操作日誌（保留最近 30 天）
         let operationLogs = loadLocalData('avocado_logs', []);
         let groups = loadLocalData('avocado_groups', []);
+        let groupCategories = loadLocalData('avocado_group_categories', []);
+        let _groupCatFilter = 'all';   // 分類篩選藥丸狀態（'all' | catId | '__uncat__'）
 
         // 📅 預假專用資料架構（智慧儲存）
         let preLeaveRecords = loadLocalData('avocado_pre_leaves', []);
@@ -1285,6 +1347,7 @@
         let _isRenamingGroup = false;  // 群組重命名保護旗標，防止 onSnapshot 在 sync 完成前以舊資料覆蓋
         let _lastScheduleGenTime = 0;  // 最後一次生成排班的時間戳（防 Firebase 舊快照覆蓋）
         let _logTypeFilter   = '';     // 操作日誌標籤篩選（'' = 全部）
+        let _memberFilter    = '';     // 工作台成員篩選（'' = 全部）
 
         // 🎲 抽籤模組動態池狀態
         let currentDrawPool = [];
@@ -2507,81 +2570,143 @@
             }
 
             const _savedGroupColors = loadLocalData('avocado_group_colors', {});
-            container.innerHTML = [
-                ...groups.map(g => {
-                    const isActive = g.id === appConfig.teamId;
-                    const safeGname = (g.name || '').replace(/"/g, '&quot;');
-                    const activeColorKey = _savedGroupColors[g.id] || 'sage';
-                    // 6個識別色點
-                    const colorDots = Object.entries(GROUP_COLOR_THEMES).map(([key, theme]) => {
-                        const isSel = key === activeColorKey;
-                        return `<button onclick="event.stopPropagation();setGroupColor('${g.id}','${key}')"
-                            title="${theme.name}"
-                            style="width:13px;height:13px;border-radius:50%;background:${theme.from};flex-shrink:0;
-                                   border:${isSel ? '2px solid #2E4A2A' : '2px solid transparent'};
-                                   box-shadow:${isSel ? '0 0 0 1.5px '+theme.from : 'none'};
-                                   transition:transform 0.15s"
-                            onmouseover="this.style.transform='scale(1.35)'" onmouseout="this.style.transform='scale(1)'"></button>`;
-                    }).join('');
-                    return `<div class="w-full rounded-2xl transition-all overflow-hidden"
-                        style="background:${isActive ? '#EAF2E8' : 'white'};border:2px solid ${isActive ? '#7A8F81' : '#D8E8D4'};box-shadow:0 2px 12px rgba(122,143,129,0.08)">
-                        <div class="flex items-center gap-2 px-4 py-3">
-                            <!-- 主要點擊區 -->
-                            <button onclick="selectGroupAndEnter('${g.id}')"
-                                class="flex items-center gap-3 flex-1 min-w-0 text-left py-1 active:scale-[0.97] transition-transform">
-                                <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shrink-0"
-                                    style="background:${isActive ? '#7A8F81' : '#EAF2E8'};color:${isActive ? '#fff' : '#5A7A56'}">${g.name.charAt(0)}</div>
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-black text-base truncate" style="color:#2E4A2A">${g.name}</h4>
-                                    <p class="text-xs font-bold mt-0.5" style="color:${isActive ? '#7A8F81' : '#9CA3AF'}">${isActive ? '✦ 目前使用中' : '點此進入'}</p>
-                                </div>
-                                <i class="fas fa-chevron-right shrink-0 mr-1" style="color:${isActive ? '#7A8F81' : '#AFCDA8'}"></i>
-                            </button>
-                            <!-- 管理按鈕 -->
-                            <div class="flex items-center gap-1 shrink-0 border-l pl-2" style="border-color:${isActive ? '#AFCDA8' : '#E5E7EB'}">
-                                <button onclick="event.stopPropagation();openRenameGroupModal(this.dataset.gid,this.dataset.gname)"
-                                    data-gid="${g.id}" data-gname="${safeGname}"
-                                    class="w-8 h-8 flex items-center justify-center rounded-xl transition"
-                                    style="color:#9CA3AF"
-                                    onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
-                                    title="重命名">
-                                    <i class="fas fa-pen text-xs"></i>
-                                </button>
-                                ${groups.length > 1
-                                    ? `<button onclick="event.stopPropagation();deleteGroup('${g.id}')"
-                                        class="w-8 h-8 flex items-center justify-center rounded-xl transition"
-                                        style="color:#FCA5A5"
-                                        onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
-                                        title="移除此群組">
-                                        <i class="fas fa-trash-alt text-xs"></i>
-                                       </button>`
-                                    : `<div class="w-8 h-8"></div>`
-                                }
+
+            // ── 單張群組卡片 HTML ──
+            const _cardHtml = (g) => {
+                const isActive  = g.id === appConfig.teamId;
+                const safeGname = (g.name || '').replace(/"/g, '&quot;');
+                const activeColorKey = _savedGroupColors[g.id] || 'sage';
+                const colorDots = Object.entries(GROUP_COLOR_THEMES).map(([key, theme]) => {
+                    const isSel = key === activeColorKey;
+                    return `<button onclick="event.stopPropagation();setGroupColor('${g.id}','${key}')"
+                        title="${theme.name}"
+                        style="width:13px;height:13px;border-radius:50%;background:${theme.from};flex-shrink:0;
+                               border:${isSel ? '2px solid #2E4A2A' : '2px solid transparent'};
+                               box-shadow:${isSel ? '0 0 0 1.5px '+theme.from : 'none'};
+                               transition:transform 0.15s"
+                        onmouseover="this.style.transform='scale(1.35)'" onmouseout="this.style.transform='scale(1)'"></button>`;
+                }).join('');
+                return `<div class="w-full rounded-2xl transition-all overflow-hidden"
+                    style="background:${isActive ? '#EAF2E8' : 'white'};border:2px solid ${isActive ? '#7A8F81' : '#D8E8D4'};box-shadow:0 2px 12px rgba(122,143,129,0.08)">
+                    <div class="flex items-center gap-2 px-4 py-3">
+                        <button onclick="selectGroupAndEnter('${g.id}')"
+                            class="flex items-center gap-3 flex-1 min-w-0 text-left py-1 active:scale-[0.97] transition-transform">
+                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shrink-0"
+                                style="background:${isActive ? '#7A8F81' : '#EAF2E8'};color:${isActive ? '#fff' : '#5A7A56'}">${g.name.charAt(0)}</div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-black text-base truncate" style="color:#2E4A2A">${g.name}</h4>
+                                <p class="text-xs font-bold mt-0.5" style="color:${isActive ? '#7A8F81' : '#9CA3AF'}">${isActive ? '✦ 目前使用中' : '點此進入'}</p>
                             </div>
+                            <i class="fas fa-chevron-right shrink-0 mr-1" style="color:${isActive ? '#7A8F81' : '#AFCDA8'}"></i>
+                        </button>
+                        <!-- 管理按鈕 -->
+                        <div class="flex items-center gap-1 shrink-0 border-l pl-2" style="border-color:${isActive ? '#AFCDA8' : '#E5E7EB'}">
+                            <button onclick="event.stopPropagation();openRenameGroupModal(this.dataset.gid,this.dataset.gname)"
+                                data-gid="${g.id}" data-gname="${safeGname}"
+                                class="w-8 h-8 flex items-center justify-center rounded-xl transition"
+                                style="color:#9CA3AF"
+                                onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
+                                title="重命名"><i class="fas fa-pen text-xs"></i></button>
+                            ${groups.length > 1
+                                ? `<button onclick="event.stopPropagation();deleteGroup('${g.id}')"
+                                    class="w-8 h-8 flex items-center justify-center rounded-xl transition"
+                                    style="color:#FCA5A5"
+                                    onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
+                                    title="移除此群組"><i class="fas fa-trash-alt text-xs"></i></button>`
+                                : `<div class="w-8 h-8"></div>`
+                            }
                         </div>
-                        <!-- 識別色選擇列 -->
-                        <div class="flex items-center gap-2 px-4 pb-2.5" style="border-top:1px solid ${isActive ? 'rgba(122,143,129,0.2)' : '#F0F4F0'}">
-                            <span class="text-[9px] font-black tracking-wide mt-2" style="color:#AFCDA8">識別色</span>
-                            <div class="flex items-center gap-1.5 mt-2">${colorDots}</div>
-                        </div>
-                    </div>`;
-                }),
-                // 新增群組 + 以ID加入 按鈕列
-                `<div class="flex gap-2 w-full">
-                    <button onclick="openAddGroupModal()"
-                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
-                        style="background:rgba(122,143,129,0.08);color:#5A7A56;border:2px dashed #AFCDA8"
-                        onmouseover="this.style.background='rgba(122,143,129,0.16)'" onmouseout="this.style.background='rgba(122,143,129,0.08)'">
-                        <i class="fas fa-plus text-xs"></i> 新增群組
+                    </div>
+                    <!-- 識別色選擇列 -->
+                    <div class="flex items-center gap-2 px-4 pb-2.5" style="border-top:1px solid ${isActive ? 'rgba(122,143,129,0.2)' : '#F0F4F0'}">
+                        <span class="text-[9px] font-black tracking-wide mt-2" style="color:#AFCDA8">識別色</span>
+                        <div class="flex items-center gap-1.5 mt-2">${colorDots}</div>
+                    </div>
+                </div>`;
+            };
+
+            // ── 依分類分區渲染（全寬卡片 + 頂部篩選藥丸）──
+            const _hasCats = groupCategories.length > 0 && groups.some(g => g.category && groupCategories.find(c => c.id === g.category));
+            // 純裝飾分隔線（全部模式下）
+            const _catDivider = (label, isFirst, muted) => `
+                <div class="flex items-center gap-2 mb-2${isFirst ? '' : ' mt-5'}">
+                    <span class="text-[10px] font-black px-3 py-1 rounded-full shrink-0"
+                        style="background:${muted ? '#B0BAB5' : '#7A8F81'};color:white">${label}</span>
+                    <div class="flex-1 h-px" style="background:${muted ? '#D1D5DB' : '#AFCDA8'}"></div>
+                </div>`;
+
+            let parts = [];
+            if (_hasCats) {
+                const uncatG = groups.filter(g => !g.category || !groupCategories.find(c => c.id === g.category));
+                // ── 篩選藥丸列 ──
+                const _pill = (id, label) => {
+                    const isSel = _groupCatFilter === id;
+                    return `<button onclick="_setGroupCatFilter('${id}')"
+                        class="px-3 py-1 rounded-full text-[10px] font-black transition-all"
+                        style="background:${isSel ? '#7A8F81' : 'rgba(122,143,129,0.1)'};color:${isSel ? 'white' : '#5A7A56'};border:1.5px solid ${isSel ? '#7A8F81' : 'transparent'}">${label}</button>`;
+                };
+                let pillsHtml = `<div class="flex gap-1.5 flex-wrap mb-4 items-center">` + _pill('all', '全部');
+                groupCategories.forEach(cat => {
+                    if (groups.some(g => g.category === cat.id)) pillsHtml += _pill(cat.id, cat.name);
+                });
+                if (uncatG.length) pillsHtml += _pill('__uncat__', '未分類');
+                pillsHtml += `<button onclick="openCatManageModal()"
+                    class="ml-auto shrink-0 w-7 h-7 flex items-center justify-center rounded-xl transition"
+                    style="color:#9CA3AF"
+                    onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
+                    title="分類管理"><i class="fas fa-cog text-xs"></i></button>`;
+                pillsHtml += `</div>`;
+                parts.push(pillsHtml);
+
+                // ── 依選中的藥丸篩選顯示 ──
+                if (_groupCatFilter === 'all') {
+                    let isFirst = true;
+                    groupCategories.forEach(cat => {
+                        const catG = groups.filter(g => g.category === cat.id);
+                        if (!catG.length) return;
+                        parts.push(_catDivider(cat.name, isFirst, false));
+                        catG.forEach(g => parts.push(_cardHtml(g)));
+                        isFirst = false;
+                    });
+                    if (uncatG.length) {
+                        parts.push(_catDivider('未分類', isFirst, true));
+                        uncatG.forEach(g => parts.push(_cardHtml(g)));
+                    }
+                } else if (_groupCatFilter === '__uncat__') {
+                    uncatG.forEach(g => parts.push(_cardHtml(g)));
+                } else {
+                    groups.filter(g => g.category === _groupCatFilter).forEach(g => parts.push(_cardHtml(g)));
+                }
+            } else {
+                // 尚無分類時，顯示一個低調的入口按鈕
+                parts.push(`<div class="flex justify-end mb-2">
+                    <button onclick="openCatManageModal()"
+                        class="flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-xl transition"
+                        style="color:#AFCDA8"
+                        onmouseover="this.style.color='#7A8F81'" onmouseout="this.style.color='#AFCDA8'">
+                        <i class="fas fa-tag text-[9px]"></i>設定分類
                     </button>
-                    <button onclick="openJoinGroupModal()"
-                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
-                        style="background:rgba(136,175,181,0.10);color:#2E6874;border:2px dashed #88AFB5"
-                        onmouseover="this.style.background='rgba(136,175,181,0.20)'" onmouseout="this.style.background='rgba(136,175,181,0.10)'">
-                        <i class="fas fa-link text-xs"></i> 以 ID 加入
-                    </button>
-                </div>`
-            ].join('');
+                </div>`);
+                groups.forEach(g => parts.push(_cardHtml(g)));
+            }
+
+            // 新增群組 + 以ID加入 按鈕列
+            parts.push(`<div class="flex gap-2 w-full mt-2">
+                <button onclick="openAddGroupModal()"
+                    class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
+                    style="background:rgba(122,143,129,0.08);color:#5A7A56;border:2px dashed #AFCDA8"
+                    onmouseover="this.style.background='rgba(122,143,129,0.16)'" onmouseout="this.style.background='rgba(122,143,129,0.08)'">
+                    <i class="fas fa-plus text-xs"></i> 新增群組
+                </button>
+                <button onclick="openJoinGroupModal()"
+                    class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black text-sm transition-all"
+                    style="background:rgba(136,175,181,0.10);color:#2E6874;border:2px dashed #88AFB5"
+                    onmouseover="this.style.background='rgba(136,175,181,0.20)'" onmouseout="this.style.background='rgba(136,175,181,0.10)'">
+                    <i class="fas fa-link text-xs"></i> 以 ID 加入
+                </button>
+            </div>`);
+
+            container.innerHTML = parts.join('');
         }
 
         window.showGroupSelectOverlay = function(allowClose = false) {
@@ -4480,15 +4605,78 @@
                 const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
                 let dayHtml = `<div class="calendar-day"><div class="day-label ${isWeekend ? 'text-red-500 bg-red-50' : 'text-gray-700'}"><span>${d} <span class="text-[10px] opacity-40 uppercase">${["SUN","MON","TUE","WED","THU","FRI","SAT"][dateObj.getDay()]}</span></span></div><div class="flex-1 py-1">`;
                 if (tasks) {
-                    tasks.forEach(t => { 
-                        dayHtml += `<div class="task-strip" title="${t.ruleName}　${t.userName}"><span class="task-name">${t.ruleName}</span><span class="task-user">${t.userName}</span></div>`;
+                    tasks.forEach(t => {
+                        const _dim = _memberFilter && t.userName !== _memberFilter;
+                        dayHtml += `<div class="task-strip" title="${t.ruleName}　${t.userName}" style="${_dim ? 'opacity:0.18;filter:saturate(0)' : ''}"><span class="task-name">${t.ruleName}</span><span class="task-user">${t.userName}</span></div>`;
                     });
                 } else {
                     dayHtml += `<div class="h-full flex items-center justify-center text-[10px] text-gray-300 italic">人力不足</div>`;
                 }
                 container.innerHTML += dayHtml + `</div></div>`;
             }
+            renderMemberFilterBar();
+            renderMemberSummary();
         }
+
+        // ── 成員篩選膠囊列 ──
+        function renderMemberFilterBar() {
+            const bar   = document.getElementById('member-filter-bar');
+            const pills = document.getElementById('member-filter-pills');
+            if (!bar || !pills) return;
+            if (!students || students.length === 0) { bar.classList.add('hidden'); return; }
+            const _pill = (val, label) => {
+                const isSel = _memberFilter === val;
+                return `<button onclick="_setMemberFilter('${val.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')"
+                    class="px-3 py-1 rounded-full text-[10px] font-black transition-all shrink-0"
+                    style="background:${isSel ? '#7A8F81' : 'rgba(122,143,129,0.1)'};color:${isSel ? 'white' : '#5A7A56'};border:1.5px solid ${isSel ? '#7A8F81' : 'transparent'}">${label}</button>`;
+            };
+            pills.innerHTML = _pill('', '全部') + students.map(s => _pill(s, s)).join('');
+            bar.classList.remove('hidden');
+        }
+
+        // ── 個人月覽摘要卡 ──
+        function renderMemberSummary() {
+            const el = document.getElementById('member-summary-card');
+            if (!el) return;
+            if (!_memberFilter) { el.classList.add('hidden'); return; }
+            const { currentYear: y, currentMonth: m } = appConfig;
+            const daysInMonth = new Date(y, m, 0).getDate();
+            const _dayNames = ['日','一','二','三','四','五','六'];
+            let items = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const tasks = monthAssignments[dKey];
+                if (!tasks) continue;
+                const myTasks = tasks.filter(t => t.userName === _memberFilter);
+                if (myTasks.length) {
+                    items.push({ d, day: _dayNames[new Date(y, m-1, d).getDay()], tasks: myTasks });
+                }
+            }
+            el.innerHTML = `<div class="bg-white rounded-2xl shadow-sm px-4 py-3" style="border:1px solid #D8E8D4;border-left:4px solid #7A8F81">
+                <div class="flex items-center gap-2 mb-2.5">
+                    <div class="w-7 h-7 rounded-xl flex items-center justify-center font-black text-sm shrink-0" style="background:#7A8F81;color:white">${_memberFilter.charAt(0)}</div>
+                    <span class="font-black text-sm" style="color:#2E4A2A">${_memberFilter}</span>
+                    <span class="text-[10px] font-bold ml-1" style="color:#9CA3AF">${m} 月・共 ${items.length} 天</span>
+                </div>
+                <div class="flex flex-col gap-1.5" style="max-height:160px;overflow-y:auto">
+                    ${items.length
+                        ? items.map(item => `
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-[10px] font-black shrink-0 w-14" style="color:#7A8F81">${m}/${item.d}（${item.day}）</span>
+                                <span class="text-[10px] font-bold leading-snug" style="color:#6B7280">${item.tasks.map(t => t.ruleName).join('、')}</span>
+                            </div>`).join('')
+                        : `<p class="text-[10px] font-bold" style="color:#D1D5DB">本月無排班記錄</p>`
+                    }
+                </div>
+            </div>`;
+            el.classList.remove('hidden');
+        }
+
+        // ── 切換成員篩選 ──
+        window._setMemberFilter = function(name) {
+            _memberFilter = name;
+            renderCalendar();
+        };
 
         // Backtracking 月度公平排班演算法
         window.runAutoScheduleFullMonthAndSave = function() {
@@ -4727,7 +4915,17 @@
                 // 不保留本機自動建立的預設項目（avocado-team-main），避免與雲端真實群組重複
                 // 同時清洗 ID：修復因 JSON.stringify 雙重編碼產生的多餘引號（如 "\"avocado-team-main\""）
                 const _cleanId = id => (typeof id === 'string' ? id.replace(/^"+|"+$/g, '').trim() : id);
-                groups = cloudGroups.map(cg => ({ id: _cleanId(cg.id), name: cg.name, createdAt: cg.createdAt || Date.now() }));
+                groups = cloudGroups.map(cg => {
+                    const g = { id: _cleanId(cg.id), name: cg.name, createdAt: cg.createdAt || Date.now() };
+                    if (cg.category) g.category = cg.category;
+                    return g;
+                });
+                // 同步分類資料（若雲端有的話）
+                const cloudCats = snap.data().groupCategories;
+                if (Array.isArray(cloudCats)) {
+                    groupCategories = cloudCats;
+                    saveLocalData('avocado_group_categories', groupCategories);
+                }
                 saveLocalData('avocado_groups', groups);
                 renderGroupsTab();
                 updateGroupNavDisplay();
@@ -4740,7 +4938,7 @@
             try {
                 // 路徑必須為偶數段：6段 ✓
                 const registryRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'groups_registry');
-                await window.FirebaseCore.setDoc(registryRef, { groups: groups, updatedAt: Date.now() });
+                await window.FirebaseCore.setDoc(registryRef, { groups: groups, groupCategories: groupCategories, updatedAt: Date.now() });
             } catch(e) { console.error('群組登錄簿寫入失敗:', e); }
         }
 
@@ -4769,46 +4967,445 @@
         function renderGroupsTab() {
             const container = document.getElementById('groups-list-container');
             if (!container) return;
+
+            // ── 分類管理區塊 ──
+            let html = `<div class="mb-4 p-4 rounded-2xl" style="background:#F9FAFB;border:1px solid #E5E7EB">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs font-black" style="color:#9CA3AF"><i class="fas fa-tags mr-1.5"></i>分類標籤管理</p>
+                    <button onclick="openAddCategoryModal()" class="text-[11px] font-black px-3 py-1.5 rounded-xl transition"
+                        style="background:#EAF2E8;color:#5A7A56"
+                        onmouseover="this.style.background='#D8E8D4'" onmouseout="this.style.background='#EAF2E8'">
+                        <i class="fas fa-plus text-[9px] mr-1"></i>新增分類
+                    </button>
+                </div>`;
+            if (groupCategories.length === 0) {
+                html += `<p class="text-[11px] font-bold" style="color:#C8D5CA">尚無分類，點右上角「＋新增分類」建立第一個</p>`;
+            } else {
+                html += `<div class="flex flex-wrap gap-2">`;
+                groupCategories.forEach(cat => {
+                    const cnt = groups.filter(g => g.category === cat.id).length;
+                    const safeName = (cat.name || '').replace(/'/g, "&#39;");
+                    html += `<div class="flex items-center gap-1 px-3 py-1.5 rounded-xl" style="background:#EAF2E8">
+                        <span class="text-xs font-black" style="color:#2E4A2A">${cat.name}</span>
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5" style="background:rgba(122,143,129,0.2);color:#5A7A56">${cnt}</span>
+                        <button onclick="openRenameCategoryModal('${cat.id}','${safeName}')"
+                            class="w-5 h-5 flex items-center justify-center rounded-lg ml-1 transition" style="color:#9CA3AF"
+                            onmouseover="this.style.background='rgba(0,0,0,0.08)'" onmouseout="this.style.background='transparent'" title="重命名分類">
+                            <i class="fas fa-pen text-[9px]"></i>
+                        </button>
+                        <button onclick="deleteCategory('${cat.id}')"
+                            class="w-5 h-5 flex items-center justify-center rounded-lg transition" style="color:#FCA5A5"
+                            onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'" title="刪除分類">
+                            <i class="fas fa-times text-[9px]"></i>
+                        </button>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            // ── 群組清單 ──
             if (groups.length === 0) {
-                container.innerHTML = `<p class="text-sm font-bold text-center py-8 text-gray-300">尚無群組</p>`;
+                html += `<p class="text-sm font-bold text-center py-8 text-gray-300">尚無群組</p>`;
+            } else {
+                html += groups.map(g => {
+                    const isActive = g.id === appConfig.teamId;
+                    const cardBg   = isActive ? 'background:#EAF2E8;border:1.5px solid #AFCDA8;' : 'background:#F9FAFB;border:1px solid #E5E7EB;';
+                    const iconBg   = isActive ? '#7A8F81' : '#D1D5DB';
+                    const cat      = g.category ? groupCategories.find(c => c.id === g.category) : null;
+                    return `
+                    <div class="flex items-center justify-between p-4 rounded-2xl transition-all" style="${cardBg}">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-black shrink-0" style="background:${iconBg}">
+                                ${isActive ? '✓' : g.name.charAt(0)}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="font-black text-sm" style="color:${isActive ? '#2E4A2A' : '#374151'}">${g.name}</p>
+                                    ${cat ? `<span class="text-[9px] font-black px-2 py-0.5 rounded-full shrink-0" style="background:#EAF2E8;color:#5A7A56">${cat.name}</span>` : ''}
+                                </div>
+                                <p class="text-[10px] font-bold mt-0.5" style="color:${isActive ? '#7A8F81' : '#9CA3AF'}">${isActive ? '✦ 目前使用中' : 'ID: ' + g.id.slice(0,16) + '…'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${isActive
+                                ? `<span class="text-[11px] font-black px-3 py-1.5 rounded-xl" style="background:#C4DABD;color:#2E4A2A">使用中</span>`
+                                : `<button onclick="doSwitchGroup('${g.id}')" class="text-xs text-white px-4 py-1.5 rounded-xl font-black transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">切換</button>`
+                            }
+                            <button onclick="openAssignCategoryModal('${g.id}')"
+                                class="w-8 h-8 flex items-center justify-center rounded-xl transition cursor-pointer"
+                                style="color:${cat ? '#5A7A56' : '#C8D5CA'}"
+                                onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='transparent'" title="設定分類">
+                                <i class="fas fa-tag text-xs"></i>
+                            </button>
+                            <button onclick="openRenameGroupModal(this.dataset.gid,this.dataset.gname)"
+                                data-gid="${g.id}" data-gname="${(g.name||'').replace(/"/g,'&quot;')}"
+                                class="w-8 h-8 flex items-center justify-center rounded-xl transition cursor-pointer"
+                                style="color:#9CA3AF"
+                                onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='transparent'" title="重命名">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            ${groups.length > 1 && !isActive
+                                ? `<button onclick="deleteGroup('${g.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl transition" style="color:#FCA5A5" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'" title="移除">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                   </button>`
+                                : ''
+                            }
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            container.innerHTML = html;
+        }
+
+        // ════════════════════════════════════════
+        // 🏷️ 分類管理（新增、重命名、刪除、分配）
+        // ════════════════════════════════════════
+        window.openAddCategoryModal = function() {
+            document.getElementById('category-edit-input').value = '';
+            document.getElementById('category-edit-id').value = '';
+            document.getElementById('category-edit-title').textContent = '新增分類';
+            document.getElementById('category-edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('category-edit-input')?.focus(), 100);
+        };
+        window.openRenameCategoryModal = function(catId, currentName) {
+            document.getElementById('category-edit-input').value = currentName;
+            document.getElementById('category-edit-id').value = catId;
+            document.getElementById('category-edit-title').textContent = '重命名分類';
+            document.getElementById('category-edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('category-edit-input')?.focus(), 100);
+        };
+        window.closeCategoryEditModal = function() {
+            document.getElementById('category-edit-modal').classList.add('hidden');
+        };
+        window.confirmCategoryEdit = function() {
+            const name = document.getElementById('category-edit-input').value.trim();
+            const id   = document.getElementById('category-edit-id').value;
+            if (!name) { showToast('⚠️ 請輸入分類名稱'); return; }
+            if (id) {
+                // 重命名
+                const cat = groupCategories.find(c => c.id === id);
+                if (cat) cat.name = name;
+                showToast(`✅ 分類已更名為「${name}」`);
+            } else {
+                // 新增
+                groupCategories.push({ id: 'cat-' + Date.now(), name });
+                showToast(`✅ 已新增分類「${name}」`);
+            }
+            saveLocalData('avocado_group_categories', groupCategories);
+            syncGroupsToCloud();
+            closeCategoryEditModal();
+            renderGroupsTab();
+            renderGroupSelectOverlay();
+            // 若是從「設定分類」視窗觸發的，完成後自動回到該視窗
+            const _retGroupId = document.getElementById('category-edit-modal').dataset.returnGroupId;
+            if (_retGroupId) {
+                delete document.getElementById('category-edit-modal').dataset.returnGroupId;
+                openAssignCategoryModal(_retGroupId);
                 return;
             }
-            container.innerHTML = groups.map(g => {
-                const isActive = g.id === appConfig.teamId;
-                const cardBg   = isActive ? 'background:#EAF2E8;border:1.5px solid #AFCDA8;' : 'background:#F9FAFB;border:1px solid #E5E7EB;';
-                const iconBg   = isActive ? '#7A8F81' : '#D1D5DB';
-                return `
-                <div class="flex items-center justify-between p-4 rounded-2xl transition-all" style="${cardBg}">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-black shrink-0" style="background:${iconBg}">
-                            ${isActive ? '✓' : g.name.charAt(0)}
-                        </div>
-                        <div>
-                            <p class="font-black text-sm ${isActive ? '' : 'text-gray-700'}" style="${isActive ? 'color:#2E4A2A' : ''}">${g.name}</p>
-                            <p class="text-[10px] font-bold mt-0.5" style="color:${isActive ? '#7A8F81' : '#9CA3AF'}">${isActive ? '✦ 目前使用中' : 'ID: ' + g.id.slice(0,16) + '…'}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        ${isActive
-                            ? `<span class="text-[11px] font-black px-3 py-1.5 rounded-xl" style="background:#C4DABD;color:#2E4A2A">使用中</span>`
-                            : `<button onclick="doSwitchGroup('${g.id}')" class="text-xs text-white px-4 py-1.5 rounded-xl font-black transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">切換</button>`
-                        }
-                        <button onclick="openRenameGroupModal(this.dataset.gid,this.dataset.gname)" data-gid="${g.id}" data-gname="${(g.name||'').replace(/"/g,'&quot;')}" class="w-8 h-8 flex items-center justify-center rounded-xl transition cursor-pointer" style="color:#9CA3AF" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='transparent'" title="重命名">
-                            <i class="fas fa-pen text-xs"></i>
-                        </button>
-                        ${groups.length > 1 && !isActive
-                            ? `<button onclick="deleteGroup('${g.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl transition" style="color:#FCA5A5" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'" title="移除">
-                                <i class="fas fa-trash-alt text-xs"></i>
-                               </button>`
-                            : ''
-                        }
+            // 若是從「分類管理」面板觸發的，完成後回到面板
+            if (document.getElementById('category-edit-modal').dataset.returnCatManage) {
+                delete document.getElementById('category-edit-modal').dataset.returnCatManage;
+                openCatManageModal();
+            }
+        };
+        window.deleteCategory = function(catId) {
+            const cat = groupCategories.find(c => c.id === catId);
+            if (!cat) return;
+            showCustomConfirm(
+                `刪除分類「${cat.name}」`,
+                `確定刪除？\n此分類下的所有群組將移回「未分類」，群組本身的資料不受影響。`,
+                () => {
+                    groupCategories = groupCategories.filter(c => c.id !== catId);
+                    groups.forEach(g => { if (g.category === catId) delete g.category; });
+                    saveLocalData('avocado_group_categories', groupCategories);
+                    saveLocalData('avocado_groups', groups);
+                    syncGroupsToCloud();
+                    renderGroupsTab();
+                    renderGroupSelectOverlay();
+                    showToast(`✅ 分類「${cat.name}」已刪除，群組已移至未分類`);
+                }
+            );
+        };
+        window.openAssignCategoryModal = function(groupId) {
+            const g = groups.find(gr => gr.id === groupId);
+            if (!g) return;
+            document.getElementById('assign-cat-group-name').textContent = g.name;
+            document.getElementById('assign-cat-group-id').value = groupId;
+            const container = document.getElementById('assign-cat-options');
+            const cur = g.category || '';
+
+            // 「不分類」選項（無編輯/刪除）
+            const _uncatBtn = (isSel) =>
+                `<button onclick="confirmAssignCategory('')"
+                    class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-black transition flex items-center justify-between"
+                    style="background:${isSel ? '#EAF2E8' : 'transparent'};color:${isSel ? '#2E4A2A' : '#9CA3AF'}"
+                    onmouseover="this.style.background='${isSel ? '#EAF2E8' : '#F9FAFB'}'" onmouseout="this.style.background='${isSel ? '#EAF2E8' : 'transparent'}'">
+                    <span>── 不分類 ──</span>
+                    ${isSel ? '<i class="fas fa-check text-xs" style="color:#5A7A56"></i>' : ''}
+                </button>`;
+
+            // 一般分類選項（有選取 + ✏️ 重命名 + 🗑️ 刪除）
+            const _catRow = (c, isSel) => {
+                const safeName = (c.name || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                return `<div class="flex items-center rounded-xl transition" style="background:${isSel ? '#EAF2E8' : 'transparent'}">
+                    <button onclick="confirmAssignCategory('${c.id}')"
+                        class="flex-1 text-left px-4 py-2.5 text-sm font-black transition flex items-center gap-2 min-w-0"
+                        style="color:${isSel ? '#2E4A2A' : '#374151'}"
+                        onmouseover="this.parentElement.style.background='${isSel ? '#EAF2E8' : '#F9FAFB'}'" onmouseout="this.parentElement.style.background='${isSel ? '#EAF2E8' : 'transparent'}'">
+                        <span class="truncate">${c.name}</span>
+                        ${isSel ? '<i class="fas fa-check text-xs ml-auto shrink-0" style="color:#5A7A56"></i>' : ''}
+                    </button>
+                    <div class="flex items-center gap-0.5 pr-2 shrink-0">
+                        <button onclick="event.stopPropagation();_assignEditCat('${c.id}','${safeName}')"
+                            class="w-7 h-7 flex items-center justify-center rounded-lg transition" style="color:#9CA3AF"
+                            onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
+                            title="重命名"><i class="fas fa-pen text-[10px]"></i></button>
+                        <button onclick="event.stopPropagation();_assignDeleteCat('${c.id}')"
+                            class="w-7 h-7 flex items-center justify-center rounded-lg transition" style="color:#FCA5A5"
+                            onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
+                            title="刪除"><i class="fas fa-trash-alt text-[10px]"></i></button>
                     </div>
                 </div>`;
-            }).join('');
+            };
+
+            container.innerHTML = _uncatBtn(!cur) +
+                groupCategories.map(c => _catRow(c, cur === c.id)).join('') +
+                // 快速新增分類欄（直接在視窗內新增，不需跳到設定頁）
+                `<div class="mt-2 pt-2" style="border-top:1px solid #F0F4F0">
+                    <p class="text-[10px] font-black mb-1.5" style="color:#C8D5CA">快速新增分類</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="assign-cat-new-input"
+                            placeholder="輸入新分類名稱…"
+                            maxlength="16"
+                            class="input-minimal flex-1 text-sm font-black"
+                            onkeydown="if(event.key==='Enter')quickAddCategoryFromAssign()"
+                            style="padding:8px 12px">
+                        <button onclick="quickAddCategoryFromAssign()"
+                            class="px-4 py-2 rounded-xl text-sm font-black text-white transition shrink-0"
+                            style="background:#7A8F81"
+                            onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            ＋
+                        </button>
+                    </div>
+                </div>`;
+            document.getElementById('assign-category-modal').classList.remove('hidden');
+        };
+        window.closeAssignCategoryModal = function() {
+            document.getElementById('assign-category-modal').classList.add('hidden');
+        };
+        // 從設定分類視窗點 ✏️ 重命名分類（關閉 assign modal → 開重命名 modal，完成後回來）
+        window._assignEditCat = function(catId, currentName) {
+            const groupId = document.getElementById('assign-cat-group-id').value;
+            document.getElementById('category-edit-input').value = currentName;
+            document.getElementById('category-edit-id').value = catId;
+            document.getElementById('category-edit-title').textContent = '重命名分類';
+            // 記住要回到哪個群組的 assign modal
+            document.getElementById('category-edit-modal').dataset.returnGroupId = groupId;
+            closeAssignCategoryModal();
+            document.getElementById('category-edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('category-edit-input')?.focus(), 100);
+        };
+        // 從設定分類視窗點 🗑️ 刪除分類
+        window._assignDeleteCat = function(catId) {
+            const groupId = document.getElementById('assign-cat-group-id').value;
+            const cat = groupCategories.find(c => c.id === catId);
+            if (!cat) return;
+            showCustomConfirm(
+                `刪除分類「${cat.name}」`,
+                `確定刪除？\n此分類下的所有群組將移回「未分類」，群組本身的資料不受影響。`,
+                () => {
+                    groupCategories = groupCategories.filter(c => c.id !== catId);
+                    groups.forEach(g => { if (g.category === catId) delete g.category; });
+                    saveLocalData('avocado_group_categories', groupCategories);
+                    saveLocalData('avocado_groups', groups);
+                    syncGroupsToCloud();
+                    renderGroupsTab();
+                    renderGroupSelectOverlay();
+                    showToast(`✅ 分類「${cat.name}」已刪除`);
+                    openAssignCategoryModal(groupId); // 重開視窗顯示最新狀態
+                }
+            );
+        };
+        // 從「設定分類」視窗快速新增分類並立即刷新選項
+        window.quickAddCategoryFromAssign = function() {
+            const inp = document.getElementById('assign-cat-new-input');
+            const name = inp ? inp.value.trim() : '';
+            if (!name) { showToast('⚠️ 請輸入分類名稱'); return; }
+            groupCategories.push({ id: 'cat-' + Date.now(), name });
+            saveLocalData('avocado_group_categories', groupCategories);
+            syncGroupsToCloud();
+            showToast(`✅ 已新增分類「${name}」`);
+            renderGroupsTab();
+            renderGroupSelectOverlay();
+            // 重新渲染視窗選項（保留目前的群組選擇狀態）
+            const groupId = document.getElementById('assign-cat-group-id').value;
+            openAssignCategoryModal(groupId);
+        };
+        window.confirmAssignCategory = function(catId) {
+            const groupId = document.getElementById('assign-cat-group-id').value;
+            const g = groups.find(gr => gr.id === groupId);
+            if (!g) return;
+            if (catId) { g.category = catId; } else { delete g.category; }
+            saveLocalData('avocado_groups', groups);
+            syncGroupsToCloud();
+            closeAssignCategoryModal();
+            renderGroupsTab();
+            renderGroupSelectOverlay();
+            const catName = catId ? (groupCategories.find(c => c.id === catId)?.name || catId) : '未分類';
+            showToast(`✅「${g.name}」已設為 ${catName}`);
+        };
+        // 點選篩選藥丸切換分類顯示
+        window._setGroupCatFilter = function(catId) {
+            _groupCatFilter = catId;
+            renderGroupSelectOverlay();
+        };
+
+        // ════════════════════════════════════════
+        // ⚙️ 分類管理面板
+        // ════════════════════════════════════════
+        function renderCatManageModal() {
+            const body = document.getElementById('cat-manage-body');
+            if (!body) return;
+            let html = '';
+
+            groupCategories.forEach(cat => {
+                const catGroups = groups.filter(g => g.category === cat.id);
+                const safeName = (cat.name || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                html += `<div class="mb-4">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full text-white shrink-0"
+                            style="background:#7A8F81">${cat.name}</span>
+                        <div class="flex-1 h-px mx-1" style="background:#E5EBE3"></div>
+                        <button onclick="_cmRename('${cat.id}','${safeName}')"
+                            class="w-6 h-6 flex items-center justify-center rounded-lg transition shrink-0" style="color:#9CA3AF"
+                            onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='transparent'"
+                            title="重命名"><i class="fas fa-pen text-[9px]"></i></button>
+                        <button onclick="_cmDeleteCat('${cat.id}')"
+                            class="w-6 h-6 flex items-center justify-center rounded-lg transition shrink-0" style="color:#FCA5A5"
+                            onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
+                            title="刪除分類"><i class="fas fa-trash-alt text-[9px]"></i></button>
+                    </div>
+                    ${catGroups.length === 0
+                        ? `<p class="text-[10px] font-bold px-2 py-1" style="color:#D1D5DB">（尚無群組）</p>`
+                        : catGroups.map(g => `
+                            <div class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-gray-50 group">
+                                <span class="text-xs font-black flex-1 truncate" style="color:#374151">${g.name}</span>
+                                <button onclick="_cmRemoveGroup('${g.id}')"
+                                    class="text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full transition opacity-0 group-hover:opacity-100"
+                                    style="color:#9CA3AF;background:rgba(0,0,0,0.05)" title="移出此分類">✕</button>
+                            </div>`).join('')
+                    }
+                </div>`;
+            });
+
+            // 未分類群組
+            const uncatGroups = groups.filter(g => !g.category || !groupCategories.find(c => c.id === g.category));
+            if (uncatGroups.length && groupCategories.length > 0) {
+                html += `<div class="pt-3" style="border-top:1px solid #F0F4F0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full text-white shrink-0"
+                            style="background:#B0BAB5">未分類</span>
+                    </div>
+                    ${uncatGroups.map(g => `
+                        <div class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-gray-50">
+                            <span class="text-xs font-black flex-1 truncate" style="color:#6B7280">${g.name}</span>
+                            <select onchange="_cmAssignGroup('${g.id}',this.value);this.value=''"
+                                class="text-[9px] font-bold rounded-lg px-2 py-1 cursor-pointer shrink-0"
+                                style="border:1.5px solid #E5E7EB;color:#9CA3AF;max-width:88px;background:white">
+                                <option value="">移入…</option>
+                                ${groupCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>`).join('')}
+                </div>`;
+            }
+
+            if (!html) {
+                body.innerHTML = `<p class="text-sm font-bold text-center py-6" style="color:#D1D5DB">尚未建立任何分類<br><span class="text-xs">點下方「新增分類」開始</span></p>`;
+            } else {
+                body.innerHTML = html;
+            }
         }
+        window.openCatManageModal = function() {
+            renderCatManageModal();
+            document.getElementById('cat-manage-modal').classList.remove('hidden');
+        };
+        window.closeCatManageModal = function() {
+            document.getElementById('cat-manage-modal').classList.add('hidden');
+        };
+        // 從分類管理面板：移出群組
+        window._cmRemoveGroup = function(groupId) {
+            const g = groups.find(gr => gr.id === groupId);
+            if (!g) return;
+            delete g.category;
+            saveLocalData('avocado_groups', groups);
+            syncGroupsToCloud();
+            renderCatManageModal();
+            renderGroupSelectOverlay();
+            renderGroupsTab();
+        };
+        // 從分類管理面板：移入群組（select 觸發）
+        window._cmAssignGroup = function(groupId, catId) {
+            if (!catId) return;
+            const g = groups.find(gr => gr.id === groupId);
+            if (!g) return;
+            g.category = catId;
+            saveLocalData('avocado_groups', groups);
+            syncGroupsToCloud();
+            renderCatManageModal();
+            renderGroupSelectOverlay();
+            renderGroupsTab();
+        };
+        // 從分類管理面板：刪除分類
+        window._cmDeleteCat = function(catId) {
+            const cat = groupCategories.find(c => c.id === catId);
+            if (!cat) return;
+            showCustomConfirm(
+                `刪除分類「${cat.name}」`,
+                `確定刪除？\n此分類下的所有群組將移回「未分類」，群組本身的資料不受影響。`,
+                () => {
+                    groupCategories = groupCategories.filter(c => c.id !== catId);
+                    groups.forEach(g => { if (g.category === catId) delete g.category; });
+                    saveLocalData('avocado_group_categories', groupCategories);
+                    saveLocalData('avocado_groups', groups);
+                    syncGroupsToCloud();
+                    renderCatManageModal();
+                    renderGroupSelectOverlay();
+                    renderGroupsTab();
+                    showToast(`✅ 分類「${cat.name}」已刪除`);
+                }
+            );
+        };
+        // 從分類管理面板：重命名分類（跳 category-edit-modal，完成後回來）
+        window._cmRename = function(catId, currentName) {
+            document.getElementById('category-edit-input').value = currentName;
+            document.getElementById('category-edit-id').value = catId;
+            document.getElementById('category-edit-title').textContent = '重命名分類';
+            document.getElementById('category-edit-modal').dataset.returnCatManage = 'true';
+            closeCatManageModal();
+            document.getElementById('category-edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('category-edit-input')?.focus(), 100);
+        };
+        // 從分類管理面板：新增分類（跳 category-edit-modal，完成後回來）
+        window.openAddCategoryFromManage = function() {
+            document.getElementById('category-edit-input').value = '';
+            document.getElementById('category-edit-id').value = '';
+            document.getElementById('category-edit-title').textContent = '新增分類';
+            document.getElementById('category-edit-modal').dataset.returnCatManage = 'true';
+            closeCatManageModal();
+            document.getElementById('category-edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('category-edit-input')?.focus(), 100);
+        };
 
         window.openAddGroupModal = function() {
             document.getElementById('new-group-name-input').value = '';
+            // 動態填入分類選項
+            const catSel = document.getElementById('new-group-category-input');
+            if (catSel) {
+                catSel.innerHTML = '<option value="">── 不分類 ──</option>' +
+                    groupCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
             document.getElementById('add-group-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('new-group-name-input')?.focus(), 100);
         };
@@ -4816,10 +5413,13 @@
             document.getElementById('add-group-modal').classList.add('hidden');
         };
         window.confirmAddGroup = async function() {
-            const name = document.getElementById('new-group-name-input').value.trim();
+            const name  = document.getElementById('new-group-name-input').value.trim();
+            const catId = document.getElementById('new-group-category-input')?.value || '';
             if (!name) { showToast('⚠️ 請輸入群組名稱'); return; }
             const newId = 'group-' + Date.now() + '-' + Math.random().toString(36).substr(2,5);
-            groups.push({ id: newId, name, createdAt: Date.now() });
+            const newGroup = { id: newId, name, createdAt: Date.now() };
+            if (catId) newGroup.category = catId;
+            groups.push(newGroup);
             saveLocalData('avocado_groups', groups);
             closeAddGroupModal();
             renderGroupsTab();
