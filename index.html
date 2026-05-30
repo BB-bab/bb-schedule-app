@@ -1285,9 +1285,14 @@
         const _savedGroupId = (() => { try { const _v = localStorage.getItem('avocado_active_group_id'); return _v ? (JSON.parse(_v) || '') : ''; } catch(e) { return ''; } })();
         const _activeTeamId = ((_urlTeamId && _urlTeamId.trim()) ? _urlTeamId.trim() : (_savedGroupId || "avocado-team-main")).replace(/^"+|"+$/g, '');
 
+        // 月份：有 localStorage 記錄就用記錄，沒有就用系統當月（選項 C）
+        const _today = new Date();
+        const _savedYear  = loadLocalData('avocado_current_year',  null);
+        const _savedMonth = loadLocalData('avocado_current_month', null);
+
         let appConfig = {
-            currentYear: 2026,
-            currentMonth: 5,
+            currentYear:  (_savedYear  !== null) ? _savedYear  : _today.getFullYear(),
+            currentMonth: (_savedMonth !== null) ? _savedMonth : (_today.getMonth() + 1),
             title: loadLocalData('avocado_title', "牛油果排班"),
             teamId: _activeTeamId,
             overThreshold: loadLocalData('avocado_over_threshold', 3)
@@ -2210,19 +2215,30 @@
             renderLeaveTable();
             uploadToCloud();
             showToast(`已成功將 ${n} 在 ${d} 的狀態調整為 ${targetStatus}`);
-            const logAction = targetStatus === '請假休息' ? '排休' : '上班';
-            appendLog('leave', n, `${n} 於 ${d} 切換為「${logAction}」`);
+            const logAction  = targetStatus === '請假休息' ? '排休' : '上班';
+            const _operator  = claimedIdentity || '成員';
+            const _dShort    = d.slice(5); // 2026-05-05 → 05-05
+            if (_operator === n) {
+                // 自己操作自己
+                appendLog('leave', _operator, `${_operator} 於 ${_dShort} 切換為「${logAction}」`);
+            } else {
+                // 代為操作他人
+                appendLog('leave', _operator, `${_operator} 代 ${n} 切換為「${logAction}」（${_dShort}）`);
+            }
         }
 
         function changeMonth(v) {
             appConfig.currentMonth += v;
-            if (appConfig.currentMonth > 12) { 
-                appConfig.currentMonth = 1; 
-                appConfig.currentYear++; 
-            } else if (appConfig.currentMonth < 1) { 
-                appConfig.currentMonth = 12; 
-                appConfig.currentYear--; 
+            if (appConfig.currentMonth > 12) {
+                appConfig.currentMonth = 1;
+                appConfig.currentYear++;
+            } else if (appConfig.currentMonth < 1) {
+                appConfig.currentMonth = 12;
+                appConfig.currentYear--;
             }
+            // 記住切換後的月份，F5 重整後可恢復
+            try { localStorage.setItem('avocado_current_year',  JSON.stringify(appConfig.currentYear));  } catch(e) {}
+            try { localStorage.setItem('avocado_current_month', JSON.stringify(appConfig.currentMonth)); } catch(e) {}
             monthAssignments = {};
             document.getElementById('calendar-view').classList.add('hidden');
             document.getElementById('empty-state').classList.remove('hidden');
@@ -2540,9 +2556,11 @@
                 const cfg = typeConfig[log.type] || { bg: '#EAF2E8', text: '#2E4A2A', label: log.type };
                 const dt = new Date(log.ts);
                 const timeStr = `${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-                return `<div class="flex items-center gap-3 px-4 py-2.5 rounded-xl" style="background:#F4F9F3;border:1px solid #D8E8D4">
+                // 代為操作他人的紀錄：整串加粗（font-black）
+                const _isProxy = log.type === 'leave' && / 代 .+ 切換為/.test(log.message || '');
+                return `<div class="flex items-center gap-3 px-4 py-2.5 rounded-xl" style="background:${_isProxy ? '#F0F5EE' : '#F4F9F3'};border:1px solid ${_isProxy ? '#C4DABD' : '#D8E8D4'}">
                     <span class="text-xs font-black px-2 py-1 rounded-md shrink-0 text-center" style="background:${cfg.bg};color:${cfg.text};min-width:4rem">${cfg.label}</span>
-                    <p class="text-[13px] font-bold leading-snug min-w-0" style="color:#2E4A2A">${log.message}<span class="ml-2 font-bold" style="color:#3A5C3E;font-size:11px">${timeStr}</span></p>
+                    <p class="text-[13px] ${_isProxy ? 'font-black' : 'font-bold'} leading-snug min-w-0" style="color:#2E4A2A">${log.message}<span class="ml-2 font-bold" style="color:#3A5C3E;font-size:11px">${timeStr}</span></p>
                 </div>`;
             }).join('');
         }
@@ -3649,7 +3667,12 @@
             }
             emptyState?.classList.add('hidden');
 
-            container.innerHTML = notices.map((n, idx) => {
+            // 置頂排前面，其餘維持原始順序
+            const _sorted = notices
+                .map((n, i) => ({ n, i }))
+                .sort((a, b) => (b.n.pinned ? 1 : 0) - (a.n.pinned ? 1 : 0));
+
+            container.innerHTML = _sorted.map(({ n, i: idx }) => {
                 // 相容舊資料（有 title 欄位）：合併顯示
                 const bodyText   = [n.title, n.body].filter(Boolean).join('\n').trim();
                 const hasBody    = !!bodyText;
@@ -3657,12 +3680,17 @@
                 const readBy     = n.readBy || [];
                 const iRead      = !!(claimedIdentity && readBy.includes(claimedIdentity));
                 const readCount  = readBy.length;
+                const isPinned   = !!n.pinned;
                 const dateStr    = n.createdAt ? new Date(n.createdAt).toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
                 const readTags   = readBy.map(name =>
                     `<span class="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style="background:#D4E8CC;color:#2E5030">🌿 ${escapeHtml(name)}</span>`
                 ).join('');
                 return `
-                <div class="rounded-2xl border border-[#C4DABD]/60" style="background:#FAFCFA;max-width:540px">
+                <div class="rounded-2xl border" style="background:#FAFCFA;max-width:540px;border-color:${isPinned ? '#7A8F81' : 'rgba(196,218,189,0.6)'};border-left:${isPinned ? '4px solid #7A8F81' : '1px solid rgba(196,218,189,0.6)'}">
+                    ${isPinned ? `<div class="flex items-center gap-1.5 px-4 pt-2.5 pb-0">
+                        <i class="fas fa-thumbtack text-[9px]" style="color:#7A8F81;transform:rotate(45deg)"></i>
+                        <span class="text-[9px] font-black tracking-wide" style="color:#7A8F81">置頂</span>
+                    </div>` : ''}
                     <div class="px-4 py-3.5 flex items-start gap-2.5">
                         <!-- 📣 圖示 -->
                         <i class="fas fa-bullhorn text-[#7A8F81] text-xs mt-1 shrink-0"></i>
@@ -3699,8 +3727,15 @@
                                 </button>` : `<span class="text-[10px] font-bold" style="color:#C0D4BC">尚無人已讀</span>`}
                             </div>
                         </div>
-                        <!-- 右側：✏️ 🗑️ -->
+                        <!-- 右側：📌 ✏️ 🗑️ -->
                         <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="toggleNoticePin(${idx})" title="${isPinned ? '取消置頂' : '置頂'}"
+                                class="w-6 h-6 rounded-lg flex items-center justify-center transition"
+                                style="background:${isPinned ? '#E3EDDF' : 'transparent'};color:${isPinned ? '#5A7A56' : '#BFCFBB'}"
+                                onmouseover="this.style.background='#E3EDDF';this.style.color='#5A7A56'"
+                                onmouseout="this.style.background='${isPinned ? '#E3EDDF' : 'transparent'}';this.style.color='${isPinned ? '#5A7A56' : '#BFCFBB'}'">
+                                <i class="fas fa-thumbtack text-[10px]"></i>
+                            </button>
                             <button onclick="openAddNoticeModal(${idx})" title="編輯" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#E3EDDF;color:#5A7A56" onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
                                 <i class="fas fa-pen text-[10px]"></i>
                             </button>
@@ -3927,6 +3962,13 @@
                 uploadToCloud();
                 showToast('公告已刪除');
             });
+        };
+        window.toggleNoticePin = function(idx) {
+            if (!notices[idx]) return;
+            notices[idx].pinned = !notices[idx].pinned;
+            renderNotices();
+            uploadToCloud();
+            showToast(notices[idx].pinned ? '📌 已置頂' : '置頂已取消');
         };
 
         function clearSelectedPreLeaveDays() {
@@ -5661,8 +5703,11 @@
 
         window.onload = () => {
             const now = new Date();
-            appConfig.currentYear = now.getFullYear();
-            appConfig.currentMonth = now.getMonth() + 1;
+            // 有 localStorage 記錄就用記錄，沒有才用系統日期（選項 C）
+            const _wlYear  = loadLocalData('avocado_current_year',  null);
+            const _wlMonth = loadLocalData('avocado_current_month', null);
+            appConfig.currentYear  = (_wlYear  !== null) ? _wlYear  : now.getFullYear();
+            appConfig.currentMonth = (_wlMonth !== null) ? _wlMonth : (now.getMonth() + 1);
             
             // 從 localStorage 立即還原標題（不等 Firebase）
             const savedTitle = loadLocalData('avocado_title', '');
