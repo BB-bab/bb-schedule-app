@@ -1401,16 +1401,21 @@
 
         // 智慧欄位映射函數
         function getCategoryIndex(moduleKey, taskIdx) {
+            // 優先讀取群組自訂映射（存於 scheduleModules['{key}_mapping']，隨群組資料獨立存取，不影響其他群組）
+            const customMap = scheduleModules[moduleKey + '_mapping'];
+            if (Array.isArray(customMap)) {
+                return customMap[taskIdx] !== undefined ? customMap[taskIdx] : taskIdx;
+            }
             if (moduleKey === "6") {
                 return taskIdx; // Category: 0, 1, 2, 3, 4, 5
             } else if (moduleKey === "5") {
-                const map = [0, 1, 2, 4, 5]; 
+                const map = [0, 1, 2, 4, 5];
                 return map[taskIdx] !== undefined ? map[taskIdx] : taskIdx;
             } else if (moduleKey === "4") {
-                const map = [0, 1, 2, 4]; 
+                const map = [0, 1, 2, 4];
                 return map[taskIdx] !== undefined ? map[taskIdx] : taskIdx;
             } else if (moduleKey === "3") {
-                const map = [0, 1, 2]; 
+                const map = [0, 1, 2];
                 return map[taskIdx] !== undefined ? map[taskIdx] : taskIdx;
             }
             return taskIdx;
@@ -1631,8 +1636,25 @@
                     if (data.scheduleModules) {
                         scheduleModules = data.scheduleModules;
                         allTaskNames = Object.keys(scheduleModules)
+                            .filter(k => !k.includes('_mapping'))
                             .sort((a, b) => Number(b) - Number(a))
                             .flatMap(k => scheduleModules[k] || []);
+
+                        // 自動套用群組自訂欄位映射：
+                        // 條件：4人模式的第3個任務含「所有外部」，且 4_mapping 不存在或已被污染（非數字陣列）
+                        const _cur4map = scheduleModules['4_mapping'];
+                        const _map4IsValid = Array.isArray(_cur4map) && typeof _cur4map[0] === 'number';
+                        if (!_map4IsValid) {
+                            const tasks4 = scheduleModules['4'] || [];
+                            if (tasks4.length >= 3 && tasks4[2] && String(tasks4[2]).includes('所有外部')) {
+                                scheduleModules['4_mapping'] = [0, 1, 4, 5];
+                                setTimeout(uploadToCloud, 800);
+                            } else if (_cur4map) {
+                                // 有 4_mapping 但不是正確格式，清除它
+                                delete scheduleModules['4_mapping'];
+                                setTimeout(uploadToCloud, 800);
+                            }
+                        }
                     }
 
                     // 同步超休門檻設定
@@ -1657,16 +1679,30 @@
                         monthDisplay.innerText = `${appConfig.currentYear} / ${String(appConfig.currentMonth).padStart(2, '0')}`;
                     }
 
-                    renderLeaveTable();
-                    renderMembersEdit();
-                    renderModulesEditor();
-                    renderAnalysis();
-                    renderPreLeaveDropdowns();
-                    renderPreLeaveList();
-                    renderNotices();
-                    renderShiftEvents();
-                    renderDrawQuickSelect();
+                    // 輕量全域更新（不論在哪個頁籤都需執行）
                     renderIdentitySelect();
+                    renderNotices();
+
+                    // 依當前頁籤，只渲染該頁籤需要的內容
+                    // 避免 Firebase 同步時全面重繪造成卡頓
+                    const _nowTab = (() => { try { return localStorage.getItem('avocado_active_tab') || 'dashboard'; } catch(e) { return 'dashboard'; } })();
+                    if (_nowTab === 'leaves') {
+                        renderLeaveTable();
+                        renderPreLeaveDropdowns();
+                        renderPreLeaveList();
+                        renderShiftEvents();
+                        renderDrawQuickSelect();
+                    }
+                    if (_nowTab === 'settings') {
+                        renderMembersEdit();
+                        renderModulesEditor();
+                    }
+                    if (_nowTab === 'stats') {
+                        renderAnalysis();
+                    }
+                    if (_nowTab === 'logs') {
+                        renderLogs();
+                    }
 
                     // 若群組選擇 overlay 的身分認領步驟正在顯示，補填成員清單並更新空成員提示
                     const gsoStep2 = document.getElementById('gso-step-identity');
@@ -2331,7 +2367,10 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             document.getElementById(`btn-${tabId}`).classList.add('active');
-            
+
+            // 記憶當前頁籤，供 F5 / Ctrl+Shift+R 刷新後自動還原
+            try { localStorage.setItem('avocado_active_tab', tabId); } catch(e) {}
+
             // 當切換到 leaves 頁面時，再次確保顯示正確的年份月份，防止渲染時間差
             if (tabId === 'leaves') {
                 const monthDisplay = document.getElementById('display-month-leaves');
@@ -4112,6 +4151,7 @@
 
             const standardKeys = ["6", "5", "4", "3"];
             const allKeys = Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
                 .sort((a, b) => Number(b) - Number(a));
 
             allKeys.forEach(key => {
@@ -4165,6 +4205,7 @@
                 }
             });
             allTaskNames = Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
                 .sort((a, b) => Number(b) - Number(a))
                 .flatMap(k => scheduleModules[k] || []);
             renderAnalysis();
@@ -4241,6 +4282,7 @@
             if (tasks.length === 0) { showToast("至少需要一項任務！"); return; }
             scheduleModules[_currentEditModuleKey] = tasks;
             allTaskNames = Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
                 .sort((a, b) => Number(b) - Number(a))
                 .flatMap(k => scheduleModules[k] || []);
             renderModulesEditor();
@@ -4260,6 +4302,7 @@
                 () => {
                     delete scheduleModules[key];
                     allTaskNames = Object.keys(scheduleModules)
+                        .filter(k => !k.includes('_mapping'))
                         .sort((a, b) => Number(b) - Number(a))
                         .flatMap(k => scheduleModules[k] || []);
                     renderModulesEditor();
@@ -4290,7 +4333,9 @@
                 { bg: '#D9E4DE', text: '#263830' }, // 最少人：極淺霧綠
             ];
             const emptyCell = { bg: '#EBF0EC', text: '#A0B0A6' };
-            const allKeys = Object.keys(scheduleModules).sort((a, b) => Number(b) - Number(a));
+            const allKeys = Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
+                .sort((a, b) => Number(b) - Number(a));
             // 依人數由多到少自動分配漸層色（支援任意模式數量）
             const modeColorMap = {};
             allKeys.forEach((key, idx) => {
@@ -4303,7 +4348,9 @@
             // 統計數據
             let statsByTask = {};
             let statsByCat = {};
-            const _allTasks = Object.values(scheduleModules).flat();
+            const _allTasks = Object.entries(scheduleModules)
+                .filter(([k]) => !k.includes('_mapping'))
+                .flatMap(([, v]) => v || []);
             students.forEach(m => {
                 statsByTask[m] = {};
                 statsByCat[m] = {};
@@ -4421,7 +4468,7 @@
             let totalWorkingDays = {};
             let lastExternalDay = {}; // 追蹤每人最後一次「所有外部」任務的日期
 
-            const _maxCatIdx = Math.max(5, ...Object.keys(scheduleModules).flatMap(k =>
+            const _maxCatIdx = Math.max(5, ...Object.keys(scheduleModules).filter(k => !k.includes('_mapping')).flatMap(k =>
                 (scheduleModules[k] || []).map((_, i) => getCategoryIndex(k, i))
             ));
             // 排班只排學生，老師不列入
@@ -4436,12 +4483,43 @@
                 lastExternalDay[mem] = -10;
             });
 
+            // 動態彙整所有外部任務對應的欄位索引（支援任意群組佈局）
+            const _externalCatIndices = new Set();
+            Object.keys(scheduleModules).filter(k => !k.includes('_mapping')).forEach(mk => {
+                (scheduleModules[mk] || []).forEach((t, i) => {
+                    if (t && String(t).includes('所有外部')) {
+                        _externalCatIndices.add(getCategoryIndex(mk, i));
+                    }
+                });
+            });
+
+            // 非外部欄位的「普遍夥伴」：取所有模式的交集
+            // 只有在每一個模式裡都同時出現的非外部欄位，才互為固定夥伴（如欄1↔欄2）
+            // 這樣在4人模式排班時，欄1不會因「欄3的歷史」而影響選人，避免干擾外部任務分配
+            const _allModKeys2 = Object.keys(scheduleModules).filter(k => !k.includes('_mapping'));
+            let _universalNonExtCats = null;
+            _allModKeys2.forEach(mk => {
+                const modNonExtSet = new Set(
+                    (scheduleModules[mk] || [])
+                        .map((t, i) => ({ ci: getCategoryIndex(mk, i), isExt: t && String(t).includes('所有外部') }))
+                        .filter(x => !x.isExt)
+                        .map(x => x.ci)
+                );
+                if (_universalNonExtCats === null) {
+                    _universalNonExtCats = new Set(modNonExtSet);
+                } else {
+                    _universalNonExtCats = new Set([..._universalNonExtCats].filter(ci => modNonExtSet.has(ci)));
+                }
+            });
+            if (!_universalNonExtCats) _universalNonExtCats = new Set();
+
             for (let d = 1; d <= daysInMonth; d++) {
                 const dKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const offList = leaveData[dKey] || [];
-                // 每天先做隨機洗牌，確保每次生成排班結果不同
+                // 以累積工作量為主排序（工作少的優先試算），加小隨機擾動保留多樣性
+                // 解決月初計數全0時純隨機造成的長期偏差
                 const available = students.filter(member => !offList.includes(member))
-                    .sort(() => Math.random() - 0.5);
+                    .sort((a, b) => (totalWorkingDays[a] - totalWorkingDays[b]) + (Math.random() - 0.5) * 0.8);
                 
                 if (available.length < 3) {
                     newMonthlyData[dKey] = null;
@@ -4462,6 +4540,17 @@
                 const currentTasks = scheduleModules[moduleKey];
                 const K = currentTasks.length;
 
+                // 依各欄位當前分配落差排序任務處理優先順序
+                // 落差最大的欄位最先選人，確保最不均的欄位有最多人選，不被其他任務搶走
+                const _taskPriorityOrder = Array.from({length: K}, (_, i) => i).sort((a, b) => {
+                    const rangeOf = (tIdx) => {
+                        const ci = getCategoryIndex(moduleKey, tIdx);
+                        const counts = students.map(m => categoryTaskCount[m][ci] || 0);
+                        return Math.max(...counts) - Math.min(...counts);
+                    };
+                    return rangeOf(b) - rangeOf(a);
+                });
+
                 let bestAssignment = null;
                 let minCost = Infinity;
 
@@ -4475,8 +4564,9 @@
                         return;
                     }
 
-                    const catIdx = getCategoryIndex(moduleKey, taskIndex);
-                    const taskName = currentTasks[taskIndex];
+                    const _realTaskIdx = _taskPriorityOrder[taskIndex]; // 依落差優先順序取得真正的任務索引
+                    const catIdx = getCategoryIndex(moduleKey, _realTaskIdx);
+                    const taskName = currentTasks[_realTaskIdx];
                     const isExternalTask = taskName.includes('所有外部');
                     for (let mVal of available) {
                         if (usedMembers.has(mVal)) continue;
@@ -4485,13 +4575,39 @@
                         if (isExternalTask && (d - lastExternalDay[mVal]) < externalCooldown) continue;
 
                         let cost = categoryTaskCount[mVal][catIdx] * 1000;
+
+                        // ▼ 軟性天花板：指派後次數超過均分目標時急劇加罰
+                        // 用「指派後的次數」判斷，確保在次數=5時就攔截，防止變成6
+                        // 舊版用「現在次數 > 上限」，在次數=5時不罰 → 次數從5變6才開始罰（晚一步）
+                        // 新版用「指派後次數 > 上限」，在次數=5時就罰 → 正確攔截
+                        const _colCeiling = Math.ceil(daysInMonth / students.length);
+                        const _afterAssign = categoryTaskCount[mVal][catIdx] + 1;
+                        if (_afterAssign > _colCeiling) {
+                            cost += (_afterAssign - _colCeiling) * 35000;
+                        }
+
                         const daysSinceLast = d - lastTakenDayByCat[mVal][catIdx];
 
                         if (daysSinceLast === 1) cost += 1000000;
                         else if (daysSinceLast === 2) cost += 100000;
 
-                        cost += totalWorkingDays[mVal] * 10;
+                        cost += totalWorkingDays[mVal] * 60;  // 加重整體工作量平衡（補償請假天數差異）
                         cost -= lastTakenDayByCat[mVal][catIdx] * 0.1;
+
+                        // 外部任務總量均衡：依「所有外部欄位合計次數」加罰
+                        // 舊設計（只看另一欄）有反向激勵：欄6高→欄5費用被高估→欄5更難追平
+                        // 新設計：高總量=所有外部任務都貴，低總量=所有外部任務都便宜，正確方向
+                        if (isExternalTask && _externalCatIndices.size > 0) {
+                            const _totalExt = [..._externalCatIndices].reduce((s, ec) => s + (categoryTaskCount[mVal][ec] || 0), 0);
+                            cost += _totalExt * 400;
+                        }
+
+                        // 非外部固定配對欄位總量均衡（欄1↔欄2，取所有模式的交集）
+                        // 同樣改用總量加罰，避免「欄2高→欄1貴」的反向激勵
+                        if (!isExternalTask && _universalNonExtCats.has(catIdx) && _universalNonExtCats.size > 1) {
+                            const _totalUni = [..._universalNonExtCats].reduce((s, uc) => s + (categoryTaskCount[mVal][uc] || 0), 0);
+                            cost += _totalUni * 300;
+                        }
 
                         usedMembers.add(mVal);
                         currentAssignment.push(mVal);
@@ -4503,27 +4619,30 @@
                     }
                 };
 
-                // 第一次：嚴格冷卻（隔2天）
+                // 第一次：嚴格冷卻（隔3天）
                 search(0, [], new Set(), 0, 3);
-                // 若失敗（符合外部資格的人不夠），放寬冷卻重試，避免出現「待定」
-                if (!bestAssignment) {
-                    minCost = Infinity;
-                    search(0, [], new Set(), 0, 0);
-                }
+                // 漸進放寬冷卻，避免一次跳到無冷卻而破壞輪替公平性
+                if (!bestAssignment) { minCost = Infinity; search(0, [], new Set(), 0, 2); }
+                if (!bestAssignment) { minCost = Infinity; search(0, [], new Set(), 0, 1); }
+                if (!bestAssignment) { minCost = Infinity; search(0, [], new Set(), 0, 0); }
 
                 const dayPlan = [];
                 if (bestAssignment) {
-                    bestAssignment.forEach((picked, taskIdx) => {
-                        const taskName = currentTasks[taskIdx];
-                        const catIdx = getCategoryIndex(moduleKey, taskIdx);
+                    // 將搜尋結果（依優先順序排列）還原為原始任務順序再存入 dayPlan
+                    const _pickedByRealIdx = {};
+                    bestAssignment.forEach((picked, orderIdx) => {
+                        _pickedByRealIdx[_taskPriorityOrder[orderIdx]] = picked;
+                    });
+                    for (let tIdx = 0; tIdx < K; tIdx++) {
+                        const picked = _pickedByRealIdx[tIdx];
+                        const taskName = currentTasks[tIdx];
+                        const catIdx = getCategoryIndex(moduleKey, tIdx);
                         dayPlan.push({ ruleName: taskName, userName: picked });
-
                         categoryTaskCount[picked][catIdx]++;
                         lastTakenDayByCat[picked][catIdx] = d;
                         totalWorkingDays[picked]++;
-                        // 記錄所有外部任務的最後日期，供冷卻規則使用
                         if (taskName.includes('所有外部')) lastExternalDay[picked] = d;
-                    });
+                    }
                 } else {
                     currentTasks.forEach(taskName => {
                         dayPlan.push({ ruleName: taskName, userName: "待定" });
@@ -4943,8 +5062,10 @@
             const _initSavedIdentity = loadLocalData('avocado_claimed_identity', '');
 
             if (_initSavedGroup && _initSavedIdentity) {
-                // ✅ 已有群組 + 已認領身分 → 直接進入，不顯示選擇頁面（刷新後自動還原）
-                // （Firebase onSnapshot 將自動重新拉取資料並刷新畫面）
+                // ✅ 已有群組 + 已認領身分 → 直接進入，並還原上次所在的頁籤
+                const _savedTab = (() => { try { return localStorage.getItem('avocado_active_tab') || 'dashboard'; } catch(e) { return 'dashboard'; } })();
+                const _validTabs = ['dashboard', 'leaves', 'stats', 'settings', 'logs'];
+                switchTab(_validTabs.includes(_savedTab) ? _savedTab : 'dashboard');
             } else {
                 // 首次使用 / 尚未選群組 / 尚未認領身分 → 顯示入口選擇頁
                 showGroupSelectOverlay(!!_initSavedGroup);
