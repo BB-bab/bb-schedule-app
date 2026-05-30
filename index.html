@@ -155,6 +155,15 @@
             background-color: #D8E8D4 !important;
         }
 
+        /* 梯次登記同步的休字：霧鵝黃色調 */
+        .leave-cell.is-shift-leave {
+            background-color: #F5ECC8;
+            color: #7A6230;
+        }
+        .leave-cell.is-shift-leave:hover {
+            background-color: #EDE4BA;
+        }
+
         .sticky-col {
             position: sticky;
             left: 0;
@@ -3224,6 +3233,8 @@
         // ============================================================
         let _shiftRegEventIdx = null;
         let _shiftRegSelectedDays = [];
+        let _shiftRegCalYear  = appConfig.currentYear;
+        let _shiftRegCalMonth = appConfig.currentMonth;
 
         window.toggleShiftEventsCollapse = function() {
             const panel = document.getElementById('shift-events-panel');
@@ -3366,6 +3377,9 @@
             _shiftRegEventIdx = eventIdx;
             const ev = shiftEvents[eventIdx];
             _shiftRegSelectedDays = [...((ev.registrations || {})[claimedIdentity] || [])];
+            // 初始化日曆月份為當前月份
+            _shiftRegCalYear  = appConfig.currentYear;
+            _shiftRegCalMonth = appConfig.currentMonth;
             document.getElementById('shift-reg-event-name').textContent  = ev.name;
             document.getElementById('shift-reg-member-name').textContent = claimedIdentity;
             _renderShiftRegCalendar();
@@ -3379,13 +3393,23 @@
         };
 
         function _renderShiftRegCalendar() {
-            const { currentYear: y, currentMonth: m } = appConfig;
+            const y = _shiftRegCalYear;
+            const m = _shiftRegCalMonth;
             const container = document.getElementById('shift-reg-calendar');
             if (!container) return;
             const daysInMonth = new Date(y, m, 0).getDate();
             const firstDay    = new Date(y, m - 1, 1).getDay();
             const dayNames    = ['日','一','二','三','四','五','六'];
-            let html = `<p class="text-[10px] font-bold text-center text-gray-400 mb-2">${y} 年 ${m} 月</p>`;
+            // 月份切換列
+            let html = `<div class="flex items-center justify-between mb-2 px-0.5">
+                <button onclick="_shiftRegPrevMonth()" class="w-7 h-7 rounded-lg flex items-center justify-center transition text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                    <i class="fas fa-chevron-left text-[11px]"></i>
+                </button>
+                <p class="text-[11px] font-black text-gray-500">${y} 年 ${m} 月</p>
+                <button onclick="_shiftRegNextMonth()" class="w-7 h-7 rounded-lg flex items-center justify-center transition text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                    <i class="fas fa-chevron-right text-[11px]"></i>
+                </button>
+            </div>`;
             html += `<div class="grid grid-cols-7 gap-1 mb-1">`;
             dayNames.forEach(d => { html += `<div class="text-[10px] font-black text-center text-gray-400">${d}</div>`; });
             html += `</div><div class="grid grid-cols-7 gap-1">`;
@@ -3405,6 +3429,18 @@
                     : '尚未選擇任何日期';
             }
         }
+
+        window._shiftRegPrevMonth = function() {
+            _shiftRegCalMonth--;
+            if (_shiftRegCalMonth < 1) { _shiftRegCalMonth = 12; _shiftRegCalYear--; }
+            _renderShiftRegCalendar();
+        };
+
+        window._shiftRegNextMonth = function() {
+            _shiftRegCalMonth++;
+            if (_shiftRegCalMonth > 12) { _shiftRegCalMonth = 1; _shiftRegCalYear++; }
+            _renderShiftRegCalendar();
+        };
 
         window.toggleShiftRegDay = function(dateKey) {
             const i = _shiftRegSelectedDays.indexOf(dateKey);
@@ -4098,9 +4134,11 @@
                         </td>`;
                     } else {
                         const shiftNote = (shiftNoteMap[dKey] || {})[name];
+                        // 梯次登記來源 → 霧鵝黃；一般手動點休 → 紅色
+                        const _offClass = isManualOff ? (shiftNote ? 'is-shift-leave text-xs' : 'is-off text-xs') : '';
                         row += `<td class="p-0 border-b border-l border-gray-100">
                             <div onclick="toggleLeave('${dKey}','${name}')"
-                                 class="leave-cell ${isManualOff ? 'is-off text-xs' : ''}"
+                                 class="leave-cell ${_offClass}"
                                  ${isManualOff && shiftNote ? `title="梯次：${shiftNote}"` : ''}>${isManualOff ? '休' : ''}</div>
                         </td>`;
                     }
