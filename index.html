@@ -160,12 +160,12 @@
             background-color: #EAF5F5 !important;
         }
 
-        /* 梯次：霧紫字（無左邊線）*/
+        /* 梯次：霧橘字（無左邊線）*/
         .leave-cell.is-shift-leave {
-            color: #8A7AAA;
+            color: #D4906A;
         }
         .leave-cell.is-shift-leave:hover {
-            background-color: #F0EEF6;
+            background-color: #FAF0E8;
         }
 
         .sticky-col {
@@ -354,14 +354,16 @@
             opacity: 0.25;
             cursor: not-allowed;
         }
-        /* 色標備注卡：緊湊型小日曆覆蓋 */
-        .cm-cal-compact {
-            width: 9cm;
+        /* 色標備注卡：已有色標格子（帶底色 + hover 紅框提示可除色） */
+        .preleave-cal-day.has-color-mark {
+            border: 1.5px solid rgba(0,0,0,0.10) !important;
         }
-        .cm-cal-compact .preleave-calendar-container {
-            padding: 10px 10px 10px 10px;
-            border-radius: 1rem;
+        .preleave-cal-day.has-color-mark:hover:not(.is-overflow) {
+            outline: 2px solid rgba(190,60,60,0.55);
+            outline-offset: -2px;
+            opacity: 0.8;
         }
+        /* 色標備注卡：浮動下拉日曆 */
         .cm-cal-compact .preleave-calendar-grid {
             gap: 2px;
         }
@@ -370,20 +372,29 @@
             padding-bottom: 3px;
         }
         .cm-cal-compact .preleave-cal-day {
-            height: 44px;
+            height: 32px;
             font-size: 10px;
             border-radius: 5px;
         }
-        .cm-cal-compact .cm-cal-nav-row {
-            margin-bottom: 6px;
-        }
-        .cm-cal-compact .cm-cal-nav-row span {
-            font-size: 13px;
-        }
-        .cm-cal-compact .cm-cal-nav-btn {
+        .cm-cal-nav-btn {
             width: 22px !important;
             height: 22px !important;
             font-size: 9px !important;
+        }
+        #cm-cal-dropdown {
+            animation: cmCalFadeIn 0.15s ease;
+        }
+        @keyframes cmCalFadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* 色標備注卡：因移除 overflow-hidden 改用圓角裁切 */
+        #color-mark-anchor > button {
+            border-radius: 2rem 2rem 0 0;
+        }
+        #color-mark-anchor > button:only-child,
+        #color-mark-anchor > button + .hidden {
+            border-radius: 2rem;
         }
     </style>
     <!-- 群組識別色：動態主題（只換導覽列漸層 + 卡片左邊框，預設鼠尾草綠） -->
@@ -485,7 +496,7 @@
 
             <!-- 📢 公告與規則佈告欄 -->
             <div id="notice-board-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="toggleNoticeBoardCollapse()" class="w-full px-6 py-3 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+                <button onclick="toggleNoticeBoardCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-bullhorn text-xl" style="color:#5A7A56"></i></span>
                         <div class="text-left">
@@ -574,7 +585,7 @@
 
             <!-- 🥑 智慧展開式「自動不重複抽籤工具」 -->
             <div id="lucky-draw-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-3 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+                <button onclick="toggleLuckyDrawCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-dice text-xl" style="color:#5A7A56"></i></span>
                         <div class="text-left">
@@ -674,8 +685,8 @@
             </div>
 
             <!-- 📅 智慧預假區工具 -->
-            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="togglePreLeaveCollapse()" class="w-full px-6 py-3 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
+                <button onclick="togglePreLeaveCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors" style="border-radius:2rem 2rem 0 0">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-calendar-plus text-xl" style="color:#5A7A56"></i></span>
                         <div class="text-left">
@@ -688,81 +699,93 @@
                     </div>
                 </button>
 
-                <div id="pre-leave-panel" class="hidden border-t border-[#C4DABD]/40 p-5 bg-white space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                        <div class="md:col-span-4 bg-[#EAF2E8]/30 p-4 rounded-2xl border border-[#C4DABD]/60 space-y-3">
-                            <h5 class="font-black text-[#2E5030] text-xs flex items-center gap-1.5"><i class="fas fa-edit"></i> 新增預假登記</h5>
+                <div id="pre-leave-panel" class="hidden border-t border-[#C4DABD]/40 px-5 py-4 bg-white">
+                    <div class="flex gap-5 items-start flex-wrap">
 
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="text-[10px] font-black text-[#2E5030] block">預假日期（點選多天，或使用上方箭頭切換月份）</label>
-                                    <button onclick="clearSelectedPreLeaveDays()" class="text-[10px] text-[#2E5030] hover:text-red-500 font-bold transition">清除重選</button>
+                        <!-- 左側：新增區 -->
+                        <div class="shrink-0">
+                            <div class="flex gap-3 items-end flex-wrap">
+                                <!-- 成員 -->
+                                <div class="shrink-0" style="min-width:110px;max-width:150px">
+                                    <label class="block text-[10px] font-black text-[#2E5030] mb-1">成員</label>
+                                    <select id="pre-leave-member-select" class="input-minimal bg-white border-[#AFCDA8] focus:border-[#7A8F81] font-bold text-sm w-full"></select>
                                 </div>
-
-                                <div class="preleave-calendar-container">
-                                    <div class="flex justify-between items-center mb-3" style="color:#2A4826">
-                                        <span id="preleave-cal-month-title" class="text-sm font-black tracking-tight">2026年5月</span>
-                                        <div class="flex gap-1.5">
-                                            <button onclick="changeMonth(-1)" class="w-6 h-6 rounded-md flex items-center justify-center transition shadow text-[10px]" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'">
-                                                <i class="fas fa-chevron-up"></i>
-                                            </button>
-                                            <button onclick="changeMonth(1)" class="w-6 h-6 rounded-md flex items-center justify-center transition shadow text-[10px]" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'">
-                                                <i class="fas fa-chevron-down"></i>
-                                            </button>
+                                <!-- 備注 -->
+                                <div class="shrink-0" style="min-width:160px;max-width:260px">
+                                    <label class="block text-[10px] font-black text-[#2E5030] mb-1">備注 <span class="font-bold text-gray-400">（例：出國、婚假）</span></label>
+                                    <input type="text" id="pre-leave-note-input" class="input-minimal bg-white border-[#AFCDA8] focus:border-[#7A8F81] font-bold text-sm w-full" placeholder="請輸入請假事由">
+                                </div>
+                                <!-- 日期（點選展開浮動日曆） -->
+                                <div class="shrink-0 relative" id="pl-cal-wrapper">
+                                    <label class="block text-[10px] font-black text-[#2E5030] mb-1">日期 <span class="font-bold text-gray-400">（可複選多天）</span></label>
+                                    <button onclick="togglePreLeaveCalDropdown(event)" id="pl-date-trigger-btn" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:border-[#7A8F81] hover:bg-[#F0F5F1] transition text-sm font-bold text-gray-500" style="min-width:152px">
+                                        <i class="fas fa-calendar-alt text-[#7A8F81] text-xs"></i>
+                                        <span id="pl-date-trigger-text" class="flex-1 text-left text-[12px]">尚未選擇日期</span>
+                                        <i class="fas fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200" id="pl-cal-chevron"></i>
+                                    </button>
+                                    <!-- 浮動日曆 dropdown -->
+                                    <div id="pl-cal-dropdown" class="hidden absolute top-full left-0 mt-1.5 z-[200] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
+                                        <div class="flex justify-between items-center px-3 py-2.5 border-b border-gray-100" style="color:#2A4826">
+                                            <span id="preleave-cal-month-title" class="font-black tracking-tight text-[13px]">2026年6月</span>
+                                            <div class="flex gap-1 items-center">
+                                                <button onclick="changeMonth(-1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-up"></i></button>
+                                                <button onclick="changeMonth(1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-down"></i></button>
+                                                <button onclick="clearSelectedPreLeaveDays()" class="ml-1.5 text-[10px] text-gray-400 hover:text-red-400 font-bold transition px-1.5 py-0.5 rounded-lg hover:bg-red-50">清除</button>
+                                            </div>
+                                        </div>
+                                        <div class="p-2 cm-cal-compact">
+                                            <div class="preleave-calendar-grid" id="preleave-mini-calendar"></div>
                                         </div>
                                     </div>
-                                    <div class="preleave-calendar-grid" id="preleave-mini-calendar"></div>
                                 </div>
-                                <span id="selected-days-badge" class="text-[10px] text-gray-400 font-bold block mt-1.5">尚未選擇任何日期</span>
+                                <!-- 新增按鈕 -->
+                                <button onclick="addPreLeaveRecord()" class="shrink-0 px-5 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                                    <i class="fas fa-plus mr-1"></i>新增預假
+                                </button>
                             </div>
-
-                            <div>
-                                <label class="text-[10px] font-black text-[#2E5030] block mb-1">預假成員</label>
-                                <select id="pre-leave-member-select" class="input-minimal bg-white border-[#AFCDA8] focus:border-[#7A8F81] font-bold text-sm"></select>
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] font-black text-[#2E5030] block mb-1">預假註解（例：出國、婚假）</label>
-                                <input type="text" id="pre-leave-note-input" class="input-minimal bg-white border-[#AFCDA8] focus:border-[#7A8F81] font-bold text-sm" placeholder="請輸入請假事由">
-                            </div>
-
-                            <button onclick="addPreLeaveRecord()" class="w-full py-2 rounded-xl bg-[#7A8F81] hover:bg-[#637569] text-white font-black text-xs shadow-md active:scale-95 transition flex items-center justify-center gap-1.5">
-                                <i class="fas fa-plus"></i> 新增預假登記
-                            </button>
                         </div>
 
-                        <div class="md:col-span-8 space-y-3">
-                            <!-- 標題列：標題 + 搜尋框 + 切換鍵 -->
-                            <div class="flex items-center gap-2 mb-2">
-                                <h5 class="font-black text-gray-700 text-sm flex items-center gap-1.5 shrink-0">
-                                    <i class="fas fa-list-ul text-[#7A8F81]"></i> 預假清單全覽
-                                </h5>
-                                <div class="flex-1"></div>
-                                <!-- 搜尋框 + 切換鍵，靠右並排 -->
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <div class="relative" style="width:7rem">
-                                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px]" style="color:#C4DABD"></i>
-                                        <input type="text" id="pre-leave-search" oninput="renderPreLeaveList()"
-                                            placeholder="搜尋…"
-                                            class="w-full text-xs font-bold pl-7 pr-2 py-1.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-600 focus:outline-none transition">
+                        <!-- 右側：預假清單全覽（可展開卡片） -->
+                        <div class="flex-1 min-w-[220px]">
+                            <div class="rounded-2xl border border-[#C4DABD]/70 overflow-hidden">
+                                <!-- 展開觸發列 -->
+                                <button onclick="togglePlListPanel()" class="w-full flex items-center justify-between px-4 py-2.5 bg-[#EAF2E8]/40 hover:bg-[#EAF2E8]/70 transition-colors">
+                                    <span class="text-[13px] font-black text-gray-700 flex items-center gap-1.5">
+                                        <i class="fas fa-list-ul text-[#7A8F81] text-[11px]"></i> 預假清單全覽
+                                    </span>
+                                    <i class="fas fa-chevron-down text-[#7A8F81] text-[10px] transition-transform duration-200" id="pl-list-chevron"></i>
+                                </button>
+                                <!-- 展開內容 -->
+                                <div id="pl-list-expanded" class="hidden border-t border-[#C4DABD]/50">
+                                    <!-- 搜尋 + 當月/全部 切換 -->
+                                    <div class="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+                                        <div class="flex rounded-xl overflow-hidden text-[11px] font-black border shrink-0" style="border-color:#C4DABD">
+                                            <button id="pl-view-month" onclick="setPreLeaveView('month')"
+                                                class="px-3 py-1.5 transition" style="background:#7A8F81;color:white">當月</button>
+                                            <button id="pl-view-all" onclick="setPreLeaveView('all')"
+                                                class="px-3 py-1.5 transition" style="background:#F9FAFB;color:#9CA3AF">全部</button>
+                                        </div>
+                                        <div class="relative flex-1">
+                                            <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px]" style="color:#C4DABD"></i>
+                                            <input type="text" id="pre-leave-search" oninput="renderPreLeaveList()"
+                                                placeholder="搜尋…"
+                                                class="w-full text-xs font-bold pl-7 pr-2 py-1.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-600 focus:outline-none transition">
+                                        </div>
                                     </div>
-                                    <div class="flex rounded-xl overflow-hidden text-[11px] font-black border" style="border-color:#C4DABD">
-                                        <button id="pl-view-month" onclick="setPreLeaveView('month')"
-                                            class="px-3 py-1.5 transition" style="background:#7A8F81;color:white">當月</button>
-                                        <button id="pl-view-all" onclick="setPreLeaveView('all')"
-                                            class="px-3 py-1.5 transition" style="background:#F9FAFB;color:#9CA3AF">全部</button>
-                                    </div>
+                                    <div class="px-3 pb-3 space-y-1.5" id="pre-leave-list-container"></div>
                                 </div>
                             </div>
-                            <div class="overflow-y-auto max-h-[380px] pr-2 space-y-2" id="pre-leave-list-container"></div>
                         </div>
+
                     </div>
+                    <!-- 備用：保留 badge DOM 供舊邏輯相容 -->
+                    <span id="selected-days-badge" class="hidden"></span>
                 </div>
             </div>
 
             <!-- 📋 梯次登記 -->
             <div id="shift-events-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="toggleShiftEventsCollapse()" class="w-full px-6 py-3 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+                <button onclick="toggleShiftEventsCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-clipboard-list text-xl" style="color:#5A7A56"></i></span>
                         <div class="text-left">
@@ -790,8 +813,8 @@
             </div>
 
             <!-- 🎨 色標備注管理卡 -->
-            <div id="color-mark-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="toggleColorMarkCollapse()" class="w-full px-6 py-3 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
+            <div id="color-mark-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
+                <button onclick="toggleColorMarkCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8">
                             <i class="fas fa-palette text-xl" style="color:#5A7A56"></i>
@@ -805,77 +828,81 @@
                         <i class="fas fa-chevron-down text-lg"></i>
                     </div>
                 </button>
-                <div id="color-mark-panel" class="hidden border-t border-[#C4DABD]/40 p-5 bg-white">
-                    <div class="flex gap-5 items-start flex-wrap">
-                        <!-- 日曆 -->
+                <div id="color-mark-panel" class="hidden border-t border-[#C4DABD]/40 px-5 py-3.5 bg-white">
+                    <div class="flex gap-4 items-end flex-wrap">
+                        <!-- 成員 -->
+                        <div class="shrink-0" style="min-width:110px;max-width:150px">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">成員</label>
+                            <select id="cm-member-select" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81]" onchange="updateColorMarkCalendarUI()"></select>
+                        </div>
+                        <!-- 色標 -->
                         <div class="shrink-0">
-                            <div class="flex justify-between items-center mb-1" style="width:9cm">
-                                <label class="text-[11px] font-black text-gray-500">選擇日期（可複選多天）</label>
-                                <button onclick="clearSelectedColorMarkDays()" class="text-[10px] text-gray-400 hover:text-red-400 font-bold transition">清除重選</button>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1.5">色標</label>
+                            <div class="flex gap-2 flex-wrap">
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#F2EDD4" class="hidden" checked>
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#F2EDD4" title="霧鵝黃"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#E8D6DC" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#E8D6DC" title="霧煙粉"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#DCE8F2" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#DCE8F2" title="霧粉藍"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#E8E4F2" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#E8E4F2" title="霧薰紫"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#D8EDD8" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#D8EDD8" title="霧葉綠"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#F2E4D4" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#F2E4D4" title="霧蜜橘"></span>
+                                </label>
+                                <label class="cm-color-opt cursor-pointer">
+                                    <input type="radio" name="cm-color" value="#D4E8E8" class="hidden">
+                                    <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#D4E8E8" title="霧碧青"></span>
+                                </label>
                             </div>
-                            <div class="cm-cal-compact">
-                                <div class="preleave-calendar-container">
-                                    <div class="flex justify-between items-center cm-cal-nav-row" style="color:#2A4826">
-                                        <span id="cm-cal-month-title" class="font-black tracking-tight">2026年5月</span>
-                                        <div class="flex gap-1.5">
-                                            <button onclick="changeMonth(-1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition shadow" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-up"></i></button>
-                                            <button onclick="changeMonth(1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition shadow" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-down"></i></button>
-                                        </div>
+                        </div>
+                        <!-- 日期（點選展開浮動日曆） -->
+                        <div class="shrink-0 relative" id="cm-cal-wrapper">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">日期 <span class="font-bold text-gray-400">（可複選多天）</span></label>
+                            <button onclick="toggleCmCalDropdown(event)" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:border-[#7A8F81] hover:bg-[#F0F5F1] transition text-sm font-bold text-gray-500" style="min-width:152px" id="cm-date-trigger-btn">
+                                <i class="fas fa-calendar-alt text-[#7A8F81] text-xs"></i>
+                                <span id="cm-date-trigger-text" class="flex-1 text-left text-[12px]">尚未選擇日期</span>
+                                <i class="fas fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200" id="cm-cal-chevron"></i>
+                            </button>
+                            <!-- 浮動日曆 dropdown -->
+                            <div id="cm-cal-dropdown" class="hidden absolute top-full left-0 mt-1.5 z-[200] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
+                                <div class="flex justify-between items-center px-3 py-2.5 border-b border-gray-100" style="color:#2A4826">
+                                    <span id="cm-cal-month-title" class="font-black tracking-tight text-[13px]">2026年6月</span>
+                                    <div class="flex gap-1 items-center">
+                                        <button onclick="changeMonth(-1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-up"></i></button>
+                                        <button onclick="changeMonth(1)" class="cm-cal-nav-btn rounded-md flex items-center justify-center transition" style="background:rgba(122,143,129,0.15)" onmouseover="this.style.background='rgba(122,143,129,0.28)'" onmouseout="this.style.background='rgba(122,143,129,0.15)'"><i class="fas fa-chevron-down"></i></button>
+                                        <button onclick="clearSelectedColorMarkDays()" class="ml-1.5 text-[10px] text-gray-400 hover:text-red-400 font-bold transition px-1.5 py-0.5 rounded-lg hover:bg-red-50">清除</button>
                                     </div>
+                                </div>
+                                <div class="p-2 cm-cal-compact">
                                     <div class="preleave-calendar-grid" id="cm-mini-calendar"></div>
                                 </div>
                             </div>
-                            <span id="cm-selected-days-badge" class="text-[10px] text-gray-400 font-bold block mt-1.5">尚未選擇任何日期</span>
                         </div>
-                        <!-- 成員 + 色標 + 新增鈕 -->
-                        <div class="shrink-0 space-y-3" style="width:160px">
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">成員</label>
-                                <select id="cm-member-select" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81]"></select>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1.5">色標</label>
-                                <div class="flex gap-2 flex-wrap">
-                                    <label class="cm-color-opt cursor-pointer">
-                                        <input type="radio" name="cm-color" value="#F2EDD4" class="hidden" checked>
-                                        <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#F2EDD4" title="霧鵝黃"></span>
-                                    </label>
-                                    <label class="cm-color-opt cursor-pointer">
-                                        <input type="radio" name="cm-color" value="#E8D6DC" class="hidden">
-                                        <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#E8D6DC" title="霧煙粉"></span>
-                                    </label>
-                                    <label class="cm-color-opt cursor-pointer">
-                                        <input type="radio" name="cm-color" value="#DCE8F2" class="hidden">
-                                        <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#DCE8F2" title="霧粉藍"></span>
-                                    </label>
-                                    <label class="cm-color-opt cursor-pointer">
-                                        <input type="radio" name="cm-color" value="#E8E4F2" class="hidden">
-                                        <span class="block w-7 h-7 rounded-xl border-2 border-transparent transition" style="background:#E8E4F2" title="霧薰紫"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <button onclick="addColorMark()" class="w-full py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
-                                <i class="fas fa-plus mr-1"></i>新增色標
-                            </button>
-                        </div>
-                        <!-- 色標紀錄清單 -->
-                        <div class="min-w-0" style="flex:1; min-width:180px; max-width:calc(100% - 13cm - 180px)">
-                            <!-- 標頭列：標題 + 搜尋 + 切換 -->
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-[11px] font-black text-gray-500 shrink-0">色標紀錄</span>
-                                <div class="flex-1"></div>
-                                <div class="relative shrink-0" style="width:6rem">
-                                    <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-[9px]" style="color:#C4DABD"></i>
-                                    <input type="text" id="cm-list-search" oninput="_cmSearchKw=this.value;renderColorMarkList()" placeholder="搜尋…" class="w-full text-[11px] font-bold pl-6 pr-2 py-1 rounded-xl border border-gray-100 bg-gray-50 text-gray-600 focus:outline-none transition">
-                                </div>
-                                <div class="flex rounded-xl overflow-hidden text-[10px] font-black border shrink-0" style="border-color:#C4DABD">
-                                    <button id="cm-view-month" onclick="setColorMarkView('month')" class="px-2.5 py-1 transition" style="background:#7A8F81;color:white">當月</button>
-                                    <button id="cm-view-all" onclick="setColorMarkView('all')" class="px-2.5 py-1 transition" style="background:#F9FAFB;color:#9CA3AF">全部</button>
-                                </div>
-                            </div>
-                            <div id="color-mark-list" class="space-y-1.5"></div>
-                        </div>
+                        <!-- 新增色標鈕 -->
+                        <button onclick="addColorMark()" class="shrink-0 px-5 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            <i class="fas fa-plus mr-1"></i>新增色標
+                        </button>
+                        <!-- 除色鈕 -->
+                        <button onclick="removeColorMarkDays()" class="shrink-0 px-4 py-2 rounded-2xl text-sm font-black transition shadow-sm" style="background:#F0E6E8;color:#8C4A58" onmouseover="this.style.background='#E8D0D4'" onmouseout="this.style.background='#F0E6E8'">
+                            <i class="fas fa-eraser mr-1"></i>除色
+                        </button>
                     </div>
+                    <!-- 色標紀錄（隱藏，保留 DOM 供 JS 使用）-->
+                    <div id="color-mark-list" class="hidden"></div>
                 </div>
             </div>
 
@@ -970,7 +997,7 @@
                             <span class="text-[11px] font-bold text-gray-400">預假</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="w-3 h-3 rounded-sm shrink-0" style="background:#8A7AAA"></span>
+                            <span class="w-3 h-3 rounded-sm shrink-0" style="background:#D4906A"></span>
                             <span class="text-[11px] font-bold text-gray-400">梯次</span>
                         </div>
                     </div>
@@ -1292,6 +1319,20 @@
                 <button onclick="closeModuleEditModal()" class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none">&#x2715;</button>
             </div>
             <div id="module-edit-inputs" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+            <!-- 統計欄位對齊切換 -->
+            <div class="flex items-center gap-2 pt-1">
+                <span class="text-[11px] font-black text-gray-500 shrink-0">統計欄位：</span>
+                <div class="flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                    <button id="align-btn-seq" onclick="setAlignMode('sequential')"
+                        class="px-3 py-1 text-[11px] font-black transition"
+                        style="background:#7A8F81;color:white">順序排列</button>
+                    <button id="align-btn-custom" onclick="setAlignMode('custom')"
+                        class="px-3 py-1 text-[11px] font-black transition"
+                        style="background:#F3F4F6;color:#9CA3AF">自訂對齊</button>
+                </div>
+                <span id="align-mode-hint" class="text-[10px] text-gray-400 font-bold">任務依序填入欄位</span>
+            </div>
+            <p class="text-[11px] font-bold text-gray-400 leading-snug">💡 任務名稱過長時，可在想換行處輸入 <span class="font-black text-gray-500">//</span> 符號，工作台表頭將自動在該位置換行顯示。</p>
             <button onclick="addTaskToEdit()" class="text-xs text-[#7A8F81] font-black hover:underline text-left">＋ 新增任務項目</button>
             <div class="flex gap-2 justify-end pt-1 border-t border-gray-100">
                 <button onclick="closeModuleEditModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl font-bold text-xs transition cursor-pointer">取消</button>
@@ -1484,7 +1525,11 @@
         let _groupCatFilter = 'all';   // 分類篩選藥丸狀態（'all' | catId | '__uncat__'）
 
         // 📅 預假專用資料架構（智慧儲存）
-        let preLeaveRecords = loadLocalData('avocado_pre_leaves', []);
+        // 安全載入：比對 localStorage 中記錄的群組 ID，若不符則以空陣列初始化，防止跨群組污染
+        const _cachedPlGroupId = loadLocalData('avocado_pre_leaves_group', null);
+        let preLeaveRecords = (_cachedPlGroupId === appConfig.teamId)
+            ? loadLocalData('avocado_pre_leaves', [])
+            : [];
         // 🎨 色標備注資料（{ id, member, dateKey, color }）
         let colorMarks = loadLocalData('avocado_color_marks', []);
         let selectedColorMarkDays = []; // 色標備注小日曆已選日期
@@ -1520,6 +1565,8 @@
         let _logTypeFilter      = '';       // 操作日誌標籤篩選（'' = 全部）
         let _memberFilter       = '';       // 工作台成員篩選（'' = 全部）
         let _preLeaveViewMode   = 'month';  // 預假清單檢視模式（'month' = 當月 | 'all' = 全部）
+        let _plListCollapsed    = true;     // 預假清單是否摺疊（> 5 筆才出現展開按鈕）
+        let _plPanelOpen       = false;    // 預假清單全覽右側面板是否展開
 
         // 🎲 抽籤模組動態池狀態
         let currentDrawPool = [];
@@ -1571,6 +1618,7 @@
             saveLocalData('avocado_modules', scheduleModules);
             saveLocalData('avocado_draw_winners', luckyDrawWinnersCount);
             saveLocalData('avocado_pre_leaves', preLeaveRecords);
+            saveLocalData('avocado_pre_leaves_group', appConfig.teamId);
             saveLocalData('avocado_notices', notices);
             saveLocalData('avocado_shift_events', shiftEvents);
             saveLocalData('avocado_claimed_identity', claimedIdentity);
@@ -1828,30 +1876,8 @@
                     notices = data.notices || [];
                     shiftEvents = data.shiftEvents || [];
 
-                    if (data.monthAssignments && Object.keys(data.monthAssignments).length > 0) {
-                        // 生成排班後 3 秒內，忽略 Firebase 推回的舊快照，防止覆蓋剛排好的結果
-                        if (Date.now() - _lastScheduleGenTime > 3000) {
-                            monthAssignments = data.monthAssignments;
-                            // 依當月是否有資料決定顯示日曆或空狀態（支援多月保留）
-                            const _snapPrefix = `${appConfig.currentYear}-${String(appConfig.currentMonth).padStart(2,'0')}-`;
-                            const _snapHasData = Object.keys(monthAssignments).some(k => k.startsWith(_snapPrefix));
-                            if (_snapHasData) {
-                                document.getElementById('empty-state').classList.add('hidden');
-                                document.getElementById('calendar-view').classList.remove('hidden');
-                                renderCalendar();
-                            } else {
-                                document.getElementById('calendar-view').classList.add('hidden');
-                                document.getElementById('empty-state').classList.remove('hidden');
-                            }
-                        }
-                    } else {
-                        if (Date.now() - _lastScheduleGenTime > 3000) {
-                            monthAssignments = {};
-                            document.getElementById('calendar-view').classList.add('hidden');
-                            document.getElementById('empty-state').classList.remove('hidden');
-                        }
-                    }
-
+                    // ⚠️ scheduleModules 必須在 renderCalendar() 之前更新，
+                    // 否則切換群組後 taskNames 仍使用舊群組設定，導致所有格子顯示 —
                     if (data.scheduleModules) {
                         scheduleModules = data.scheduleModules;
                         allTaskNames = Object.keys(scheduleModules)
@@ -1873,6 +1899,30 @@
                                 delete scheduleModules['4_mapping'];
                                 setTimeout(uploadToCloud, 800);
                             }
+                        }
+                    }
+
+                    if (data.monthAssignments && Object.keys(data.monthAssignments).length > 0) {
+                        // 生成排班後 3 秒內，忽略 Firebase 推回的舊快照，防止覆蓋剛排好的結果
+                        if (Date.now() - _lastScheduleGenTime > 3000) {
+                            monthAssignments = data.monthAssignments;
+                            // 依當月是否有資料決定顯示日曆或空狀態（支援多月保留）
+                            const _snapPrefix = `${appConfig.currentYear}-${String(appConfig.currentMonth).padStart(2,'0')}-`;
+                            const _snapHasData = Object.keys(monthAssignments).some(k => k.startsWith(_snapPrefix));
+                            if (_snapHasData) {
+                                document.getElementById('empty-state').classList.add('hidden');
+                                document.getElementById('calendar-view').classList.remove('hidden');
+                                renderCalendar();
+                            } else {
+                                document.getElementById('calendar-view').classList.add('hidden');
+                                document.getElementById('empty-state').classList.remove('hidden');
+                            }
+                        }
+                    } else {
+                        if (Date.now() - _lastScheduleGenTime > 3000) {
+                            monthAssignments = {};
+                            document.getElementById('calendar-view').classList.add('hidden');
+                            document.getElementById('empty-state').classList.remove('hidden');
                         }
                     }
 
@@ -3645,10 +3695,33 @@
             }
         };
 
-        function clearSelectedColorMarkDays() {
+        window.clearSelectedColorMarkDays = function() {
             selectedColorMarkDays = [];
             updateColorMarkCalendarUI();
-        }
+        };
+
+        window.toggleCmCalDropdown = function(e) {
+            if (e) e.stopPropagation();
+            const dd      = document.getElementById('cm-cal-dropdown');
+            const chevron = document.getElementById('cm-cal-chevron');
+            if (!dd) return;
+            const isOpen = !dd.classList.contains('hidden');
+            dd.classList.toggle('hidden', isOpen);
+            if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        };
+
+        // 點外關閉色標日曆
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('cm-cal-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                const dd      = document.getElementById('cm-cal-dropdown');
+                const chevron = document.getElementById('cm-cal-chevron');
+                if (dd && !dd.classList.contains('hidden')) {
+                    dd.classList.add('hidden');
+                    if (chevron) chevron.style.transform = '';
+                }
+            }
+        });
 
         window.toggleColorMarkDaySelection = function(dateKey, isOverflow) {
             if (isOverflow) return;
@@ -3660,29 +3733,50 @@
             updateColorMarkCalendarUI();
         };
 
-        function updateColorMarkCalendarUI() {
+        window.updateColorMarkCalendarUI = function() {
+            const member = document.getElementById('cm-member-select')?.value || '';
             const { currentYear: y, currentMonth: m } = appConfig;
             const daysInMonth = new Date(y, m, 0).getDate();
             for (let i = 1; i <= daysInMonth; i++) {
                 const dKey = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
                 const cell = document.getElementById(`cm-cal-${dKey}`);
-                if (cell) {
-                    cell.classList.toggle('is-selected', selectedColorMarkDays.includes(dKey));
+                if (!cell) continue;
+                const isSelected = selectedColorMarkDays.includes(dKey);
+                cell.classList.toggle('is-selected', isSelected);
+                // 顯示該成員在此日已有的色標（未被選取時才上色，避免與 is-selected 衝突）
+                const existingMark = member ? colorMarks.find(c => c.member === member && c.dateKey === dKey) : null;
+                if (existingMark && !isSelected) {
+                    cell.style.background = existingMark.color;
+                    cell.classList.add('has-color-mark');
+                    cell.title = '已有色標，點選後按「除色」可移除';
+                } else {
+                    cell.style.background = '';
+                    cell.classList.remove('has-color-mark');
+                    cell.title = '';
                 }
             }
-            const badge = document.getElementById('cm-selected-days-badge');
-            if (badge) {
+            const triggerText = document.getElementById('cm-date-trigger-text');
+            const triggerBtn  = document.getElementById('cm-date-trigger-btn');
+            if (triggerText) {
                 if (selectedColorMarkDays.length > 0) {
                     const sortedDays = [...selectedColorMarkDays]
                         .map(d => parseInt(d.split('-')[2])).sort((a, b) => a - b);
-                    badge.innerHTML = `<i class="fas fa-check-circle text-[#3D5E39]"></i> 已選 ${sortedDays.length} 天：${appConfig.currentMonth}月 ${sortedDays.join(', ')} 日`;
-                    badge.className = "text-[11px] text-[#2E5030] font-black block mt-2 bg-[#EAF2E8] border border-[#AFCDA8] px-3 py-1.5 rounded-xl";
+                    triggerText.textContent = `已選 ${sortedDays.length} 天：${sortedDays.join('、')} 日`;
+                    if (triggerBtn) {
+                        triggerBtn.style.borderColor = '#AFCDA8';
+                        triggerBtn.style.background  = '#EAF2E8';
+                        triggerBtn.style.color       = '#2E5030';
+                    }
                 } else {
-                    badge.innerHTML = `<i class="fas fa-info-circle"></i> 尚未選擇任何日期`;
-                    badge.className = "text-[10px] text-gray-400 font-bold block mt-2";
+                    triggerText.textContent = '尚未選擇日期';
+                    if (triggerBtn) {
+                        triggerBtn.style.borderColor = '';
+                        triggerBtn.style.background  = '';
+                        triggerBtn.style.color       = '';
+                    }
                 }
             }
-        }
+        };
 
         function renderColorMarkCalendar() {
             const calContainer = document.getElementById('cm-mini-calendar');
@@ -3814,6 +3908,25 @@
             if (addedCount > 0) _toastParts.push(`新增 ${addedCount} 筆`);
             if (updatedCount > 0) _toastParts.push(`更新 ${updatedCount} 筆`);
             showToast(`✅ 色標備注：${_toastParts.join('，')}`);
+        };
+
+        window.removeColorMarkDays = function() {
+            if (!requireIdentity()) return;
+            if (selectedColorMarkDays.length === 0) { showToast('請先在日曆點選要除色的日期'); return; }
+            const member = document.getElementById('cm-member-select')?.value || '';
+            if (!member) { showToast('請選擇成員'); return; }
+            const toRemove = selectedColorMarkDays.filter(dKey =>
+                colorMarks.some(c => c.member === member && c.dateKey === dKey)
+            );
+            if (toRemove.length === 0) { showToast('所選日期無此成員的色標'); return; }
+            colorMarks = colorMarks.filter(c => !(c.member === member && toRemove.includes(c.dateKey)));
+            selectedColorMarkDays = [];
+            renderColorMarkList();
+            renderLeaveTable();
+            debouncedSaveToLocalStorage();
+            uploadToCloud();
+            showToast(`✅ 已除色 ${toRemove.length} 天`);
+            updateColorMarkCalendarUI();
         };
 
         window.deleteColorMark = function(idsString) {
@@ -4471,10 +4584,33 @@
             showToast(notices[idx].pinned ? '📌 已置頂' : '置頂已取消');
         };
 
-        function clearSelectedPreLeaveDays() {
+        window.clearSelectedPreLeaveDays = function() {
             selectedPreLeaveDays = [];
             updatePreLeaveCalendarUI();
-        }
+        };
+
+        window.togglePreLeaveCalDropdown = function(e) {
+            if (e) e.stopPropagation();
+            const dd      = document.getElementById('pl-cal-dropdown');
+            const chevron = document.getElementById('pl-cal-chevron');
+            if (!dd) return;
+            const isOpen = !dd.classList.contains('hidden');
+            dd.classList.toggle('hidden', isOpen);
+            if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        };
+
+        // 點外關閉預假日曆
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('pl-cal-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                const dd      = document.getElementById('pl-cal-dropdown');
+                const chevron = document.getElementById('pl-cal-chevron');
+                if (dd && !dd.classList.contains('hidden')) {
+                    dd.classList.add('hidden');
+                    if (chevron) chevron.style.transform = '';
+                }
+            }
+        });
 
         // 智慧預假小日曆日期選擇
         window.togglePreLeaveDaySelection = function(dateKey, isOverflow) {
@@ -4501,17 +4637,26 @@
                     }
                 }
             }
-            const badge = document.getElementById('selected-days-badge');
-            if (badge) {
+            const triggerText = document.getElementById('pl-date-trigger-text');
+            const triggerBtn  = document.getElementById('pl-date-trigger-btn');
+            if (triggerText) {
                 if (selectedPreLeaveDays.length > 0) {
                     const sortedDays = [...selectedPreLeaveDays]
                         .map(d => parseInt(d.split('-')[2]))
                         .sort((a, b) => a - b);
-                    badge.innerHTML = `<i class="fas fa-check-circle text-[#3D5E39]"></i> 已選 ${sortedDays.length} 天：${appConfig.currentMonth}月 ${sortedDays.join(', ')} 日`;
-                    badge.className = "text-[11px] text-[#2E5030] font-black block mt-2 bg-[#EAF2E8] border border-[#AFCDA8] px-3 py-1.5 rounded-xl";
+                    triggerText.textContent = `已選 ${sortedDays.length} 天：${sortedDays.join('、')} 日`;
+                    if (triggerBtn) {
+                        triggerBtn.style.borderColor = '#AFCDA8';
+                        triggerBtn.style.background  = '#EAF2E8';
+                        triggerBtn.style.color       = '#2E5030';
+                    }
                 } else {
-                    badge.innerHTML = `<i class="fas fa-info-circle"></i> 尚未選擇任何日期 (請直接在下方日曆上點選多天)`;
-                    badge.className = "text-[10px] text-gray-400 font-bold block mt-2";
+                    triggerText.textContent = '尚未選擇日期';
+                    if (triggerBtn) {
+                        triggerBtn.style.borderColor = '';
+                        triggerBtn.style.background  = '';
+                        triggerBtn.style.color       = '';
+                    }
                 }
             }
         }
@@ -4577,9 +4722,13 @@
             const keyword = (document.getElementById('pre-leave-search')?.value || '').trim().toLowerCase();
 
             // ── 篩選來源資料 ──
+            // ── 安全層：過濾掉不屬於當前群組成員的紀錄，防止跨群組 localStorage 污染 ──
+            const _validMembers = new Set(members);
+            const _groupFiltered = preLeaveRecords.filter(r => _validMembers.size === 0 || _validMembers.has(r.member));
+
             let sourceRecords = isAllMode
-                ? [...preLeaveRecords]
-                : preLeaveRecords.filter(r => r.dateKey.startsWith(`${y}-${String(m).padStart(2,'0')}`));
+                ? [..._groupFiltered]
+                : _groupFiltered.filter(r => r.dateKey.startsWith(`${y}-${String(m).padStart(2,'0')}`));
 
             // 關鍵字過濾（成員名 / 日期）
             if (keyword) {
@@ -4636,11 +4785,11 @@
                     : `${item.startDay}～${item.endDay}日`;
                 const idsPayload = item.rawIds.join(',');
                 return `
-                    <div class="flex items-center px-3 py-2.5 rounded-xl border border-[#AFCDA8]/40 bg-[#F4F9F3]/60 transition hover:bg-[#EAF2E8]">
-                        <div class="flex items-center gap-2.5 flex-1 justify-center min-w-0 flex-wrap">
-                            ${item.note ? `<span class="px-2 py-0.5 rounded-lg bg-[#7A8F81] text-white shrink-0 whitespace-nowrap text-[15px] font-black">${escapeHtml(item.note)}</span>` : ''}
-                            <span class="text-[15px] font-black text-gray-700 truncate">${escapeHtml(item.member)}</span>
-                            <span class="text-[15px] font-bold shrink-0" style="color:#4B5563">${displayMonth}月${dayText}</span>
+                    <div class="flex items-center py-1.5 rounded-xl border border-[#AFCDA8]/40 bg-[#F4F9F3]/60 transition hover:bg-[#EAF2E8]" style="padding-left:1.5cm;padding-right:0.75rem">
+                        <div class="flex items-center gap-2 flex-1 justify-start min-w-0 flex-wrap">
+                            ${item.note ? `<span class="py-0.5 rounded-full bg-[#7A8F81] text-white shrink-0 whitespace-nowrap text-[13px] font-black" style="padding-left:0.3cm;padding-right:0.3cm">${escapeHtml(item.note)}</span>` : ''}
+                            <span class="text-[13px] font-black text-gray-700 truncate" style="padding-left:0.1cm;padding-right:0.1cm">${escapeHtml(item.member)}</span>
+                            <span class="text-[13px] font-bold shrink-0" style="color:#4B5563;padding-left:0.1cm;padding-right:0.1cm">${displayMonth}月${dayText}</span>
                         </div>
                         <button onclick="deletePreLeaveSegment('${idsPayload}')" class="w-6 h-6 text-[#AFCDA8] hover:text-red-500 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors shrink-0">
                             <i class="fas fa-trash-alt text-[10px]"></i>
@@ -4648,32 +4797,56 @@
                     </div>`;
             }
 
-            // ── 渲染 ──
+            // ── 渲染（含展開 / 收起邏輯）──
+            const COLLAPSE_LIMIT = 5;
+            let allItemParts = [];
+            let totalItemCount = 0;
+
             if (!isAllMode) {
-                // 當月模式：直接合併排序
                 const merged = buildMergedList(sourceRecords).sort((a, b) => a.startDay - b.startDay);
-                container.innerHTML = merged.map(item => itemHtml(item, m)).join('');
+                totalItemCount = merged.length;
+                allItemParts.push(merged.map(item => itemHtml(item, m)).join(''));
             } else {
-                // 全部模式：依年月分組，加分隔標題
                 const monthMap = {};
                 sourceRecords.forEach(r => {
                     const mk = r.dateKey.slice(0, 7);
                     if (!monthMap[mk]) monthMap[mk] = [];
                     monthMap[mk].push(r);
                 });
-                let html = '';
                 Object.keys(monthMap).sort().forEach(mk => {
                     const [gy, gm] = mk.split('-').map(Number);
                     const merged = buildMergedList(monthMap[mk]).sort((a, b) => a.startDay - b.startDay);
-                    html += `
+                    totalItemCount += merged.length;
+                    allItemParts.push(`
                         <div class="flex items-center gap-2 pt-1 pb-0.5">
                             <div class="flex-1 border-t border-[#C4DABD]"></div>
                             <span class="text-[11px] font-black shrink-0" style="color:#7A8F81">${gy}年 ${gm}月</span>
                             <div class="flex-1 border-t border-[#C4DABD]"></div>
-                        </div>`;
-                    html += merged.map(item => itemHtml(item, gm)).join('');
+                        </div>`);
+                    allItemParts.push(merged.map(item => itemHtml(item, gm)).join(''));
                 });
-                container.innerHTML = html;
+            }
+
+            const fullHtml = allItemParts.join('');
+            const needCollapse = false; // 當月與全部模式皆直接展開全部
+
+            if (needCollapse) {
+                // 只顯示前 COLLAPSE_LIMIT 筆（用 max-height 截斷，約 34px/筆）
+                container.innerHTML = `
+                    <div class="overflow-hidden" style="max-height:${COLLAPSE_LIMIT * 34}px">${fullHtml}</div>
+                    <button onclick="expandPlList()"
+                        class="w-full mt-1.5 py-1.5 flex items-center justify-center gap-1.5 rounded-xl border border-[#C4DABD] text-[11px] font-black transition hover:bg-[#EAF2E8]" style="color:#7A8F81">
+                        <i class="fas fa-chevron-down text-[9px]"></i> 查看全部（${totalItemCount} 筆）
+                    </button>`;
+            } else {
+                container.innerHTML = fullHtml;
+                if (totalItemCount > COLLAPSE_LIMIT) {
+                    container.innerHTML += `
+                    <button onclick="collapsePlList()"
+                        class="w-full mt-1.5 py-1.5 flex items-center justify-center gap-1.5 rounded-xl border border-gray-100 text-[11px] font-black text-gray-400 transition hover:bg-gray-50">
+                        <i class="fas fa-chevron-up text-[9px]"></i> 收起
+                    </button>`;
+                }
             }
         }
 
@@ -4694,8 +4867,41 @@
             renderColorMarkList();
         };
 
+        window.expandPlList = function() {
+            _plListCollapsed = false;
+            renderPreLeaveList();
+        };
+        window.collapsePlList = function() {
+            _plListCollapsed = true;
+            renderPreLeaveList();
+        };
+
+        window.togglePlListPanel = function() {
+            _plPanelOpen = !_plPanelOpen;
+            const panel   = document.getElementById('pl-list-expanded');
+            const chevron = document.getElementById('pl-list-chevron');
+            if (!panel) return;
+            panel.classList.toggle('hidden', !_plPanelOpen);
+            if (chevron) chevron.style.transform = _plPanelOpen ? 'rotate(180deg)' : '';
+            if (_plPanelOpen) {
+                _plListCollapsed = true;   // 每次展開重置為預設收折
+                renderPreLeaveList();
+            }
+        };
+
+        // 新增預假後自動展開清單面板
+        function openPlListPanel() {
+            if (_plPanelOpen) return;
+            _plPanelOpen = true;
+            const panel   = document.getElementById('pl-list-expanded');
+            const chevron = document.getElementById('pl-list-chevron');
+            if (panel)   panel.classList.remove('hidden');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        }
+
         window.setPreLeaveView = function(mode) {
             _preLeaveViewMode = mode;
+            _plListCollapsed = (mode !== 'all'); // 全部模式不收折，當月模式重置收折
             const mBtn = document.getElementById('pl-view-month');
             const aBtn = document.getElementById('pl-view-all');
             if (mBtn && aBtn) {
@@ -4754,6 +4960,7 @@
             noteInput.value = "";
 
             renderLeaveTable();
+            openPlListPanel();   // 新增後自動展開右側清單面板
             renderPreLeaveList();
             renderPreLeaveDropdowns();
             uploadToCloud();
@@ -5025,20 +5232,59 @@
         };
 
         let _currentEditModuleKey = null;
+        let _currentAlignMode = 'sequential'; // 'sequential' | 'custom'
 
         window.openModuleEditor = function(key) {
             if (!requireIdentity()) return;
             _currentEditModuleKey = key;
             const tasks = scheduleModules[key] || [];
             document.getElementById('module-edit-title').innerText = `${key} 人在崗模式 · 任務編輯`;
+
+            // 計算最大欄數（供自訂對齊的下拉選項使用）
+            const _maxCols = Math.max(6, ...Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
+                .map(k => (scheduleModules[k] || []).length));
+            const mapping = scheduleModules[key + '_mapping'];
+            const _colOptions = (selectedCol) => Array.from({length: _maxCols}, (_, c) =>
+                `<option value="${c}" ${selectedCol === c ? 'selected' : ''}>欄 ${c + 1}</option>`
+            ).join('');
+
             const container = document.getElementById('module-edit-inputs');
-            container.innerHTML = tasks.map((t, i) => `
+            container.innerHTML = tasks.map((t, i) => {
+                const colVal = mapping && mapping[i] !== undefined ? mapping[i] : i;
+                return `
                 <div class="module-edit-row flex items-center gap-2">
                     <span class="module-edit-label text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${i + 1}</span>
                     <input type="text" value="${t}" class="module-edit-input input-minimal bg-white font-bold flex-1" placeholder="任務名稱">
+                    <select class="module-edit-col-select text-[11px] font-bold rounded-lg px-2 py-1.5 border border-gray-200 hidden shrink-0" style="color:#5A7A56;min-width:56px">${_colOptions(colVal)}</select>
                     <button onclick="this.closest('.module-edit-row').remove(); reindexModuleInputs()" class="text-gray-300 hover:text-red-400 font-black text-sm shrink-0 cursor-pointer">&#x2715;</button>
-                </div>`).join('');
+                </div>`;
+            }).join('');
+
+            // 判斷目前對齊模式
+            const isSeq = Array.isArray(mapping) && mapping.every((v, i) => v === i);
+            const noMappingButSeqDefault = !mapping && (key === '6' || key === '3');
+            setAlignMode((isSeq || noMappingButSeqDefault) ? 'sequential' : 'custom');
             document.getElementById('module-edit-modal').classList.remove('hidden');
+        };
+
+        window.setAlignMode = function(mode) {
+            _currentAlignMode = mode;
+            const seqBtn    = document.getElementById('align-btn-seq');
+            const customBtn = document.getElementById('align-btn-custom');
+            const hint      = document.getElementById('align-mode-hint');
+            if (!seqBtn || !customBtn) return;
+            if (mode === 'sequential') {
+                seqBtn.style.background    = '#7A8F81'; seqBtn.style.color    = 'white';
+                customBtn.style.background = '#F3F4F6'; customBtn.style.color = '#9CA3AF';
+                if (hint) hint.innerText = '任務依序填入欄位，無空欄';
+                document.querySelectorAll('.module-edit-col-select').forEach(s => s.classList.add('hidden'));
+            } else {
+                customBtn.style.background = '#7A8F81'; customBtn.style.color = 'white';
+                seqBtn.style.background    = '#F3F4F6'; seqBtn.style.color    = '#9CA3AF';
+                if (hint) hint.innerText = '為每個任務指定對應統計欄位';
+                document.querySelectorAll('.module-edit-col-select').forEach(s => s.classList.remove('hidden'));
+            }
         };
 
         window.closeModuleEditModal = function() {
@@ -5048,12 +5294,20 @@
 
         window.addTaskToEdit = function() {
             const container = document.getElementById('module-edit-inputs');
-            const count = container.querySelectorAll('.module-edit-row').length + 1;
+            const count = container.querySelectorAll('.module-edit-row').length;
+            // 計算目前最大欄數
+            const _maxCols = Math.max(6, ...Object.keys(scheduleModules)
+                .filter(k => !k.includes('_mapping'))
+                .map(k => (scheduleModules[k] || []).length));
+            const _colOptions = Array.from({length: _maxCols}, (_, c) =>
+                `<option value="${c}" ${c === count ? 'selected' : ''}>欄 ${c + 1}</option>`
+            ).join('');
             const div = document.createElement('div');
             div.className = 'module-edit-row flex items-center gap-2';
             div.innerHTML = `
-                <span class="module-edit-label text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${count}</span>
+                <span class="module-edit-label text-xs font-black text-[#7A8F81] shrink-0 w-10">任務 ${count + 1}</span>
                 <input type="text" value="" class="module-edit-input input-minimal bg-white font-bold flex-1" placeholder="任務名稱">
+                <select class="module-edit-col-select text-[11px] font-bold rounded-lg px-2 py-1.5 border border-gray-200 shrink-0 ${_currentAlignMode === 'custom' ? '' : 'hidden'}" style="color:#5A7A56;min-width:56px">${_colOptions}</select>
                 <button onclick="this.closest('.module-edit-row').remove(); reindexModuleInputs()" class="text-gray-300 hover:text-red-400 font-black text-sm shrink-0 cursor-pointer">&#x2715;</button>`;
             container.appendChild(div);
         };
@@ -5067,10 +5321,27 @@
 
         window.saveModuleEdit = function() {
             if (!_currentEditModuleKey) return;
-            const inputs = document.querySelectorAll('.module-edit-input');
-            const tasks = Array.from(inputs).map(inp => inp.value.trim()).filter(v => v);
+            const rows   = document.querySelectorAll('.module-edit-row');
+            const tasks  = [];
+            const colMap = [];
+            rows.forEach(row => {
+                const val = row.querySelector('.module-edit-input')?.value.trim();
+                const col = row.querySelector('.module-edit-col-select');
+                if (val) {
+                    tasks.push(val);
+                    colMap.push(col ? parseInt(col.value) : tasks.length - 1);
+                }
+            });
             if (tasks.length === 0) { showToast("至少需要一項任務！"); return; }
             scheduleModules[_currentEditModuleKey] = tasks;
+            // 依對齊模式寫入欄位映射
+            if (_currentAlignMode === 'sequential') {
+                // 順序排列：寫入 0,1,2,…,n-1
+                scheduleModules[_currentEditModuleKey + '_mapping'] = tasks.map((_, i) => i);
+            } else {
+                // 自訂對齊：依使用者下拉選單設定
+                scheduleModules[_currentEditModuleKey + '_mapping'] = colMap;
+            }
             allTaskNames = Object.keys(scheduleModules)
                 .filter(k => !k.includes('_mapping'))
                 .sort((a, b) => Number(b) - Number(a))
@@ -5191,7 +5462,7 @@
                     // 自定義模式：任務由左至右填入，不足補空
                     for (let col = 0; col < maxCols; col++) {
                         cells += col < tasks.length
-                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${escapeHtml(tasks[col])}</th>`
+                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${escapeHtml(tasks[col]).replace(/\/\//g, '<br>')}</th>`
                             : `<th style="background-color:${emptyCell.bg};color:${emptyCell.text}" class="border border-slate-200 p-2 font-normal text-[10px]">無</th>`;
                     }
                 } else {
@@ -5200,7 +5471,7 @@
                     for (let col = 0; col < maxCols; col++) {
                         const tIdx = usedCols.indexOf(col);
                         cells += tIdx !== -1
-                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${escapeHtml(tasks[tIdx])}</th>`
+                            ? `<th style="background-color:${mc.bg};color:${mc.text}" class="border border-slate-200 p-2 min-w-[160px] font-black">${escapeHtml(tasks[tIdx]).replace(/\/\//g, '<br>')}</th>`
                             : `<th style="background-color:${emptyCell.bg};color:${emptyCell.text}" class="border border-slate-200 p-2 font-normal text-[10px]">無</th>`;
                     }
                 }
@@ -5230,31 +5501,148 @@
                 </tr>`).join('');
         }
 
-        // 智慧大月日曆渲染
+        // 排班結果表格渲染（幾人模式分組 × 日期 × 工作）
         function renderCalendar() {
             const container = document.getElementById('calendar-container');
             if (!container) return;
+            container.className = 'w-full';
             container.innerHTML = '';
             const { currentYear: y, currentMonth: m } = appConfig;
             const daysInMonth = new Date(y, m, 0).getDate();
+
+            // 今日 dateKey（用於凸顯）
+            const _now = new Date();
+            const _todayKey = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+
+            // 依幾人模式分組（key = 任務數量字串）
+            // modeGroups[modeKey] = { taskNames: [...], days: [dKey, ...] }
+            const modeGroups = {};
             for (let d = 1; d <= daysInMonth; d++) {
-                const dKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dKey  = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const tasks = monthAssignments[dKey];
-                const dateObj = new Date(y, m-1, d);
-                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                let dayHtml = `<div class="calendar-day"><div class="day-label ${isWeekend ? 'text-red-500 bg-red-50' : 'text-gray-700'}"><span>${d} <span class="text-[10px] opacity-40 uppercase">${["SUN","MON","TUE","WED","THU","FRI","SAT"][dateObj.getDay()]}</span></span></div><div class="flex-1 py-1">`;
-                if (tasks) {
-                    tasks.forEach(t => {
-                        const _dim = _memberFilter && t.userName !== _memberFilter;
-                        dayHtml += `<div class="task-strip" title="${escapeHtml(t.ruleName)}　${escapeHtml(t.userName)}" style="${_dim ? 'opacity:0.18;filter:saturate(0)' : ''}"><span class="task-name">${escapeHtml(t.ruleName)}</span><span class="task-user">${escapeHtml(t.userName)}</span></div>`;
-                    });
-                } else {
-                    dayHtml += `<div class="h-full flex items-center justify-center text-[10px] text-gray-300 italic">人力不足</div>`;
+                if (!tasks || tasks.length === 0) continue;
+                const modeKey = String(tasks.length);
+                if (!modeGroups[modeKey]) {
+                    // 優先使用 scheduleModules 的任務名稱（保持設定順序）
+                    // 若找不到對應模組則從實際指派資料萃取
+                    const modTasks = scheduleModules[modeKey];
+                    const taskNames = Array.isArray(modTasks) && modTasks.length
+                        ? modTasks
+                        : tasks.map(t => t.ruleName);
+                    modeGroups[modeKey] = { taskNames, days: [] };
                 }
-                container.innerHTML += dayHtml + `</div></div>`;
+                modeGroups[modeKey].days.push(dKey);
             }
+
+            if (Object.keys(modeGroups).length === 0) {
+                renderMemberFilterBar();
+                renderMemberSummary();
+                renderScheduleLockUI();
+                return;
+            }
+
+            // 模式排序：含今天的群組優先，其餘從大到小
+            const _todayModeKey = Object.keys(modeGroups).find(k => modeGroups[k].days.includes(_todayKey)) || null;
+            const sortedModes = Object.keys(modeGroups).sort((a, b) => {
+                if (a === _todayModeKey) return -1;
+                if (b === _todayModeKey) return 1;
+                return Number(b) - Number(a);
+            });
+
+            const _dayNames = ['日','一','二','三','四','五','六'];
+            let allTablesHtml = '';
+
+            for (const modeKey of sortedModes) {
+                const { taskNames, days } = modeGroups[modeKey];
+                const modeLabel = `${modeKey} 人模式`;
+
+                // ── 模式表頭列（深綠底白字）──
+                const thModeName = `<th class="px-4 py-2.5 text-center font-black text-white text-[15px] whitespace-nowrap" style="background:#5A7A56;width:96px">${escapeHtml(modeLabel)}</th>`;
+                const thTaskCells = taskNames.map(name => {
+                    // // 符號轉換為換行，先 escape 再替換以防 XSS
+                    const displayName = escapeHtml(name).replace(/\/\//g, '<br>');
+                    return `<th class="px-3 py-2.5 text-center font-black text-white text-[15px]" style="background:#7A8F81;overflow-wrap:break-word;word-break:break-word;white-space:normal">${displayName}</th>`;
+                }).join('');
+
+                let tbodyHtml = '';
+
+                // ── 日期排序：今天第一、未來由近到遠、過去沉底由近到遠 ──
+                const sortedDays = [...days].sort((a, b) => {
+                    if (a === _todayKey) return -1;
+                    if (b === _todayKey) return 1;
+                    const aPast = a < _todayKey;
+                    const bPast = b < _todayKey;
+                    if (aPast && !bPast) return 1;
+                    if (!aPast && bPast) return -1;
+                    return a < b ? -1 : 1;
+                });
+
+                // ── 日期資料列 ──
+                for (const dKey of sortedDays) {
+                    const tasks   = monthAssignments[dKey] || [];
+                    const dateObj = new Date(dKey + 'T00:00:00');
+                    const dd      = dateObj.getDate();
+                    const dow     = dateObj.getDay();
+                    const isWeekend = dow === 0 || dow === 6;
+                    const dayName = _dayNames[dow];
+                    const isToday = dKey === _todayKey;
+                    const isPast  = dKey < _todayKey;
+
+                    // ruleName → [userName, ...]
+                    const taskMap = {};
+                    tasks.forEach(t => {
+                        if (!taskMap[t.ruleName]) taskMap[t.ruleName] = [];
+                        taskMap[t.ruleName].push(t.userName);
+                    });
+
+                    // 列底色（今天 > 週末 > 一般）
+                    const rowBg    = isToday ? '#E8F1F7' : (isWeekend ? '#FFF7F7' : '#F7FAF7');
+                    const dateBg   = isToday ? '#CADDE9' : (isWeekend ? '#FFF0F0' : '#EEF5EE');
+                    const dateColor = isToday ? '#4A3728' : (isWeekend ? '#DC2626' : '#374151');
+
+                    // 今天：整框（上下左右 3px）＋ 底部明顯陰影
+                    const todayFrame = isToday
+                        ? 'border-top:3px solid #5A8AAD;border-bottom:3px solid #5A8AAD;box-shadow:0 6px 16px rgba(45,90,123,0.26);'
+                        : '';
+
+                    const tdDate = `<td class="px-3 py-2 font-black text-[14px] text-center whitespace-nowrap" style="background:${dateBg};color:${dateColor};${todayFrame}${isToday ? 'border-left:3px solid #5A8AAD;' : ''}width:96px;-webkit-text-stroke:0.4px currentColor">${m}/${dd}（${dayName}）</td>`;
+
+                    const tdCells = taskNames.map((r, idx) => {
+                        const isLastCell = idx === taskNames.length - 1;
+                        const rightBorder = (isToday && isLastCell) ? 'border-right:3px solid #5A8AAD;' : '';
+                        const users = taskMap[r] || [];
+                        if (!users.length) {
+                            return `<td class="px-3 py-2 text-center" style="background:${rowBg};${todayFrame}${rightBorder}"><span style="color:#D1D5DB;font-size:10px">—</span></td>`;
+                        }
+                        // ③ 格子底色填滿
+                        const user = users[0];
+                        const _dim       = !isPast && _memberFilter && user !== _memberFilter;
+                        const _highlight = _memberFilter && user === _memberFilter;
+                        const cellBg    = _highlight ? '#7A8F81' : (isToday ? '#B8CEDE' : '#E8F2E6');
+                        const cellColor = _highlight ? '#FFFFFF' : (isToday ? '#4A3728' : '#2E4A2A');
+                        const dimStyle  = _dim ? 'opacity:0.2;filter:saturate(0);' : '';
+                        const nameText  = users.map(u => escapeHtml(u)).join(' / ');
+                        return `<td class="px-3 py-2 text-center font-black text-[16px] whitespace-nowrap" style="background:${cellBg};color:${cellColor};${dimStyle}${todayFrame}${rightBorder}">${nameText}</td>`;
+                    }).join('');
+
+                    // 過去日期整列淡化
+                    const rowOpacity = isPast ? 'opacity:0.38;' : '';
+                    tbodyHtml += `<tr style="${rowOpacity}border-bottom:1px solid #EEF3EC">${tdDate}${tdCells}</tr>`;
+                }
+
+                // 每個模式各自一張獨立表格，全寬 + 固定欄寬平均分配
+                allTablesHtml += `
+                    <div class="overflow-x-auto rounded-2xl w-full" style="border:1px solid #DDE8DA;margin-bottom:16px">
+                        <table class="border-collapse w-full" style="table-layout:fixed">
+                            <thead><tr>${thModeName}${thTaskCells}</tr></thead>
+                            <tbody>${tbodyHtml}</tbody>
+                        </table>
+                    </div>`;
+            }
+
+            container.innerHTML = `<div class="w-full">${allTablesHtml}</div>`;
+
             renderMemberFilterBar();
-            renderMemberSummary();
             renderScheduleLockUI();
         }
 
