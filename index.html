@@ -7132,9 +7132,9 @@
 
             _isSwitchingGroup = true; // 🔒 啟動切換保護，禁止空資料覆寫 Firestore
 
-            // 背景儲存目前群組資料，不阻塞 UI（fire-and-forget）
+            // 先等待目前群組資料上傳完畢，再切換 teamId，避免覆蓋舊群組資料
             if (isCloudReady && auth && auth.currentUser) {
-                uploadToCloud().catch(() => {});
+                await uploadToCloud().catch(() => {});
             }
 
             // 切換 teamId
@@ -7266,7 +7266,7 @@
             appConfig.currentMonth = (_wlMonth !== null) ? _wlMonth : (now.getMonth() + 1);
             
             // 從 localStorage 立即還原標題（不等 Firebase）
-            const savedTitle = loadLocalData('avocado_title', '');
+            const savedTitle = loadGroupLocalData('avocado_title', '');
             if (savedTitle) {
                 appConfig.title = savedTitle;
                 document.getElementById('app-title-display').innerText = savedTitle;
