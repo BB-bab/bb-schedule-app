@@ -1738,121 +1738,6 @@
             _isInLocalMode = false;
         }
 
-        // === 冲突檢測和智能合併機制 ===
-        let _lastSyncedState = null;  // 記錄上次成功同步的狀態，用於檢測本機是否有未同步修改
-
-        // 檢測是否發生冲突（本機有修改 vs Firebase 也有修改）
-        function detectConflict(localData, firebaseData) {
-            if (!localData || !firebaseData) return false;
-
-            // 檢測名單衝突（teachers/students）
-            const localTeachers = localData.teachers || [];
-            const firebaseTeachers = firebaseData.teachers || [];
-            if (JSON.stringify(localTeachers) !== JSON.stringify(firebaseTeachers)) {
-                return { type: 'teachers', local: localTeachers, firebase: firebaseTeachers };
-            }
-
-            // 檢測請假表衝突（leaveData）
-            const localLeaves = JSON.stringify(localData.leaveData || {});
-            const firebaseLeaves = JSON.stringify(firebaseData.leaveData || {});
-            if (localLeaves !== firebaseLeaves) {
-                return { type: 'leaveData', local: localData.leaveData, firebase: firebaseData.leaveData };
-            }
-
-            // 檢測排班衝突（monthAssignments）
-            const localAssignments = JSON.stringify(localData.monthAssignments || {});
-            const firebaseAssignments = JSON.stringify(firebaseData.monthAssignments || {});
-            if (localAssignments !== firebaseAssignments) {
-                return { type: 'monthAssignments', local: localData.monthAssignments, firebase: firebaseData.monthAssignments };
-            }
-
-            return false; // 無衝突
-        }
-
-        // 智能合併：根據資料類型應用不同的合併策略
-        function mergeConflicts(firebaseData, localMemory) {
-            const merged = JSON.parse(JSON.stringify(firebaseData)); // 深複製 Firebase 數據作為基礎
-
-            if (!merged.teachers) merged.teachers = [];
-            if (!merged.students) merged.students = [];
-            if (!merged.leaveData) merged.leaveData = {};
-            if (!merged.monthAssignments) merged.monthAssignments = {};
-
-            // ═══ 策略 1：名單合併（並集 - 兩邊都保留，去重） ═══
-            if (localMemory.teachers && localMemory.teachers.length > 0) {
-                const uniqueSet = new Set([
-                    ...merged.teachers.map(t => JSON.stringify(t)),
-                    ...localMemory.teachers.map(t => JSON.stringify(t))
-                ]);
-                merged.teachers = Array.from(uniqueSet).map(t => JSON.parse(t));
-            }
-            if (localMemory.students && localMemory.students.length > 0) {
-                const uniqueSet = new Set([
-                    ...merged.students.map(s => JSON.stringify(s)),
-                    ...localMemory.students.map(s => JSON.stringify(s))
-                ]);
-                merged.students = Array.from(uniqueSet).map(s => JSON.parse(s));
-            }
-
-            // ═══ 策略 2：請假表合併（本機優先，因為本機是剛編輯） ═══
-            // 邏輯：本機修改 > Firebase（假設用户在本機做的修改更新）
-            if (localMemory.leaveData && Object.keys(localMemory.leaveData).length > 0) {
-                merged.leaveData = { ...merged.leaveData, ...localMemory.leaveData };
-            }
-
-            // ═══ 策略 3：排班合併（按日期合併，本機優先） ═══
-            if (localMemory.monthAssignments && Object.keys(localMemory.monthAssignments).length > 0) {
-                merged.monthAssignments = { ...merged.monthAssignments, ...localMemory.monthAssignments };
-            }
-
-            // ═══ 策略 4：公告合併（新增去重，預假記錄不參與合併以確保刪除操作生效） ═══
-            // preLeaveRecords 直接使用 Firebase 版本，不在此合併，防止刪除後被加回來
-
-            if (localMemory.notices && localMemory.notices.length > 0) {
-                const firebaseIds = new Set((merged.notices || []).map(n => n.id || n.ts));
-                const newNotices = localMemory.notices.filter(n => !firebaseIds.has(n.id || n.ts));
-                merged.notices = [...(merged.notices || []), ...newNotices];
-            }
-
-            return merged;
-        }
-
-        // 記錄冲突解決日誌（供用户查看）
-        function logConflictResolution(conflictInfo, mergedResult) {
-            const timestamp = Date.now();
-            const now = new Date();
-            const dateStr = now.toLocaleString('zh-TW');
-
-            const logMessage = `🔄 偵測到冲突並自動合併 (${conflictInfo.type})\n` +
-                               `時間: ${dateStr}\n` +
-                               `合併策略: ${getConflictStrategyName(conflictInfo.type)}\n` +
-                               `本機項目數: ${getItemCount(conflictInfo.local)}\n` +
-                               `雲端項目數: ${getItemCount(conflictInfo.firebase)}\n` +
-                               `合併後項目數: ${getItemCount(mergedResult[conflictInfo.type])}`;
-
-            appendLog('conflict', appConfig.identity || '系統', logMessage);
-            console.log("✅ 冲突已解決:", conflictInfo.type, mergedResult);
-        }
-
-        // 取得冑突類型對應的合併策略名稱
-        function getConflictStrategyName(type) {
-            const strategies = {
-                'teachers': '名單合併（並集去重）',
-                'students': '名單合併（並集去重）',
-                'leaveData': '請假表合併（本機優先）',
-                'monthAssignments': '排班合併（本機優先）',
-                'preLeaveRecords': '預假記錄合併（新增去重）'
-            };
-            return strategies[type] || '未知型別';
-        }
-
-        // 取得資料項目數量（用於日誌）
-        function getItemCount(data) {
-            if (Array.isArray(data)) return data.length;
-            if (typeof data === 'object' && data !== null) return Object.keys(data).length;
-            return 0;
-        }
-
         // --- LocalStorage 存取小助手 ---
         function loadLocalData(key, defaultValue) {
             try {
@@ -2380,15 +2265,6 @@
                         }
                     }
 
-                    // ═══ 更新同步狀態快照（用於下次冑突檢測） ═══
-                    _lastSyncedState = {
-                        teachers: [...teachers],
-                        students: [...students],
-                        leaveData: JSON.parse(JSON.stringify(leaveData)),
-                        monthAssignments: JSON.parse(JSON.stringify(monthAssignments)),
-                        preLeaveRecords: JSON.parse(JSON.stringify(preLeaveRecords)),
-                        notices: JSON.parse(JSON.stringify(notices))
-                    };
                 } else {
                     // 只有在「非切換途中」才允許建立新文件，防止切換時以空資料覆寫既有群組
                     if (!_isSwitchingGroup) {
@@ -2600,15 +2476,6 @@
                 if (_firebaseReconnectAttempt > 0) {
                     resetFirebaseReconnectState();
                 }
-                // ═══ 更新同步狀態快照（用於下次冑突檢測） ✅ ═══
-                _lastSyncedState = {
-                    teachers: [...cleanTeachers],
-                    students: [...cleanStudents],
-                    leaveData: JSON.parse(JSON.stringify(cleanLeaveData)),
-                    monthAssignments: JSON.parse(JSON.stringify(cleanMonthAssignments)),
-                    preLeaveRecords: JSON.parse(JSON.stringify(cleanPreLeaveRecords)),
-                    notices: JSON.parse(JSON.stringify(cleanNotices))
-                };
                 updateSyncStatusBar('syncing');
             } catch (err) {
                 console.error("同步至雲端失敗:", err);
