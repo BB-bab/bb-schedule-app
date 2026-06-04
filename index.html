@@ -1805,12 +1805,8 @@
                 merged.monthAssignments = { ...merged.monthAssignments, ...localMemory.monthAssignments };
             }
 
-            // ═══ 策略 4：其他陣列資料合併（預假記錄、公告等） ═══
-            if (localMemory.preLeaveRecords && localMemory.preLeaveRecords.length > 0) {
-                const firebaseIds = new Set((merged.preLeaveRecords || []).map(r => r.id));
-                const newRecords = localMemory.preLeaveRecords.filter(r => !firebaseIds.has(r.id));
-                merged.preLeaveRecords = [...(merged.preLeaveRecords || []), ...newRecords];
-            }
+            // ═══ 策略 4：公告合併（新增去重，預假記錄不參與合併以確保刪除操作生效） ═══
+            // preLeaveRecords 直接使用 Firebase 版本，不在此合併，防止刪除後被加回來
 
             if (localMemory.notices && localMemory.notices.length > 0) {
                 const firebaseIds = new Set((merged.notices || []).map(n => n.id || n.ts));
@@ -2361,6 +2357,12 @@
                     }
 
                     debouncedSaveToLocalStorage();
+
+                    // ⭐ 重新渲染預假清單全覽（確保 Firebase 同步後預假清單正確顯示）
+                    // 使用 setTimeout 延遲執行，確保函數已定義
+                    if (typeof renderPreLeaveList === 'function') {
+                        renderPreLeaveList();
+                    }
 
                     // 雲端拉完資料後，即時重設「假表登記」上方的年份月份字體
                     const monthDisplay = document.getElementById('display-month-leaves');
@@ -5464,6 +5466,26 @@
                     </div>`;
             }
 
+            // ── 輔助：將記錄按成員名稱分組 ──
+            function buildMemberGroupList(recs) {
+                const groups = {};
+                recs.forEach(r => {
+                    if (!groups[r.member]) groups[r.member] = [];
+                    groups[r.member].push(r);
+                });
+                return groups;
+            }
+
+            // ── 輔助：產生單一成員的容器 HTML ──
+            function memberContainerHtml(member, mergedItems, displayMonth) {
+                const itemsHtml = mergedItems.map(item => itemHtml(item, displayMonth)).join('');
+                return `
+                    <div class="mb-1">
+                        <div class="text-[11px] font-black text-[#7A8F81] px-1 pb-0.5">${escapeHtml(member)}</div>
+                        <div class="space-y-1">${itemsHtml}</div>
+                    </div>`;
+            }
+
             // ── 渲染（含展開 / 收起邏輯）──
             const COLLAPSE_LIMIT = 5;
             let allItemParts = [];
@@ -5701,6 +5723,7 @@
                         }
                     }
                 });
+                saveGroupLocalData('avocado_pre_leaves', preLeaveRecords);
                 renderLeaveTable();
                 renderPreLeaveList();
                 renderShiftEvents();      // ✅ 同時更新防蹦卡片
