@@ -2219,41 +2219,7 @@
                     _isSwitchingGroup = false; // 資料確認存在，解除切換保護
                     const data = docSnap.data();
 
-                    // === 冑突檢測與智能合併 ✅ ===
-                    // 構造本機當前狀態快照，用於冑突檢測
-                    if (!_isFirstFirebaseLoad && _lastSyncedState) {
-                        const localMemory = {
-                            teachers: teachers,
-                            students: students,
-                            leaveData: leaveData,
-                            monthAssignments: monthAssignments,
-                            preLeaveRecords: preLeaveRecords,
-                            notices: notices
-                        };
-
-                        // 檢測冑突
-                        const conflict = detectConflict(localMemory, data);
-                        if (conflict) {
-                            console.warn("🔄 偵測到資料冑突:", conflict.type);
-
-                            // 執行智能合併
-                            const mergedData = mergeConflicts(data, localMemory);
-
-                            // 應用合併結果
-                            data.teachers = mergedData.teachers;
-                            data.students = mergedData.students;
-                            data.leaveData = mergedData.leaveData;
-                            data.monthAssignments = mergedData.monthAssignments;
-                            data.preLeaveRecords = mergedData.preLeaveRecords;
-                            data.notices = mergedData.notices;
-
-                            // ⚠️ 冑突檢測不寫入操作日誌（只在 Console 記錄以便調試）
-                            console.log("✅ 冑突已自動解決:", conflict.type, mergedData);
-
-                            // 合併後立即回傳給 Firebase（確保所有用户看到合併結果）
-                            setTimeout(() => uploadToCloud(), 2000);
-                        }
-                    }
+                    // === 衝突偵測已停用，直接以 Firebase 資料為準 ===
 
                     // 載入老師 / 學生名單（舊版只有 members 時自動遷移至學生名單）
                     // 修復：只在 Firebase 有真實資料時才覆蓋，防止空數據覆蓋本機已有資料 ✅
