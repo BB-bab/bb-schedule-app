@@ -160,14 +160,6 @@
             background-color: #EAF5F5 !important;
         }
 
-        /* 梯次：霧橘字（無左邊線）*/
-        .leave-cell.is-shift-leave {
-            color: #D4906A;
-        }
-        .leave-cell.is-shift-leave:hover {
-            background-color: #FAF0E8;
-        }
-
         .sticky-col {
             position: sticky;
             left: 0;
@@ -685,7 +677,7 @@
             </div>
 
             <!-- 📅 智慧預假區工具 -->
-            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
+            <div class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
                 <button onclick="togglePreLeaveCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors" style="border-radius:2rem 2rem 0 0">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-calendar-plus text-xl" style="color:#5A7A56"></i></span>
@@ -703,7 +695,8 @@
                     <div class="flex gap-5 items-start flex-wrap">
 
                         <!-- 左側：新增區 -->
-                        <div class="shrink-0">
+                        <div class="shrink-0 flex flex-col gap-4" style="min-width:400px">
+                            <!-- 上方：固定區域（成員、備註、日期、按鈕） -->
                             <div class="flex gap-3 items-end flex-wrap">
                                 <!-- 成員 -->
                                 <div class="shrink-0" style="min-width:110px;max-width:150px">
@@ -724,7 +717,7 @@
                                         <i class="fas fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200" id="pl-cal-chevron"></i>
                                     </button>
                                     <!-- 浮動日曆 dropdown -->
-                                    <div id="pl-cal-dropdown" class="hidden absolute top-full left-0 mt-1.5 z-[200] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
+                                    <div id="pl-cal-dropdown" class="hidden fixed z-[9998] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
                                         <div class="flex justify-between items-center px-3 py-2.5 border-b border-gray-100" style="color:#2A4826">
                                             <span id="preleave-cal-month-title" class="font-black tracking-tight text-[13px]">2026年6月</span>
                                             <div class="flex gap-1 items-center">
@@ -739,9 +732,22 @@
                                     </div>
                                 </div>
                                 <!-- 新增按鈕 -->
-                                <button onclick="addPreLeaveRecord()" class="shrink-0 px-5 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
-                                    <i class="fas fa-plus mr-1"></i>新增預假
-                                </button>
+                                <div class="flex gap-2">
+                                    <button onclick="addPreLeaveRecord()" class="shrink-0 px-5 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                                        <i class="fas fa-plus mr-1"></i>新增預假
+                                    </button>
+                                    <button onclick="openShiftNewModal()" class="shrink-0 px-4 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                                        <i class="fas fa-plus mr-1"></i>新增梯次
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 下方：梯次列表區（可滾動） -->
+                            <div class="pt-4 border-t border-[#C4DABD]/40">
+                                <p class="text-[11px] font-black text-gray-600 mb-2">梯次登記</p>
+                                <div id="shift-list-display" class="space-y-2" style="max-height:200px;overflow-y:auto">
+                                    <!-- 梯次項目動態生成 -->
+                                </div>
                             </div>
                         </div>
 
@@ -783,37 +789,8 @@
                 </div>
             </div>
 
-            <!-- 📋 梯次登記 -->
-            <div id="shift-events-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
-                <button onclick="toggleShiftEventsCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
-                    <div class="flex items-center gap-3">
-                        <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8"><i class="fas fa-clipboard-list text-xl" style="color:#5A7A56"></i></span>
-                        <div class="text-left">
-                            <h4 class="font-black text-gray-800 text-lg">梯次登記</h4>
-                            <p class="text-[11px] text-gray-400 font-bold">建立活動梯次供成員登記出席日期，登記日期自動帶入當月放假登記全覽。</p>
-                        </div>
-                    </div>
-                    <div id="shift-events-arrow-icon" class="text-[#7A8F81] transition-transform duration-300">
-                        <i class="fas fa-chevron-down text-lg"></i>
-                    </div>
-                </button>
-                <div id="shift-events-panel" class="hidden border-t border-[#C4DABD]/40 p-6 bg-white space-y-4">
-                    <div class="flex justify-end">
-                        <button onclick="openShiftEventModal(null)" class="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
-                            <i class="fas fa-plus"></i> 新增梯次
-                        </button>
-                    </div>
-                    <div id="shift-events-list" class="space-y-3"></div>
-                    <div id="shift-events-empty" class="hidden flex flex-col items-center justify-center py-10 gap-3 text-center">
-                        <div style="font-size:2.2rem">📋</div>
-                        <p class="text-sm font-black text-gray-400">尚無梯次</p>
-                        <p class="text-xs text-gray-300 font-bold">點擊右上角「新增梯次」建立活動</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- 🎨 色標備注管理卡 -->
-            <div id="color-mark-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border">
+            <div id="color-mark-anchor" class="bg-white rounded-[2rem] shadow-sm border-l-[8px] border-[#7A8F81] theme-card-border overflow-hidden">
                 <button onclick="toggleColorMarkCollapse()" class="w-full px-6 py-2.5 bg-[#EAF2E8]/20 hover:bg-[#EAF2E8]/50 flex justify-between items-center transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:#EAF2E8">
@@ -878,7 +855,7 @@
                                 <i class="fas fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200" id="cm-cal-chevron"></i>
                             </button>
                             <!-- 浮動日曆 dropdown -->
-                            <div id="cm-cal-dropdown" class="hidden absolute top-full left-0 mt-1.5 z-[200] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
+                            <div id="cm-cal-dropdown" class="hidden fixed z-[9998] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden" style="width:258px">
                                 <div class="flex justify-between items-center px-3 py-2.5 border-b border-gray-100" style="color:#2A4826">
                                     <span id="cm-cal-month-title" class="font-black tracking-tight text-[13px]">2026年6月</span>
                                     <div class="flex gap-1 items-center">
@@ -906,34 +883,58 @@
                 </div>
             </div>
 
-            <!-- 梯次新增／編輯 Modal -->
-            <div id="shift-event-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
-                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col">
-                    <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                        <h3 id="shift-event-modal-title" class="text-lg font-black text-gray-800">新增梯次</h3>
-                        <button onclick="closeShiftEventModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
-                            <i class="fas fa-times text-gray-500 text-sm"></i>
+            <!-- 梯次日期登記 Modal（保留，用於梯次登記功能） -->
+            <!-- 新增梯次 Modal -->
+            <div id="shift-new-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
+                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+                        <h3 class="text-lg font-black text-gray-800">新增梯次</h3>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-black text-gray-600 mb-2">梯次名稱</label>
+                            <input type="text" id="shift-new-name" placeholder="例：暑期梯次、校外教學" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#7A8F81] focus:bg-white transition">
+                        </div>
+                    </div>
+                    <div class="px-6 pb-6 flex gap-3">
+                        <button onclick="closeShiftNewModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-sm text-gray-700 hover:bg-gray-50 transition">
+                            取消
                         </button>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <input type="hidden" id="shift-event-edit-id">
-                        <div>
-                            <label class="block text-xs font-black text-gray-600 mb-1.5">梯次名稱 <span class="text-red-400">*</span></label>
-                            <input id="shift-event-name" type="text" maxlength="30" placeholder="例：五月校外教學、畢業旅行⋯" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81]">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-gray-600 mb-1.5">說明 <span class="text-gray-400 font-medium">(選填)</span></label>
-                            <textarea id="shift-event-desc" rows="3" placeholder="活動說明或注意事項⋯" class="input-minimal w-full text-sm font-bold focus:border-[#7A8F81] resize-none" style="min-height:72px"></textarea>
-                        </div>
-                    </div>
-                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
-                        <button onclick="closeShiftEventModal()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-gray-500 bg-gray-100 hover:bg-gray-200 transition">取消</button>
-                        <button onclick="saveShiftEvent()" class="px-5 py-2.5 rounded-2xl text-sm font-black text-white transition shadow-sm" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">儲存</button>
+                        <button onclick="saveNewShiftEvent()" class="flex-1 px-4 py-2.5 rounded-xl text-white font-black text-sm transition" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            新增梯次
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 梯次日期登記 Modal -->
+            <!-- 編輯梯次 Modal -->
+            <div id="shift-event-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
+                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+                        <h3 class="text-lg font-black text-gray-800" id="shift-event-modal-title">編輯梯次</h3>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-black text-gray-600 mb-2">梯次名稱</label>
+                            <input type="text" id="shift-event-name" placeholder="例：暑期梯次、校外教學" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#7A8F81] focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-black text-gray-600 mb-2">描述</label>
+                            <input type="text" id="shift-event-desc" placeholder="例：地點、時間等補充說明" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#7A8F81] focus:bg-white transition">
+                        </div>
+                        <input type="hidden" id="shift-event-edit-id">
+                    </div>
+                    <div class="px-6 pb-6 flex gap-3">
+                        <button onclick="document.getElementById('shift-event-modal').classList.add('hidden')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-sm text-gray-700 hover:bg-gray-50 transition">
+                            取消
+                        </button>
+                        <button onclick="window.saveShiftEvent()" class="flex-1 px-4 py-2.5 rounded-xl text-white font-black text-sm transition" style="background:#7A8F81" onmouseover="this.style.background='#637569'" onmouseout="this.style.background='#7A8F81'">
+                            保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div id="shift-register-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
                 <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col" style="max-height:90vh">
                     <div class="px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
@@ -995,10 +996,6 @@
                         <div class="flex items-center gap-1.5">
                             <span class="w-3 h-3 rounded-sm shrink-0" style="background:#4A9898"></span>
                             <span class="text-[11px] font-bold text-gray-400">預假</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-3 h-3 rounded-sm shrink-0" style="background:#D4906A"></span>
-                            <span class="text-[11px] font-bold text-gray-400">梯次</span>
                         </div>
                     </div>
                 </div>
@@ -1079,7 +1076,7 @@
                         <h3 class="text-xl font-black flex items-center gap-2" style="color:#2E4A2A">
                             <i class="fas fa-history" style="color:#7A8F81"></i> 操作日誌
                         </h3>
-                        <p class="text-xs font-bold mt-1" style="color:#7A8F81">記錄最近 30 天內的成員操作與抽籤結果，超過自動清除</p>
+                        <p class="text-xs font-bold mt-1" style="color:#7A8F81">記錄最近 45 天內的成員操作與抽籤結果，超過自動清除</p>
                     </div>
                 </div>
 
@@ -1465,18 +1462,34 @@
             "ND SH JD XY SY", "LS MT JY YD LY FB", "OL XO XH YS HS", "所有外部主审", "所有外部異常+GPAY+代付+2card",
             "ND SH JD XY SY 2card", "LS MT JY YD LY FB +代付", "OL XO XH YS HS GPAY", "所有外部主审+異常"
         ];
-        
-        // 系統變數初始化 (智慧防丟失：會優先從本機儲存 LocalStorage 載入資料)
-        // 老師 / 學生分組；舊版資料自動遷移至學生名單
-        let _rawTeachers = loadLocalData('avocado_teachers', null);
-        let _rawStudents = loadLocalData('avocado_students', null);
-        let teachers = (_rawTeachers !== null) ? (_rawTeachers || []) : [];
-        let students = (_rawStudents !== null) ? (_rawStudents || []) : loadLocalData('avocado_members', DEFAULT_MEMBERS);
-        let members  = [...teachers, ...students];
-        
+
+        // 【第一步】先確定當前群組 ID
         const _urlTeamId = new URLSearchParams(window.location.search).get('team');
         const _savedGroupId = (() => { try { const _v = localStorage.getItem('avocado_active_group_id'); return _v ? (JSON.parse(_v) || '') : ''; } catch(e) { return ''; } })();
         const _activeTeamId = ((_urlTeamId && _urlTeamId.trim()) ? _urlTeamId.trim() : (_savedGroupId || "avocado-team-main")).replace(/^"+|"+$/g, '');
+
+        // 【第二步】自動遷移舊資料到命名空間（首次載入時執行）✅
+        migrateGroupDataToNamespace(_activeTeamId);
+
+        // 【第三步】系統變數初始化 (智慧防丟失：從本機儲存 LocalStorage 載入資料)
+        // 修復：優先使用命名空間鍵中的資料，確保新添加資料不被覆蓋 ✅
+        // 老師 / 學生分組；舊版資料自動遷移至學生名單
+
+        // 讀取老師資料：優先用命名空間鍵，空數據也保留（不回退）
+        const _namespaceTeachers = loadGroupLocalData('avocado_teachers', undefined, _activeTeamId);
+        let _rawTeachers = (_namespaceTeachers !== undefined)
+            ? _namespaceTeachers  // 命名空間鍵有資料（即使是空陣列），就用它
+            : loadLocalData('avocado_teachers', null);  // 只在沒找到時才回退
+        let teachers = (_rawTeachers !== null) ? (_rawTeachers || []) : [];
+
+        // 讀取學生資料：優先用命名空間鍵，空數據也保留（不回退）
+        const _namespaceStudents = loadGroupLocalData('avocado_students', undefined, _activeTeamId);
+        let _rawStudents = (_namespaceStudents !== undefined)
+            ? _namespaceStudents  // 命名空間鍵有資料（即使是空陣列），就用它
+            : loadLocalData('avocado_students', null);  // 只在沒找到時才回退
+        let students = (_rawStudents !== null) ? (_rawStudents || []) : loadLocalData('avocado_members', DEFAULT_MEMBERS);
+
+        let members  = [...teachers, ...students];
 
         // 月份：有 localStorage 記錄就用記錄，沒有就用系統當月（選項 C）
         const _today = new Date();
@@ -1486,14 +1499,15 @@
         let appConfig = {
             currentYear:  (_savedYear  !== null) ? _savedYear  : _today.getFullYear(),
             currentMonth: (_savedMonth !== null) ? _savedMonth : (_today.getMonth() + 1),
-            title: loadLocalData('avocado_title', "牛油果排班"),
+            title: loadGroupLocalData('avocado_title', "牛油果排班", _activeTeamId),
             teamId: _activeTeamId,
             overThreshold: loadLocalData('avocado_over_threshold', 3)
         };
-        
-        let leaveData = loadLocalData('avocado_leaves', {}); 
-        let monthAssignments = loadLocalData('avocado_assignments', {}); 
-        
+
+        // 群組資料：從命名空間鍵讀取（修復：防止不同群組互相覆蓋）✅
+        let leaveData = loadGroupLocalData('avocado_leaves', {}, _activeTeamId) || loadLocalData('avocado_leaves', {});
+        let monthAssignments = loadGroupLocalData('avocado_assignments', {}, _activeTeamId) || loadLocalData('avocado_assignments', {});
+
         let allTaskNames = loadLocalData('avocado_all_tasks', DEFAULT_TASKS);
 
         let scheduleModules = loadLocalData('avocado_modules', {
@@ -1510,10 +1524,10 @@
         let _isDrawAnimating = false;  // 防止同一次 drawing 廣播重複觸發動畫
         const _appLoadTs = Date.now(); // 頁面載入時間戳，用於過濾 F5 後重播的舊結果
 
-        // 📋 操作日誌（保留最近 30 天）
-        let operationLogs = loadLocalData('avocado_logs', []);
-        // 🔒 排班鎖定狀態（null = 未鎖，{ year, month, lockedBy, lockedAt } = 已鎖）
-        let scheduleLock = loadLocalData('avocado_schedule_lock', null);
+        // 📋 操作日誌（保留最近 30 天）修復：從命名空間鍵讀取 ✅
+        let operationLogs = loadGroupLocalData('avocado_logs', [], _activeTeamId) || loadLocalData('avocado_logs', []);
+        // 🔒 排班鎖定狀態（null = 未鎖，{ year, month, lockedBy, lockedAt } = 已鎖）修復：從命名空間鍵讀取 ✅
+        let scheduleLock = loadGroupLocalData('avocado_schedule_lock', null, _activeTeamId) || loadLocalData('avocado_schedule_lock', null);
         // 判斷目前顯示月份的排班是否已鎖定
         function isScheduleLocked() {
             return scheduleLock !== null
@@ -1525,22 +1539,65 @@
         let _groupCatFilter = 'all';   // 分類篩選藥丸狀態（'all' | catId | '__uncat__'）
 
         // 📅 預假專用資料架構（智慧儲存）
-        // 安全載入：比對 localStorage 中記錄的群組 ID，若不符則以空陣列初始化，防止跨群組污染
-        const _cachedPlGroupId = loadLocalData('avocado_pre_leaves_group', null);
-        let preLeaveRecords = (_cachedPlGroupId === appConfig.teamId)
-            ? loadLocalData('avocado_pre_leaves', [])
-            : [];
-        // 🎨 色標備注資料（{ id, member, dateKey, color }）
-        let colorMarks = loadLocalData('avocado_color_marks', []);
+        // 預假記錄：從命名空間鍵讀取（修復：防止不同群組互相覆蓋）✅
+        let preLeaveRecords = loadGroupLocalData('avocado_pre_leaves', [], _activeTeamId) || loadLocalData('avocado_pre_leaves', []);
+
+        // 🎨 色標備注資料（{ id, member, dateKey, color }）修復：從命名空間鍵讀取 ✅
+        let colorMarks = loadGroupLocalData('avocado_color_marks', [], _activeTeamId) || loadLocalData('avocado_color_marks', []);
         let selectedColorMarkDays = []; // 色標備注小日曆已選日期
         let _cmViewMode   = 'month';    // 色標紀錄檢視模式（'month' | 'all'）
         let _cmSearchKw   = '';         // 色標紀錄搜尋關鍵字
 
-        // 📢 公告佈告欄資料
-        let notices = loadLocalData('avocado_notices', []);
+        // 📢 公告佈告欄資料：從命名空間鍵讀取（修復：防止不同群組互相覆蓋）✅
+        let notices = loadGroupLocalData('avocado_notices', [], _activeTeamId) || loadLocalData('avocado_notices', []);
 
-        // 📋 梯次登記資料
-        let shiftEvents = loadLocalData('avocado_shift_events', []);
+        // 📋 梯次登記資料：從命名空間鍵讀取（修復：防止不同群組互相覆蓋）✅
+        let shiftEvents = loadGroupLocalData('avocado_shift_events', [], _activeTeamId) || loadLocalData('avocado_shift_events', []);
+
+        // ✅ 【遷移函數】將舊梯次登記從 shiftEvents.registrations 遷移到 preLeaveRecords
+        function migrateShiftRegistrationsToPreLeaveRecords() {
+            const migrationKey = `avocado_shift_migration_done_${_activeTeamId}`;
+            if (loadLocalData(migrationKey, false)) return; // 已遷移過，跳過
+
+            let hasMigration = false;
+            shiftEvents.forEach(ev => {
+                if (!ev.registrations || Object.keys(ev.registrations).length === 0) return;
+
+                Object.entries(ev.registrations).forEach(([member, dates]) => {
+                    dates.forEach(dateKey => {
+                        // 檢查是否已存在於 preLeaveRecords
+                        const exists = preLeaveRecords.some(r =>
+                            r.type === 'shift' && r.shiftId === ev.id && r.member === member && r.dateKey === dateKey
+                        );
+
+                        if (!exists) {
+                            const shiftRecord = {
+                                id: `shift_migrated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                member: member,
+                                dateKey: dateKey,
+                                type: 'shift',
+                                shiftName: ev.name,
+                                shiftId: ev.id,
+                                isSingle: true
+                            };
+                            preLeaveRecords.push(shiftRecord);
+                            hasMigration = true;
+                        }
+                    });
+                });
+            });
+
+            // 標記遷移完成
+            saveLocalData(migrationKey, true);
+
+            // 如果有遷移數據，保存到本機
+            if (hasMigration) {
+                saveGroupLocalData('avocado_pre_leaves', preLeaveRecords, _activeTeamId);
+            }
+        }
+
+        // 初始化時執行遷移
+        migrateShiftRegistrationsToPreLeaveRecords();
 
         // 📅 預假小日曆當前被選中的多個日期數組
         let selectedPreLeaveDays = [];
@@ -1562,11 +1619,20 @@
         let _isSwitchingGroup = false; // 群組切換保護旗標，防止切換途中以空資料覆寫 Firestore
         let _isRenamingGroup = false;  // 群組重命名保護旗標，防止 onSnapshot 在 sync 完成前以舊資料覆蓋
         let _lastScheduleGenTime = 0;  // 最後一次生成排班的時間戳（防 Firebase 舊快照覆蓋）
+        let _isFirstFirebaseLoad = true; // 頁面初次載入時的 Firebase 快照標誌（防止空資料覆蓋本機資料）
         let _logTypeFilter      = '';       // 操作日誌標籤篩選（'' = 全部）
         let _memberFilter       = '';       // 工作台成員篩選（'' = 全部）
         let _preLeaveViewMode   = 'month';  // 預假清單檢視模式（'month' = 當月 | 'all' = 全部）
         let _plListCollapsed    = true;     // 預假清單是否摺疊（> 5 筆才出現展開按鈕）
         let _plPanelOpen       = false;    // 預假清單全覽右側面板是否展開
+
+        // === 自動重連機制狀態變數 ===
+        let _firebaseReconnectAttempt = 0;      // 重連嘗試次數
+        let _firebaseReconnectTimer = null;     // 重連計時器
+        let _lastConnectionError = null;        // 最後發生的連接錯誤
+        let _isInLocalMode = false;             // 是否進入本機模式
+        let _firebaseReconnectStartTime = null; // 重連開始時間
+        let _pendingCloudSyncNeeded = false;    // 是否有待同步的本機變更
 
         // 🎲 抽籤模組動態池狀態
         let currentDrawPool = [];
@@ -1584,15 +1650,211 @@
          appId: "1:857292934439:web:ca4e49df41d22153092d02"
         };
 
-        
-        // 完美解析與載入 Firebase 實體：不再重複宣告 `db`，直接對全域變數賦值！
-        try {
-            const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-            const app = window.FirebaseCore.initializeApp(effectiveConfig);
-            db = window.FirebaseCore.getFirestore(app);
-            auth = window.FirebaseCore.getAuth(app);
-        } catch (e) {
-            console.warn("Firebase 載入階段偵測到本地無雲端配置，將以單機備份防遺失模式執行：", e);
+
+        // 修復：等待 module script 加載完成後再初始化 Firebase ✅
+        // （防止時序問題導致 window.FirebaseCore undefined）
+        document.addEventListener('DOMContentLoaded', function initFirebaseOnLoad() {
+            // 等待 Firebase module 加載完成（最多 5 秒）
+            const waitForFirebase = setInterval(() => {
+                if (window.FirebaseCore) {
+                    clearInterval(waitForFirebase);
+                    try {
+                        const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+                        const app = window.FirebaseCore.initializeApp(effectiveConfig);
+                        db = window.FirebaseCore.getFirestore(app);
+                        auth = window.FirebaseCore.getAuth(app);
+                        console.log("✅ Firebase 初始化成功");
+                    } catch (e) {
+                        console.warn("Firebase 初始化失敗，進入本機單機模式：", e);
+                    }
+                }
+            }, 100);
+            // 超時保護（5秒後仍未加載則放棄）
+            setTimeout(() => clearInterval(waitForFirebase), 5000);
+            document.removeEventListener('DOMContentLoaded', initFirebaseOnLoad);
+        });
+
+        // === 自動重連機制實現 ===
+        function attemptFirebaseReconnect() {
+            if (!auth || !auth.currentUser) return;
+
+            // 初始化重連計時
+            if (!_firebaseReconnectStartTime) {
+                _firebaseReconnectStartTime = Date.now();
+                _firebaseReconnectAttempt = 0;
+            }
+
+            // 超時保護：60 秒內無法重連則進入本機模式
+            const elapsedSeconds = (Date.now() - _firebaseReconnectStartTime) / 1000;
+            if (elapsedSeconds > 60 || _firebaseReconnectAttempt >= 5) {
+                console.warn("⚠️ Firebase 重連超時，進入本機模式");
+                _isInLocalMode = true;
+                document.getElementById('cloud-status').innerText = '🟢 本機模式運行';
+                document.getElementById('cloud-status').style.color = "#EAD1DC";
+                return;
+            }
+
+            // 指數退避計算：1秒、3秒、5秒、10秒
+            const delays = [1000, 3000, 5000, 10000];
+            const delay = delays[Math.min(_firebaseReconnectAttempt, delays.length - 1)];
+            _firebaseReconnectAttempt++;
+
+            console.log(`🔄 Firebase 重連第 ${_firebaseReconnectAttempt} 次嘗試（延遲 ${delay}ms）`);
+            document.getElementById('cloud-status').innerText = `⚠️ 网络中断中... 正在重连 (${_firebaseReconnectAttempt}/${5})`;
+            document.getElementById('cloud-status').style.color = "#FFD700";
+
+            if (_firebaseReconnectTimer) clearTimeout(_firebaseReconnectTimer);
+            _firebaseReconnectTimer = setTimeout(() => {
+                try {
+                    // 嘗試重新連接
+                    connectToCloudTeam(auth.currentUser);
+
+                    // 連接成功，重置重連狀態
+                    _firebaseReconnectAttempt = 0;
+                    _firebaseReconnectStartTime = null;
+                    _isInLocalMode = false;
+                    document.getElementById('cloud-status').innerText = '☁️ 雲端同步已啟動';
+                    document.getElementById('cloud-status').style.color = "#ffffff";
+                    console.log("✅ Firebase 重連成功");
+
+                    // 若有待同步的變更，立即同步
+                    if (_pendingCloudSyncNeeded) {
+                        _pendingCloudSyncNeeded = false;
+                        uploadToCloud();
+                    }
+                } catch (e) {
+                    console.error("重連嘗試失敗:", e);
+                    attemptFirebaseReconnect();
+                }
+            }, delay);
+        }
+
+        // 重置重連狀態（連接恢復時調用）
+        function resetFirebaseReconnectState() {
+            if (_firebaseReconnectTimer) clearTimeout(_firebaseReconnectTimer);
+            _firebaseReconnectAttempt = 0;
+            _firebaseReconnectStartTime = null;
+            _firebaseReconnectTimer = null;
+            _isInLocalMode = false;
+        }
+
+        // === 冲突檢測和智能合併機制 ===
+        let _lastSyncedState = null;  // 記錄上次成功同步的狀態，用於檢測本機是否有未同步修改
+
+        // 檢測是否發生冲突（本機有修改 vs Firebase 也有修改）
+        function detectConflict(localData, firebaseData) {
+            if (!localData || !firebaseData) return false;
+
+            // 檢測名單衝突（teachers/students）
+            const localTeachers = localData.teachers || [];
+            const firebaseTeachers = firebaseData.teachers || [];
+            if (JSON.stringify(localTeachers) !== JSON.stringify(firebaseTeachers)) {
+                return { type: 'teachers', local: localTeachers, firebase: firebaseTeachers };
+            }
+
+            // 檢測請假表衝突（leaveData）
+            const localLeaves = JSON.stringify(localData.leaveData || {});
+            const firebaseLeaves = JSON.stringify(firebaseData.leaveData || {});
+            if (localLeaves !== firebaseLeaves) {
+                return { type: 'leaveData', local: localData.leaveData, firebase: firebaseData.leaveData };
+            }
+
+            // 檢測排班衝突（monthAssignments）
+            const localAssignments = JSON.stringify(localData.monthAssignments || {});
+            const firebaseAssignments = JSON.stringify(firebaseData.monthAssignments || {});
+            if (localAssignments !== firebaseAssignments) {
+                return { type: 'monthAssignments', local: localData.monthAssignments, firebase: firebaseData.monthAssignments };
+            }
+
+            return false; // 無衝突
+        }
+
+        // 智能合併：根據資料類型應用不同的合併策略
+        function mergeConflicts(firebaseData, localMemory) {
+            const merged = JSON.parse(JSON.stringify(firebaseData)); // 深複製 Firebase 數據作為基礎
+
+            if (!merged.teachers) merged.teachers = [];
+            if (!merged.students) merged.students = [];
+            if (!merged.leaveData) merged.leaveData = {};
+            if (!merged.monthAssignments) merged.monthAssignments = {};
+
+            // ═══ 策略 1：名單合併（並集 - 兩邊都保留，去重） ═══
+            if (localMemory.teachers && localMemory.teachers.length > 0) {
+                const uniqueSet = new Set([
+                    ...merged.teachers.map(t => JSON.stringify(t)),
+                    ...localMemory.teachers.map(t => JSON.stringify(t))
+                ]);
+                merged.teachers = Array.from(uniqueSet).map(t => JSON.parse(t));
+            }
+            if (localMemory.students && localMemory.students.length > 0) {
+                const uniqueSet = new Set([
+                    ...merged.students.map(s => JSON.stringify(s)),
+                    ...localMemory.students.map(s => JSON.stringify(s))
+                ]);
+                merged.students = Array.from(uniqueSet).map(s => JSON.parse(s));
+            }
+
+            // ═══ 策略 2：請假表合併（本機優先，因為本機是剛編輯） ═══
+            // 邏輯：本機修改 > Firebase（假設用户在本機做的修改更新）
+            if (localMemory.leaveData && Object.keys(localMemory.leaveData).length > 0) {
+                merged.leaveData = { ...merged.leaveData, ...localMemory.leaveData };
+            }
+
+            // ═══ 策略 3：排班合併（按日期合併，本機優先） ═══
+            if (localMemory.monthAssignments && Object.keys(localMemory.monthAssignments).length > 0) {
+                merged.monthAssignments = { ...merged.monthAssignments, ...localMemory.monthAssignments };
+            }
+
+            // ═══ 策略 4：其他陣列資料合併（預假記錄、公告等） ═══
+            if (localMemory.preLeaveRecords && localMemory.preLeaveRecords.length > 0) {
+                const firebaseIds = new Set((merged.preLeaveRecords || []).map(r => r.id));
+                const newRecords = localMemory.preLeaveRecords.filter(r => !firebaseIds.has(r.id));
+                merged.preLeaveRecords = [...(merged.preLeaveRecords || []), ...newRecords];
+            }
+
+            if (localMemory.notices && localMemory.notices.length > 0) {
+                const firebaseIds = new Set((merged.notices || []).map(n => n.id || n.ts));
+                const newNotices = localMemory.notices.filter(n => !firebaseIds.has(n.id || n.ts));
+                merged.notices = [...(merged.notices || []), ...newNotices];
+            }
+
+            return merged;
+        }
+
+        // 記錄冲突解決日誌（供用户查看）
+        function logConflictResolution(conflictInfo, mergedResult) {
+            const timestamp = Date.now();
+            const now = new Date();
+            const dateStr = now.toLocaleString('zh-TW');
+
+            const logMessage = `🔄 偵測到冲突並自動合併 (${conflictInfo.type})\n` +
+                               `時間: ${dateStr}\n` +
+                               `合併策略: ${getConflictStrategyName(conflictInfo.type)}\n` +
+                               `本機項目數: ${getItemCount(conflictInfo.local)}\n` +
+                               `雲端項目數: ${getItemCount(conflictInfo.firebase)}\n` +
+                               `合併後項目數: ${getItemCount(mergedResult[conflictInfo.type])}`;
+
+            appendLog('conflict', appConfig.identity || '系統', logMessage);
+            console.log("✅ 冲突已解決:", conflictInfo.type, mergedResult);
+        }
+
+        // 取得冑突類型對應的合併策略名稱
+        function getConflictStrategyName(type) {
+            const strategies = {
+                'teachers': '名單合併（並集去重）',
+                'students': '名單合併（並集去重）',
+                'leaveData': '請假表合併（本機優先）',
+                'monthAssignments': '排班合併（本機優先）',
+                'preLeaveRecords': '預假記錄合併（新增去重）'
+            };
+            return strategies[type] || '未知型別';
+        }
+
+        // 取得資料項目數量（用於日誌）
+        function getItemCount(data) {
+            if (Array.isArray(data)) return data.length;
+            if (typeof data === 'object' && data !== null) return Object.keys(data).length;
+            return 0;
         }
 
         // --- LocalStorage 存取小助手 ---
@@ -1606,25 +1868,44 @@
             }
         }
 
+        // 按群組命名空間讀取本機資料（防止不同群組的資料互相覆蓋）
+        function loadGroupLocalData(key, defaultValue, groupId = null) {
+            const gid = groupId || appConfig.teamId;
+            const namespacedKey = `${key}_${gid}`;
+            try {
+                const stored = localStorage.getItem(namespacedKey);
+                return stored ? JSON.parse(stored) : defaultValue;
+            } catch (e) {
+                console.warn("讀取群組本機儲存失敗，使用預設值:", e);
+                return defaultValue;
+            }
+        }
+
         // 保存系統所有當前設定與排班數據至本機緩存
+        // 修復：按群組命名空間保存，防止不同群組的資料互相覆蓋 ✅
         function saveAllDataToLocalStorage() {
-            saveLocalData('avocado_teachers', teachers);
-            saveLocalData('avocado_students', students);
-            saveLocalData('avocado_members', members);
-            saveLocalData('avocado_title', appConfig.title || "牛油果排班");
-            saveLocalData('avocado_leaves', leaveData);
-            saveLocalData('avocado_assignments', monthAssignments);
+            // 按群組命名空間保存的資料（每個群組獨立）
+            saveGroupLocalData('avocado_teachers', teachers);
+            saveGroupLocalData('avocado_students', students);
+            saveGroupLocalData('avocado_leaves', leaveData);
+            saveGroupLocalData('avocado_assignments', monthAssignments);
+            saveGroupLocalData('avocado_pre_leaves', preLeaveRecords);
+            saveGroupLocalData('avocado_notices', notices);
+            saveGroupLocalData('avocado_shift_events', shiftEvents);
+            saveGroupLocalData('avocado_logs', operationLogs);
+            saveGroupLocalData('avocado_schedule_lock', scheduleLock);
+            saveGroupLocalData('avocado_color_marks', colorMarks);
+
+            // 按群組命名空間保存標題（每個群組獨立標題） ✅
+            saveGroupLocalData('avocado_title', appConfig.title || "牛油果排班");
+
+            // 全局資料（所有群組共用）
+            saveLocalData('avocado_members', members); // 兼容舊邏輯
             saveLocalData('avocado_all_tasks', allTaskNames);
             saveLocalData('avocado_modules', scheduleModules);
             saveLocalData('avocado_draw_winners', luckyDrawWinnersCount);
-            saveLocalData('avocado_pre_leaves', preLeaveRecords);
             saveLocalData('avocado_pre_leaves_group', appConfig.teamId);
-            saveLocalData('avocado_notices', notices);
-            saveLocalData('avocado_shift_events', shiftEvents);
             saveLocalData('avocado_claimed_identity', claimedIdentity);
-            saveLocalData('avocado_logs', operationLogs);
-            saveLocalData('avocado_schedule_lock', scheduleLock);
-            saveLocalData('avocado_color_marks', colorMarks);
         }
 
         // 防抖版本：停止操作 300ms 後才寫入 localStorage，避免快速連續操作重複序列化
@@ -1640,6 +1921,66 @@
             } catch (e) {
                 console.warn("寫入本機儲存失敗:", e);
             }
+        }
+
+        // 按群組命名空間保存本機資料（防止不同群組的資料互相覆蓋）
+        function saveGroupLocalData(key, data, groupId = null) {
+            const gid = groupId || appConfig.teamId;
+            const namespacedKey = `${key}_${gid}`;
+            try {
+                localStorage.setItem(namespacedKey, JSON.stringify(data));
+            } catch (e) {
+                console.warn("寫入群組本機儲存失敗:", e);
+            }
+        }
+
+        // 【關鍵】資料遷移函數：把舊的全局鍵資料遷移到命名空間鍵（只在首次執行）✅
+        // 修復：不遷移空資料，防止覆蓋新添加的資料 ✅
+        function migrateGroupDataToNamespace(groupId) {
+            if (!groupId) return;
+
+            const keysToMigrate = [
+                'avocado_teachers',
+                'avocado_students',
+                'avocado_leaves',
+                'avocado_assignments',
+                'avocado_pre_leaves',
+                'avocado_notices',
+                'avocado_shift_events',
+                'avocado_logs',
+                'avocado_schedule_lock',
+                'avocado_color_marks'
+            ];
+
+            keysToMigrate.forEach(oldKey => {
+                const oldData = localStorage.getItem(oldKey);
+                if (oldData) {
+                    const namespacedKey = `${oldKey}_${groupId}`;
+                    const existingData = localStorage.getItem(namespacedKey);
+
+                    // 只有在新鍵不存在時才遷移（防止覆蓋新數據）
+                    if (!existingData) {
+                        // 不遷移空資料（[]、{}、null），防止覆蓋新添加的資料
+                        const parsedOldData = (() => {
+                            try { return JSON.parse(oldData); }
+                            catch(e) { return oldData; }
+                        })();
+
+                        // 檢查是否為空資料
+                        const isEmpty = (
+                            parsedOldData === null ||
+                            parsedOldData === undefined ||
+                            (Array.isArray(parsedOldData) && parsedOldData.length === 0) ||
+                            (typeof parsedOldData === 'object' && Object.keys(parsedOldData).length === 0)
+                        );
+
+                        if (!isEmpty) {
+                            localStorage.setItem(namespacedKey, oldData);
+                            console.log(`✅ 已遷移 ${oldKey} 至 ${namespacedKey}`);
+                        }
+                    }
+                }
+            });
         }
 
         // 顯示提示訊息 (Toast) - 完美寫入
@@ -1775,6 +2116,8 @@
                     renderAnalysis();
                     renderPreLeaveDropdowns();
                     renderPreLeaveList();
+                    renderShiftAntiBumpList();  // ✅ 新增：防蹦列表
+                    renderShiftList();          // ✅ 新增：梯次列表
                     renderDrawQuickSelect();
                     renderIdentitySelect();
                     return;
@@ -1831,6 +2174,8 @@
                 renderAnalysis();
                 renderPreLeaveDropdowns();
                 renderPreLeaveList();
+                renderShiftAntiBumpList();  // ✅ 防蹦列表
+                renderShiftList();          // ✅ 梯次列表
                 renderDrawQuickSelect();
                 renderIdentitySelect();
             }
@@ -1840,9 +2185,16 @@
         function connectToCloudTeam(user) {
             if (!isCloudReady || !db || !user) return;
 
+            // 重置首次 Firebase 載入標誌（切換群組時重新保護本機資料）
+            _isFirstFirebaseLoad = true;
+
             // 先完整清除舊監聽器，避免新舊監聽器短暫並存造成資料混亂
             if (unsubscribeOnSnapshot) { unsubscribeOnSnapshot(); unsubscribeOnSnapshot = null; }
             if (unsubscribeDrawBroadcast) { unsubscribeDrawBroadcast(); unsubscribeDrawBroadcast = null; }
+
+            // 重置重連狀態（成功連線）
+            resetFirebaseReconnectState();
+            _isInLocalMode = false;
 
             document.getElementById('cloud-status').innerText = `☁️ 雲端同步已啟動`;
             document.getElementById('cloud-status').style.color = "#ffffff";
@@ -1855,17 +2207,73 @@
                 // 若目前 teamId 已不符（舊監聽器最後一次延遲回調），直接丟棄
                 if (appConfig.teamId !== _expectedTeamId) return;
                 if (docSnap.exists()) {
+                    // 連線恢復：重置重連狀態
+                    if (_firebaseReconnectAttempt > 0) {
+                        console.log("✅ Firebase 連線已恢復");
+                        resetFirebaseReconnectState();
+                        document.getElementById('cloud-status').innerText = `☁️ 雲端同步已啟動`;
+                        document.getElementById('cloud-status').style.color = "#ffffff";
+                        // 若有待同步的變更，立即同步
+                        if (_pendingCloudSyncNeeded) {
+                            _pendingCloudSyncNeeded = false;
+                            setTimeout(uploadToCloud, 1000);
+                        }
+                    }
+
                     _isSwitchingGroup = false; // 資料確認存在，解除切換保護
                     const data = docSnap.data();
 
+                    // === 冑突檢測與智能合併 ✅ ===
+                    // 構造本機當前狀態快照，用於冑突檢測
+                    if (!_isFirstFirebaseLoad && _lastSyncedState) {
+                        const localMemory = {
+                            teachers: teachers,
+                            students: students,
+                            leaveData: leaveData,
+                            monthAssignments: monthAssignments,
+                            preLeaveRecords: preLeaveRecords,
+                            notices: notices
+                        };
+
+                        // 檢測冑突
+                        const conflict = detectConflict(localMemory, data);
+                        if (conflict) {
+                            console.warn("🔄 偵測到資料冑突:", conflict.type);
+
+                            // 執行智能合併
+                            const mergedData = mergeConflicts(data, localMemory);
+
+                            // 應用合併結果
+                            data.teachers = mergedData.teachers;
+                            data.students = mergedData.students;
+                            data.leaveData = mergedData.leaveData;
+                            data.monthAssignments = mergedData.monthAssignments;
+                            data.preLeaveRecords = mergedData.preLeaveRecords;
+                            data.notices = mergedData.notices;
+
+                            // ⚠️ 冑突檢測不寫入操作日誌（只在 Console 記錄以便調試）
+                            console.log("✅ 冑突已自動解決:", conflict.type, mergedData);
+
+                            // 合併後立即回傳給 Firebase（確保所有用户看到合併結果）
+                            setTimeout(() => uploadToCloud(), 2000);
+                        }
+                    }
+
                     // 載入老師 / 學生名單（舊版只有 members 時自動遷移至學生名單）
+                    // 修復：只在 Firebase 有真實資料時才覆蓋，防止空數據覆蓋本機已有資料 ✅
                     if (data.teachers !== undefined || data.students !== undefined) {
-                        teachers = data.teachers || [];
-                        students = data.students || [];
+                        // 只在 Firebase 有非空數據時才覆蓋，否則保留本機資料
+                        if ((data.teachers && data.teachers.length > 0) ||
+                            (data.students && data.students.length > 0)) {
+                            teachers = data.teachers || [];
+                            students = data.students || [];
+                        }
+                        // 如果 Firebase 有欄位但資料為空，保留本機已有的 teachers/students
                     } else if (data.members) {
                         teachers = [];
                         students = data.members || [];
                     }
+                    _isFirstFirebaseLoad = false; // 首次 Firebase 載入完成
                     members = [...teachers, ...students];
                     if (data.title) {
                         appConfig.title = data.title || "牛油果排班";
@@ -1971,6 +2379,8 @@
                         renderLeaveTable();
                         renderPreLeaveDropdowns();
                         renderPreLeaveList();
+                        renderShiftAntiBumpList();  // ✅ 防蹦列表
+                        renderShiftList();          // ✅ 梯次列表
                         renderShiftEvents();
                         renderDrawQuickSelect();
                     }
@@ -2001,6 +2411,16 @@
                             if (gsoEnter) gsoEnter.classList.add('hidden');
                         }
                     }
+
+                    // ═══ 更新同步狀態快照（用於下次冑突檢測） ═══
+                    _lastSyncedState = {
+                        teachers: [...teachers],
+                        students: [...students],
+                        leaveData: JSON.parse(JSON.stringify(leaveData)),
+                        monthAssignments: JSON.parse(JSON.stringify(monthAssignments)),
+                        preLeaveRecords: JSON.parse(JSON.stringify(preLeaveRecords)),
+                        notices: JSON.parse(JSON.stringify(notices))
+                    };
                 } else {
                     // 只有在「非切換途中」才允許建立新文件，防止切換時以空資料覆寫既有群組
                     if (!_isSwitchingGroup) {
@@ -2009,7 +2429,28 @@
                 }
             }, (err) => {
                 console.error("即時同步錯誤:", err);
-                showToast("無權限或網絡異常");
+                _lastConnectionError = err;
+
+                // 辨別錯誤類型：網絡錯誤 vs 權限錯誤
+                const isNetworkError = err.code === 'permission-denied' ? false :
+                    (err.code === 'unauthenticated' ||
+                     err.message?.includes('network') ||
+                     err.message?.includes('timeout') ||
+                     err.message?.includes('PERMISSION_DENIED'));
+
+                if (isNetworkError) {
+                    // 網絡錯誤：觸發自動重連機制
+                    console.warn("🔄 偵測到網絡中斷，啟動自動重連機制");
+                    showToast("網絡中斷，系統正在自動重新連接...");
+                    attemptFirebaseReconnect();
+                } else {
+                    // 權限錯誤：不重連，進入本機模式
+                    console.warn("⚠️ Firebase 權限錯誤或帳戶問題");
+                    _isInLocalMode = true;
+                    showToast("無雲端同步權限，已進入本機模式");
+                    document.getElementById('cloud-status').innerText = '🟢 本機模式運行';
+                    document.getElementById('cloud-status').style.color = "#EAD1DC";
+                }
             });
 
             // 抽籤廣播監聽（獨立文件，不影響主資料）
@@ -2019,6 +2460,9 @@
             unsubscribeDrawBroadcast = window.FirebaseCore.onSnapshot(drawBroadcastRef, (snap) => {
                 if (appConfig.teamId !== _expectedDrawTeamId) return; // 丟棄舊群組的延遲廣播
                 handleDrawBroadcast(snap.exists() ? snap.data() : null);
+            }, (err) => {
+                // 抽籤廣播錯誤（非關鍵功能，只記錄日誌）
+                console.warn("抽籤廣播監聽錯誤:", err);
             });
         }
 
@@ -2111,17 +2555,46 @@
             }
         }
 
-        // 上傳最新資料到 Google Firestore
-        async function uploadToCloud() {
-            debouncedSaveToLocalStorage();
+        // === 狀態欄同步狀態控制 ===
+        let _syncStatusTimer = null;
+        function updateSyncStatusBar(state) {
+            const statusEl = document.getElementById('cloud-status');
+            if (!statusEl) return;
 
+            if (state === 'syncing') {
+                // 清除舊的計時器（若有）
+                if (_syncStatusTimer) clearTimeout(_syncStatusTimer);
+
+                // 顯示「同步中」
+                statusEl.innerText = '⟳ 同步中...';
+                statusEl.style.color = '#FFD700';  // 黃色
+
+                // 2秒後恢復為「雲端同步已啟動」
+                _syncStatusTimer = setTimeout(() => {
+                    statusEl.innerText = '☁️ 雲端同步已啟動';
+                    statusEl.style.color = '#ffffff';
+                    _syncStatusTimer = null;
+                }, 2000);
+            }
+        }
+
+        // 上傳最新資料到 Google Firestore
+        // 修復：移除初始化時的 localStorage 覆蓋問題 ✅
+        // uploadToCloud() 只負責上傳 Firebase，不應在初始化時覆蓋 localStorage
+        async function uploadToCloud() {
             if (!isCloudReady || !db || !auth || !auth.currentUser) {
-                showToast("本機資料已即時備份");
+                // 當無法連線雲端時，標記待同步並使用本機備份
+                _pendingCloudSyncNeeded = true;
+                if (_isInLocalMode) {
+                    showToast("⚠️ 本機模式：資料已保存到本機");
+                } else {
+                    showToast("本機資料已即時備份");
+                }
                 return;
             }
 
             const teamDocRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', appConfig.teamId);
-            
+
             const cleanTeachers = teachers || [];
             const cleanStudents = students || [];
             const cleanMembers = [...cleanTeachers, ...cleanStudents];
@@ -2153,9 +2626,37 @@
                     colorMarks: colorMarks || [],
                     updatedAt: new Date().getTime()
                 });
-                showToast("資料已同步到雲端與本機");
+                // 同步成功，清除待同步標誌
+                _pendingCloudSyncNeeded = false;
+                // 重置重連狀態（如果正在重連的話）
+                if (_firebaseReconnectAttempt > 0) {
+                    resetFirebaseReconnectState();
+                }
+                // ═══ 更新同步狀態快照（用於下次冑突檢測） ✅ ═══
+                _lastSyncedState = {
+                    teachers: [...cleanTeachers],
+                    students: [...cleanStudents],
+                    leaveData: JSON.parse(JSON.stringify(cleanLeaveData)),
+                    monthAssignments: JSON.parse(JSON.stringify(cleanMonthAssignments)),
+                    preLeaveRecords: JSON.parse(JSON.stringify(cleanPreLeaveRecords)),
+                    notices: JSON.parse(JSON.stringify(cleanNotices))
+                };
+                updateSyncStatusBar('syncing');
             } catch (err) {
                 console.error("同步至雲端失敗:", err);
+                // 同步失敗時標記待同步
+                _pendingCloudSyncNeeded = true;
+                // 若偵測到網絡錯誤，觸發自動重連
+                const isNetworkError = err.code === 'permission-denied' ? false :
+                    (err.code === 'unauthenticated' ||
+                     err.message?.includes('network') ||
+                     err.message?.includes('timeout') ||
+                     err.message?.includes('PERMISSION_DENIED'));
+
+                if (isNetworkError && _firebaseReconnectAttempt === 0) {
+                    console.warn("🔄 同步時偵測到網絡中斷，啟動自動重連機制");
+                    attemptFirebaseReconnect();
+                }
             }
         }
 
@@ -2395,17 +2896,45 @@
         }
 
         // 智慧過濾並渲染已合併連續日期的預假清單 (自動將連續日期合併)
+        // 修復：支持多個日期段顯示（同成員的假期不再因日期非連續而分開） ✅
         function packageSegment(segment) {
             const first = segment[0];
-            const last = segment[segment.length - 1];
-            const startDay = parseInt(first.dateKey.split('-')[2]);
-            const endDay = parseInt(last.dateKey.split('-')[2]);
+
+            // 將日期分段（檢查連續性）
+            const dateSegments = [];
+            let curSeg = [segment[0]];
+
+            for (let i = 1; i < segment.length; i++) {
+                const prev = segment[i - 1];
+                const curr = segment[i];
+                const diff = (new Date(curr.dateKey) - new Date(prev.dateKey)) / 86400000;
+
+                if (diff === 1) {
+                    // 連續，加入當前段
+                    curSeg.push(curr);
+                } else {
+                    // 不連續，結束當前段並開始新段
+                    dateSegments.push(curSeg);
+                    curSeg = [curr];
+                }
+            }
+            if (curSeg.length > 0) dateSegments.push(curSeg);
+
+            // 生成日期段信息
+            const dateParts = dateSegments.map(seg => {
+                const startDay = parseInt(seg[0].dateKey.split('-')[2]);
+                const endDay = parseInt(seg[seg.length - 1].dateKey.split('-')[2]);
+                return { startDay, endDay, isSingle: seg.length === 1 };
+            });
 
             return {
                 member: first.member,
                 note: first.note,
-                startDay: startDay,
-                endDay: endDay,
+                type: first.type,              // ✅ 新增：記錄類型（shift 或 leave）
+                shiftName: first.shiftName,    // ✅ 新增：梯次名稱
+                dateSegments: dateParts,  // 新增：多個日期段
+                startDay: dateSegments[0][0] ? parseInt(dateSegments[0][0].dateKey.split('-')[2]) : 0,  // 相容舊邏輯
+                endDay: dateSegments[dateSegments.length - 1][0] ? parseInt(dateSegments[dateSegments.length - 1][dateSegments[dateSegments.length - 1].length - 1].dateKey.split('-')[2]) : 0,
                 isSingle: segment.length === 1,
                 rawIds: segment.map(r => r.id),
                 records: segment
@@ -3150,28 +3679,6 @@
             renderLogs();
         };
 
-        window.clearAllLogs = function() {
-            if (!requireIdentity()) return;
-            const actor = claimedIdentity;
-            showCustomConfirm(
-                '清除操作日誌',
-                `確定要清除全部操作日誌嗎？\n清除後僅保留本次操作紀錄，無法復原。\n\n操作人：${actor}`,
-                () => {
-                    // 清空全部，再補上一筆「誰清除」的系統紀錄，讓此記錄永遠留存
-                    operationLogs = [{
-                        type: 'system',
-                        actor: actor,
-                        message: `${actor} 清除了全部操作日誌`,
-                        ts: Date.now()
-                    }];
-                    saveLocalData('avocado_logs', operationLogs);
-                    renderLogs();
-                    uploadToCloud();
-                    showToast(`操作日誌已清除，已記錄操作人：${actor}`);
-                }
-            );
-        };
-
         // 抽籤 collapse 控制與重置方法
         function toggleLuckyDrawCollapse() {
             const panel = document.getElementById('lucky-draw-panel');
@@ -3662,6 +4169,7 @@
                 arrow.style.transform = 'rotate(180deg)';
                 renderPreLeaveDropdowns();
                 renderPreLeaveList();
+                renderShiftList();  // ✅ 立即渲染梯次列表
             } else {
                 panel.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
@@ -3703,9 +4211,18 @@
         window.toggleCmCalDropdown = function(e) {
             if (e) e.stopPropagation();
             const dd      = document.getElementById('cm-cal-dropdown');
+            const btn     = document.getElementById('cm-date-trigger-btn');
             const chevron = document.getElementById('cm-cal-chevron');
-            if (!dd) return;
+            if (!dd || !btn) return;
             const isOpen = !dd.classList.contains('hidden');
+
+            if (!isOpen) {
+                // 打開時計算位置
+                const rect = btn.getBoundingClientRect();
+                dd.style.left = rect.left + 'px';
+                dd.style.top = (rect.bottom + 8) + 'px';
+            }
+
             dd.classList.toggle('hidden', isOpen);
             if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
         };
@@ -3942,22 +4459,29 @@
             });
         };
 
-        window.toggleShiftEventsCollapse = function() {
-            const panel = document.getElementById('shift-events-panel');
-            const arrow = document.getElementById('shift-events-arrow-icon');
+        // === 防蹦卡片展開/收起 ===
+        window.toggleShiftAntiBumpCollapse = function() {
+            const panel = document.getElementById('shift-anti-bump-panel');
+            const arrow = document.getElementById('shift-anti-bump-arrow-icon');
             if (panel.classList.contains('hidden')) {
                 panel.classList.remove('hidden');
                 arrow.style.transform = 'rotate(180deg)';
-                renderShiftEvents();
+                renderShiftAntiBumpList();
             } else {
                 panel.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
             }
         };
 
-        function renderShiftEvents() {
-            const container  = document.getElementById('shift-events-list');
-            const emptyState = document.getElementById('shift-events-empty');
+        // === 舊版展開/收起（保留相容性，改調用新函數） ===
+        window.toggleShiftEventsCollapse = function() {
+            toggleShiftAntiBumpCollapse();
+        };
+
+        // === 簡化版防蹦列表（只顯示登記狀態，無編輯功能） ===
+        window.renderShiftAntiBumpList = function() {
+            const container  = document.getElementById('shift-anti-bump-list');
+            const emptyState = document.getElementById('shift-anti-bump-empty');
             if (!container) return;
             if (!shiftEvents || shiftEvents.length === 0) {
                 container.innerHTML = '';
@@ -3966,61 +4490,58 @@
             }
             emptyState?.classList.add('hidden');
 
-            container.innerHTML = shiftEvents.map((ev, idx) => {
-                const regs     = ev.registrations || {};
-                // 僅顯示學生登記（過濾老師）
-                const studentRegs = Object.fromEntries(Object.entries(regs).filter(([n]) => !teachers.includes(n)));
-                const regCount = Object.keys(studentRegs).length;
-                const myDates  = studentRegs[claimedIdentity] || [];
-                const iReg     = myDates.length > 0;
-                const regRows  = Object.entries(studentRegs).map(([name, dates]) => {
-                    const ds = dates.slice().sort().map(d => d.slice(5).replace('-','/')).join('、');
-                    return `<div class="flex items-start gap-2 text-xs py-0.5">
-                        <span class="font-black shrink-0" style="color:#3D5E39;min-width:3.5rem">${escapeHtml(name)}</span>
-                        <span class="text-gray-500 font-bold">${ds}</span>
-                    </div>`;
-                }).join('');
+            container.innerHTML = shiftEvents.map((ev) => {
+                const regs = ev.registrations || {};
+
+                // 已登記人員（僅學生，過濾老師）
+                const registeredMembers = Object.keys(regs)
+                    .filter(name => !teachers.includes(name) && regs[name].length > 0)
+                    .sort();
+
+                // 未登記人員
+                const unregisteredMembers = students
+                    .filter(name => !registeredMembers.includes(name))
+                    .sort();
+
+                const iClaimed = registeredMembers.includes(claimedIdentity);
+
                 return `
                 <div class="rounded-2xl border border-[#C4DABD]/60 overflow-hidden" style="background:#FAFCFA">
-                    <div class="px-5 py-4 flex items-start gap-3">
-                        <div class="flex-1 min-w-0 space-y-1.5">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-black text-sm text-gray-800">${escapeHtml(ev.name)}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#E3EDDF;color:#3D5E39">${regCount} 人已登記</span>
-                                ${iReg ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#B8D8A8;color:#2A4A22">🌿 我已登記 ${myDates.length} 天</span>` : ''}
-                            </div>
-                            ${ev.desc ? `<p class="text-xs text-gray-500 font-bold" style="word-break:break-word">${escapeHtml(ev.desc)}</p>` : ''}
-                            <div class="flex items-center gap-2 flex-wrap mt-1">
-                                <button onclick="openShiftRegisterModal(${idx})"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black transition"
-                                    style="background:${iReg ? '#B8D8A8' : '#7A8F81'};color:${iReg ? '#2A4A22' : '#fff'}"
-                                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-                                    <i class="fas fa-calendar-check text-[10px]"></i> ${iReg ? '修改我的登記' : '登記日期'}
-                                </button>
-                                ${regCount > 0 ? `
-                                <button onclick="toggleShiftRegList(this,'shift-reglist-${idx}')"
-                                    class="inline-flex items-center gap-1 text-[11px] font-black transition" style="color:#6A8C72">
-                                    <i class="fas fa-users text-[10px]"></i>
-                                    <span>查看名單</span>
-                                    <i class="fas fa-chevron-down text-[9px] ml-0.5"></i>
-                                </button>` : `<span class="text-[11px] font-bold" style="color:#C0D4BC">尚無人登記</span>`}
+                    <div class="px-5 py-4 space-y-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="font-black text-sm text-gray-800">${escapeHtml(ev.name)}</span>
+                            ${iClaimed ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#B8D8A8;color:#2A4A22">✅ 我已登記</span>` : ''}
+                        </div>
+
+                        <!-- 已登記 -->
+                        <div class="text-xs space-y-1">
+                            <span class="font-black text-gray-600">✅ 已登記 (${registeredMembers.length})：</span>
+                            <div style="color:#5A7A56;font-bold;padding-left:0.5rem;line-height:1.4">
+                                ${registeredMembers.map(name =>
+                                    `${escapeHtml(name)}${name === claimedIdentity ? ' (你)' : ''}`
+                                ).join('、')}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="openShiftEventModal(${idx})" title="編輯" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#E3EDDF;color:#5A7A56" onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
-                                <i class="fas fa-pen text-[10px]"></i>
-                            </button>
-                            <button onclick="deleteShiftEvent(${idx})" title="刪除" class="w-6 h-6 rounded-lg flex items-center justify-center transition" style="background:#F7EAED;color:#8C4A58" onmouseover="this.style.background='#EEDCE0'" onmouseout="this.style.background='#F7EAED'">
-                                <i class="fas fa-trash-alt text-[10px]"></i>
-                            </button>
+
+                        <!-- 未登記 -->
+                        <div class="text-xs space-y-1">
+                            <span class="font-black text-gray-600">❌ 未登記 (${unregisteredMembers.length})：</span>
+                            <div style="color:#9CA3AF;font-bold;padding-left:0.5rem;line-height:1.4">
+                                ${unregisteredMembers.length > 0 ?
+                                    unregisteredMembers.map(name => escapeHtml(name)).join('、')
+                                    : '<span style="color:#D1D5DB">全部登記 🎉</span>'}
+                            </div>
                         </div>
-                    </div>
-                    <div id="shift-reglist-${idx}" class="hidden px-5 pb-4 space-y-0.5 border-t border-[#E8F2E4]">
-                        ${regRows || '<p class="text-xs text-gray-400 py-2">尚無登記</p>'}
                     </div>
                 </div>`;
             }).join('');
-        }
+        };
+
+        // === 舊版 renderShiftEvents（保留但不使用，改調用新函數） ===
+        window.renderShiftEvents = function() {
+            // 改調用新的防蹦列表函數
+            window.renderShiftAntiBumpList();
+        };
 
         window.openShiftEventModal = function(editIdx) {
             const modal   = document.getElementById('shift-event-modal');
@@ -4045,6 +4566,110 @@
 
         window.closeShiftEventModal = function() {
             document.getElementById('shift-event-modal').classList.add('hidden');
+        };
+
+        // === 新增梯次 Modal 相關函數 ===
+        window.openShiftNewModal = function() {
+            document.getElementById('shift-new-name').value = '';
+            document.getElementById('shift-new-modal').classList.remove('hidden');
+        };
+
+        window.closeShiftNewModal = function() {
+            document.getElementById('shift-new-modal').classList.add('hidden');
+        };
+
+        window.saveNewShiftEvent = function() {
+            const name = (document.getElementById('shift-new-name').value || '').trim();
+            if (!name) {
+                showToast('請輸入梯次名稱');
+                return;
+            }
+            const actor = claimedIdentity || '管理員';
+            shiftEvents.unshift({
+                id: String(Date.now()),
+                name,
+                desc: '',
+                createdAt: Date.now(),
+                registrations: {}
+            });
+            appendLog('shift', actor, `${actor} 新增了梯次「${name}」`);
+            closeShiftNewModal();
+            renderShiftList();     // ✅ 更新梯次列表
+            uploadToCloud();
+            showToast('梯次已新增 ✅');
+        };
+
+        // === 渲染梯次列表 ===
+        window.renderShiftList = function() {
+            const container = document.getElementById('shift-list-display');
+            if (!container) return;
+
+            if (!shiftEvents || shiftEvents.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400">尚無梯次</p>';
+                return;
+            }
+
+            container.innerHTML = shiftEvents.map((ev, idx) => {
+                const regs = ev.registrations || {};
+                const iRegistered = claimedIdentity && regs[claimedIdentity] && regs[claimedIdentity].length > 0;
+                const regCount = Object.keys(regs).filter(n => !teachers.includes(n) && regs[n].length > 0).length;
+
+                // 構建登記人名單的 tooltip
+                const regTooltip = Object.entries(regs)
+                    .filter(([n, d]) => !teachers.includes(n) && d.length > 0)
+                    .map(([name, dates]) => {
+                        const dateStr = dates.slice().sort().map(d => {
+                            const [year, month, day] = d.split('-');
+                            return `${parseInt(month)}/${day}`;
+                        }).join('、');
+                        return `${name} ${dateStr}`;
+                    })
+                    .join('&#10;');
+
+                return `
+                    <div class="flex items-center justify-between px-3 py-2 rounded-lg border border-[#AFCDA8]/40 bg-[#F4F9F3]/60 hover:bg-[#EAF2E8] transition">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                            <span class="text-sm font-bold text-gray-700 truncate">${escapeHtml(ev.name)}</span>
+                            <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0 cursor-help" style="background:#E3EDDF;color:#3D5E39" title="${regTooltip || '尚無成員登記'}">${regCount}人</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="window.openShiftRegisterModal(${idx})" class="px-3 py-1 rounded-lg text-xs font-black transition" style="background:${iRegistered ? '#B8D8A8' : '#7A8F81'};color:${iRegistered ? '#2A4A22' : '#fff'}" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                                ${iRegistered ? '修改' : '登記'}
+                            </button>
+                            <button onclick="window.editShiftEvent(${idx})" class="w-6 h-6 rounded text-xs flex items-center justify-center transition" style="background:#E3EDDF;color:#5A7A56" onmouseover="this.style.background='#C4DABD'" onmouseout="this.style.background='#E3EDDF'">
+                                <i class="fas fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="window.deleteShiftEventWithConfirm(${idx})" class="w-6 h-6 rounded text-xs flex items-center justify-center transition" style="background:#F7EAED;color:#8C4A58" onmouseover="this.style.background='#EEDCE0'" onmouseout="this.style.background='#F7EAED'">
+                                <i class="fas fa-trash-alt text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
+        };
+
+        // === 編輯梯次 ===
+        window.editShiftEvent = function(idx) {
+            if (!shiftEvents[idx]) return;
+            const ev = shiftEvents[idx];
+            document.getElementById('shift-event-edit-id').value = String(idx);
+            document.getElementById('shift-event-name').value = ev.name || '';
+            document.getElementById('shift-event-desc').value = ev.desc || '';
+            document.getElementById('shift-event-modal-title').textContent = '編輯梯次';
+            document.getElementById('shift-event-modal').classList.remove('hidden');
+        };
+
+        // === 刪除梯次（含確認） ===
+        window.deleteShiftEventWithConfirm = function(idx) {
+            const evName = shiftEvents[idx]?.name || '（無名稱）';
+            showCustomConfirm('刪除梯次', `確定要刪除梯次「${evName}」嗎？所有成員登記記錄將一併移除。`, () => {
+                _removeShiftEventFromLeave(shiftEvents[idx]);
+                shiftEvents.splice(idx, 1);
+                appendLog('shift', claimedIdentity || '管理員', `${claimedIdentity || '管理員'} 刪除了梯次「${evName}」`);
+                renderShiftList();     // ✅ 更新梯次列表
+                renderLeaveTable();
+                uploadToCloud();
+                showToast('梯次已刪除');
+            });
         };
 
         window.saveShiftEvent = function() {
@@ -4189,24 +4814,47 @@
                 ? (document.getElementById('shift-reg-for-student')?.value || claimedIdentity)
                 : claimedIdentity;
             const oldDates = ((ev.registrations || {})[target]) || [];
-            // 移除舊日期（若同一天仍有預假記錄，保留 leaveData 不移除，避免蓋掉預假）
+
+            // ═══ 第一步：從 preLeaveRecords 移除舊的梯次記錄 ═══
+            preLeaveRecords = preLeaveRecords.filter(r =>
+                !(r.member === target && r.type === 'shift' && r.shiftId === ev.id)
+            );
+
+            // 第二步：從 leaveData 移除舊日期（若同一天仍有預假記錄，保留 leaveData 不移除，避免蓋掉預假）
             oldDates.forEach(dk => {
                 if (leaveData[dk]) {
                     const hasPreLeave = preLeaveRecords.some(r => r.member === target && r.dateKey === dk);
                     if (!hasPreLeave) leaveData[dk] = leaveData[dk].filter(n => n !== target);
                 }
             });
-            // 加入新日期
+
+            // 第三步：新增梯次記錄到 preLeaveRecords（type: 'shift'）
             _shiftRegSelectedDays.forEach(dk => {
+                // 加入 leaveData
                 if (!leaveData[dk]) leaveData[dk] = [];
                 if (!leaveData[dk].includes(target)) leaveData[dk].push(target);
+
+                // 加入 preLeaveRecords
+                const shiftRecord = {
+                    id: `shift_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    member: target,
+                    dateKey: dk,
+                    type: 'shift',
+                    shiftName: ev.name,
+                    shiftId: ev.id,
+                    isSingle: true
+                };
+                preLeaveRecords.push(shiftRecord);
             });
+
+            // 第四步：更新 shiftEvents 的 registrations（保留原有邏輯，用於防蹦顯示）
             if (!ev.registrations) ev.registrations = {};
             if (_shiftRegSelectedDays.length > 0) {
                 ev.registrations[target] = [..._shiftRegSelectedDays];
             } else {
                 delete ev.registrations[target];
             }
+
             const cnt = _shiftRegSelectedDays.length;
             const logMsg = isTeacher
                 ? `${claimedIdentity} <strong>代</strong> ${target} 在梯次「${ev.name}」登記了 ${cnt} 天`
@@ -4214,7 +4862,9 @@
             appendLog('shift', claimedIdentity, logMsg);
             closeShiftRegisterModal();
             renderShiftEvents();
+            renderShiftList();     // ✅ 更新梯次列表
             renderLeaveTable();
+            renderPreLeaveList();  // ✅ 同步到當月放假登記全覽
             uploadToCloud();
             showToast(cnt > 0 ? `已登記 ${cnt} 天，並同步至放假表 ✅` : '已清除登記');
         };
@@ -4592,9 +5242,18 @@
         window.togglePreLeaveCalDropdown = function(e) {
             if (e) e.stopPropagation();
             const dd      = document.getElementById('pl-cal-dropdown');
+            const btn     = document.getElementById('pl-date-trigger-btn');
             const chevron = document.getElementById('pl-cal-chevron');
-            if (!dd) return;
+            if (!dd || !btn) return;
             const isOpen = !dd.classList.contains('hidden');
+
+            if (!isOpen) {
+                // 打開時計算位置
+                const rect = btn.getBoundingClientRect();
+                dd.style.left = rect.left + 'px';
+                dd.style.top = (rect.bottom + 8) + 'px';
+            }
+
             dd.classList.toggle('hidden', isOpen);
             if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
         };
@@ -4730,7 +5389,7 @@
                 ? [..._groupFiltered]
                 : _groupFiltered.filter(r => r.dateKey.startsWith(`${y}-${String(m).padStart(2,'0')}`));
 
-            // 關鍵字過濾（成員名 / 日期）
+            // 關鍵字過濾（成員名 / 日期 / 梯次名）
             if (keyword) {
                 sourceRecords = sourceRecords.filter(r => {
                     const parts = r.dateKey.split('-');
@@ -4738,7 +5397,8 @@
                     return r.member.toLowerCase().includes(keyword)
                         || r.dateKey.includes(keyword)
                         || shortDate.includes(keyword)
-                        || (r.note || '').toLowerCase().includes(keyword);
+                        || (r.note || '').toLowerCase().includes(keyword)
+                        || (r.shiftName || '').toLowerCase().includes(keyword);  // ✅ 新增：梯次名稱搜尋
                 });
             }
 
@@ -4754,40 +5414,47 @@
                 return;
             }
 
-            // ── 輔助：將同成員同備註的連續紀錄合併為段落 ──
+            // ── 輔助：將同成員同備註/梯次的紀錄完全合併（選項A：不按日期連續性分開） ✅
             function buildMergedList(recs) {
                 const grpMap = {};
                 recs.forEach(r => {
-                    const k = `${r.member}_${r.note}`;
+                    // 梯次記錄用 shiftName，預假記錄用 note
+                    const label = r.type === 'shift' ? r.shiftName : (r.note || '');
+                    const k = `${r.member}_${label}_${r.type}`;
                     if (!grpMap[k]) grpMap[k] = [];
                     grpMap[k].push(r);
                 });
                 const merged = [];
                 Object.values(grpMap).forEach(grpRecs => {
                     grpRecs.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
-                    let seg = [];
-                    grpRecs.forEach(rec => {
-                        if (seg.length === 0) { seg.push(rec); return; }
-                        const last = seg[seg.length - 1];
-                        const diff = (new Date(rec.dateKey) - new Date(last.dateKey)) / 86400000;
-                        if (diff === 1) { seg.push(rec); }
-                        else { merged.push(packageSegment(seg)); seg = [rec]; }
-                    });
-                    if (seg.length > 0) merged.push(packageSegment(seg));
+                    // 選項 A：同一成員同一備註/梯次的所有日期，不管日期是否連續，都合併成一條
+                    merged.push(packageSegment(grpRecs));
                 });
                 return merged;
             }
 
             // ── 產生單筆 HTML ──
+            // 修復：顯示多個日期段（用逗號分隔） ✅
+            // 增強：支持梯次標籤顯示 ✅
             function itemHtml(item, displayMonth) {
-                const dayText = item.isSingle
-                    ? `${item.startDay}日`
-                    : `${item.startDay}～${item.endDay}日`;
+                // 支持新的 dateSegments 格式（多個日期段）
+                const dateSegments = item.dateSegments || [{ startDay: item.startDay, endDay: item.endDay, isSingle: item.isSingle }];
+                const dayTexts = dateSegments.map(seg => {
+                    return seg.isSingle ? `${seg.startDay}日` : `${seg.startDay}～${seg.endDay}日`;
+                });
+                const dayText = dayTexts.join('、');  // 用逗號分隔多個日期段
+
+                // 判斷是梯次還是預假（從第一筆原始記錄判斷）
+                const firstRecord = item.records && item.records.length > 0 ? item.records[0] : null;
+                const isShift = firstRecord && firstRecord.type === 'shift';
+                const labelText = isShift ? firstRecord.shiftName : item.note;
+                const labelBgColor = isShift ? '#7A8F81' : '#7A8F81';  // 統一為預假色（奶茶色的灰綠）
+
                 const idsPayload = item.rawIds.join(',');
                 return `
                     <div class="flex items-center py-1.5 rounded-xl border border-[#AFCDA8]/40 bg-[#F4F9F3]/60 transition hover:bg-[#EAF2E8]" style="padding-left:1.5cm;padding-right:0.75rem">
                         <div class="flex items-center gap-2 flex-1 justify-start min-w-0 flex-wrap">
-                            ${item.note ? `<span class="py-0.5 rounded-full bg-[#7A8F81] text-white shrink-0 whitespace-nowrap text-[13px] font-black" style="padding-left:0.3cm;padding-right:0.3cm">${escapeHtml(item.note)}</span>` : ''}
+                            ${labelText ? `<span class="py-0.5 rounded-full text-white shrink-0 whitespace-nowrap text-[13px] font-black" style="background:${labelBgColor};padding-left:0.3cm;padding-right:0.3cm">${escapeHtml(labelText)}</span>` : ''}
                             <span class="text-[13px] font-black text-gray-700 truncate" style="padding-left:0.1cm;padding-right:0.1cm">${escapeHtml(item.member)}</span>
                             <span class="text-[13px] font-bold shrink-0" style="color:#4B5563;padding-left:0.1cm;padding-right:0.1cm">${displayMonth}月${dayText}</span>
                         </div>
@@ -4803,9 +5470,14 @@
             let totalItemCount = 0;
 
             if (!isAllMode) {
-                const merged = buildMergedList(sourceRecords).sort((a, b) => a.startDay - b.startDay);
-                totalItemCount = merged.length;
-                allItemParts.push(merged.map(item => itemHtml(item, m)).join(''));
+                // 按成員分組，同成員的所有記錄顯示在同一個容器
+                const memberGroups = buildMemberGroupList(sourceRecords);
+                Object.keys(memberGroups).sort().forEach(member => {
+                    const memberRecs = memberGroups[member];
+                    const merged = buildMergedList(memberRecs).sort((a, b) => a.startDay - b.startDay);
+                    totalItemCount += merged.length;
+                    allItemParts.push(memberContainerHtml(member, merged, m));
+                });
             } else {
                 const monthMap = {};
                 sourceRecords.forEach(r => {
@@ -4815,15 +5487,23 @@
                 });
                 Object.keys(monthMap).sort().forEach(mk => {
                     const [gy, gm] = mk.split('-').map(Number);
-                    const merged = buildMergedList(monthMap[mk]).sort((a, b) => a.startDay - b.startDay);
-                    totalItemCount += merged.length;
+                    // 該月份資料按成員分組
+                    const monthRecs = monthMap[mk];
+                    const memberGroups = buildMemberGroupList(monthRecs);
+
                     allItemParts.push(`
                         <div class="flex items-center gap-2 pt-1 pb-0.5">
                             <div class="flex-1 border-t border-[#C4DABD]"></div>
                             <span class="text-[11px] font-black shrink-0" style="color:#7A8F81">${gy}年 ${gm}月</span>
                             <div class="flex-1 border-t border-[#C4DABD]"></div>
                         </div>`);
-                    allItemParts.push(merged.map(item => itemHtml(item, gm)).join(''));
+
+                    Object.keys(memberGroups).sort().forEach(member => {
+                        const memberRecs = memberGroups[member];
+                        const merged = buildMergedList(memberRecs).sort((a, b) => a.startDay - b.startDay);
+                        totalItemCount += merged.length;
+                        allItemParts.push(memberContainerHtml(member, merged, gm));
+                    });
                 });
             }
 
@@ -4983,20 +5663,36 @@
             // 先取出將被刪除的資訊，供確認視窗與日誌使用
             const deletedInfo = ids.map(id => preLeaveRecords.find(r => r.id === id)).filter(Boolean);
             const logMember = deletedInfo.length > 0 ? deletedInfo[0].member : '';
+            const isShiftDelete = deletedInfo.length > 0 && deletedInfo[0].type === 'shift';
             const logDays = deletedInfo.map(r => {
                 const p = r.dateKey.split('-');
                 return `${parseInt(p[1])}/${parseInt(p[2])}`;
             }).join('、');
             const confirmMsg = logMember
-                ? `確定要刪除「${logMember}」的預假登記嗎？\n日期：${logDays}\n\n刪除後將同時取消點休表上的標記。`
-                : '確定要刪除此預假登記嗎？';
-            showCustomConfirm('🗑️ 刪除預假確認', confirmMsg, () => {
+                ? `確定要刪除「${logMember}」的${isShiftDelete ? '梯次' : '預假'}登記嗎？\n日期：${logDays}\n\n刪除後將同時取消點休表上的標記。`
+                : `確定要刪除此${isShiftDelete ? '梯次' : '預假'}登記嗎？`;
+            showCustomConfirm('🗑️ 刪除確認', confirmMsg, () => {
                 ids.forEach(id => {
                     const index = preLeaveRecords.findIndex(r => r.id === id);
                     if (index !== -1) {
                         const record = preLeaveRecords[index];
-                        const { dateKey, member } = record;
+                        const { dateKey, member, type, shiftId } = record;
                         preLeaveRecords.splice(index, 1);
+
+                        // 若為梯次記錄，也從 shiftEvents 的 registrations 中移除
+                        if (type === 'shift' && shiftId) {
+                            const shiftEventIdx = shiftEvents.findIndex(e => e.id === shiftId);
+                            if (shiftEventIdx !== -1) {
+                                const ev = shiftEvents[shiftEventIdx];
+                                if (ev.registrations && ev.registrations[member]) {
+                                    ev.registrations[member] = ev.registrations[member].filter(d => d !== dateKey);
+                                    if (ev.registrations[member].length === 0) {
+                                        delete ev.registrations[member];
+                                    }
+                                }
+                            }
+                        }
+
                         if (leaveData[dateKey]) {
                             leaveData[dateKey] = leaveData[dateKey].filter(name => name !== member);
                             if (leaveData[dateKey].length === 0) {
@@ -5007,15 +5703,18 @@
                 });
                 renderLeaveTable();
                 renderPreLeaveList();
+                renderShiftEvents();      // ✅ 同時更新防蹦卡片
+                renderShiftList();        // ✅ 同時更新梯次列表
                 renderPreLeaveDropdowns();
                 uploadToCloud();
-                showToast("✅ 已刪除預假登記並取消點休標記");
+                showToast("✅ 已刪除登記並取消點休標記");
                 if (logMember) {
                     const _plDelOperator = claimedIdentity || '成員';
+                    const typeLabel = isShiftDelete ? '梯次' : '預假';
                     if (_plDelOperator === logMember) {
-                        appendLog('preleave', _plDelOperator, `${_plDelOperator} 刪除預假 ${deletedInfo.length} 天（${logDays}）`);
+                        appendLog(isShiftDelete ? 'shift' : 'preleave', _plDelOperator, `${_plDelOperator} 刪除${typeLabel} ${deletedInfo.length} 天（${logDays}）`);
                     } else {
-                        appendLog('preleave', _plDelOperator, `${_plDelOperator} 代 ${logMember} 刪除預假 ${deletedInfo.length} 天（${logDays}）`);
+                        appendLog(isShiftDelete ? 'shift' : 'preleave', _plDelOperator, `${_plDelOperator} 代 ${logMember} 刪除${typeLabel} ${deletedInfo.length} 天（${logDays}）`);
                     }
                 }
             });
@@ -5042,20 +5741,6 @@
             hHtml += `<th class="sticky-col-total border-b" style="${thBase}width:70px;min-width:70px;padding:0 6px;font-size:11px;">總天數</th></tr>`;
             header.innerHTML = hHtml;
 
-            // ── 梯次備註查找表：{ dateKey: { memberName: eventName } } ──
-            const shiftNoteMap = {};
-            (shiftEvents || []).forEach(ev => {
-                Object.entries(ev.registrations || {}).forEach(([member, dates]) => {
-                    dates.forEach(dk => {
-                        if (!shiftNoteMap[dk]) shiftNoteMap[dk] = {};
-                        // 若同一人同日有多個梯次，以逗號串接
-                        shiftNoteMap[dk][member] = shiftNoteMap[dk][member]
-                            ? shiftNoteMap[dk][member] + '、' + ev.name
-                            : ev.name;
-                    });
-                });
-            });
-
             // ── 表身：只顯示學生（老師不列入放假登記）──
             body.innerHTML = students.map(name => {
                 let offDaysCount = 0;
@@ -5079,22 +5764,31 @@
                     const _cmStyle = _cm ? `background-color:${_cm.color};` : '';
 
                     if (isPreLeaved) {
+                        // 梯次登記顯示梯次名稱，預排假顯示備註
+                        let titleText = '';
+                        if (preLeaveObj.type === 'shift') {
+                            titleText = `梯次：${escapeHtml(preLeaveObj.shiftName || '未知梯次')}`;
+                        } else {
+                            const noteText = preLeaveObj.note || '無備註';
+                            titleText = `${escapeHtml(name)} 預假備註：${escapeHtml(noteText)}`;
+                        }
                         row += `<td class="p-0 border-b border-l border-gray-100">
                             <div onclick="toggleLeave('${dKey}','${name.replace(/\\/g,'\\\\').replace(/'/g,"\\x27")}')"
                                  class="leave-cell is-pre-leave font-black text-xs"
                                  style="${_cmStyle}"
-                                 title="${escapeHtml(name)} 預假備註：${escapeHtml(preLeaveObj.note)}">休</div>
+                                 title="${titleText}">休</div>
                         </td>`;
-                    } else {
-                        const shiftNote = (shiftNoteMap[dKey] || {})[name];
-                        const _offClass = isManualOff ? (shiftNote ? 'is-shift-leave text-xs' : 'is-off text-xs') : '';
-                        // 一般休假用描邊「休」，梯次用一般「休」
-                        const _休Html = !isManualOff ? '' : shiftNote ? '休' : '<span class="休-badge">休</span>';
+                    } else if (isManualOff) {
                         row += `<td class="p-0 border-b border-l border-gray-100">
                             <div onclick="toggleLeave('${dKey}','${name.replace(/\\/g,'\\\\').replace(/'/g,"\\x27")}')"
-                                 class="leave-cell ${_offClass}"
-                                 style="${_cmStyle}"
-                                 ${isManualOff && shiftNote ? `title="梯次：${escapeHtml(shiftNote)}"` : ''}>${_休Html}</div>
+                                 class="leave-cell is-off text-xs"
+                                 style="${_cmStyle}"><span class="休-badge">休</span></div>
+                        </td>`;
+                    } else {
+                        row += `<td class="p-0 border-b border-l border-gray-100">
+                            <div onclick="toggleLeave('${dKey}','${name.replace(/\\/g,'\\\\').replace(/'/g,"\\x27")}')"
+                                 class="leave-cell"
+                                 style="${_cmStyle}"></div>
                         </td>`;
                     }
                 }
@@ -6699,10 +7393,10 @@
         };
 
         window.onload = () => {
-            // 30 天日誌自動清理：距上次清理超過 24 小時才執行，不因開啟/重整就清理
+            // 45 天日誌自動清理：距上次清理超過 24 小時才執行，不因開啟/重整就清理 ✅
             const _lastClean = loadLocalData('avocado_logs_last_clean', 0);
             if (Date.now() - _lastClean > 24 * 60 * 60 * 1000) {
-                const _logCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                const _logCutoff = Date.now() - 45 * 24 * 60 * 60 * 1000;  // 保留 45 天內的日誌
                 operationLogs = operationLogs.filter(l => l.ts > _logCutoff);
                 saveLocalData('avocado_logs', operationLogs);
                 try { localStorage.setItem('avocado_logs_last_clean', JSON.stringify(Date.now())); } catch(e) {}
