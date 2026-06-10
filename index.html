@@ -1213,7 +1213,7 @@
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[960] hidden">
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] hidden">
         <div class="bg-white p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border border-[#DECFC0] text-center space-y-4">
             <div class="text-4xl text-[#C2A383]"><i class="fas fa-exclamation-circle"></i></div>
             <h4 class="font-black text-lg text-gray-800" id="confirm-title">確認操作</h4>
@@ -1636,6 +1636,7 @@
         let _isRenamingGroup = false;  // 群組重命名保護旗標，防止 onSnapshot 在 sync 完成前以舊資料覆蓋
         let _lastScheduleGenTime = 0;  // 最後一次生成排班的時間戳（防 Firebase 舊快照覆蓋）
         let _isFirstFirebaseLoad = true; // 頁面初次載入時的 Firebase 快照標誌（防止空資料覆蓋本機資料）
+        let _backupTriggered = false;    // 每日備份是否已觸發（每次開頁面只跑一次）
         let _logTypeFilter      = '';       // 操作日誌標籤篩選（'' = 全部）
         let _memberFilter       = '';       // 工作台成員篩選（'' = 全部）
         let _preLeaveViewMode   = 'month';  // 預假清單檢視模式（'month' = 當月 | 'all' = 全部）
@@ -3305,6 +3306,11 @@
                         <div class="w-px h-4 shrink-0" style="background:${isActive ? '#AFCDA8' : '#E5E7EB'}"></div>
                         <!-- 管理按鈕 -->
                         <div class="flex items-center gap-0.5 shrink-0">
+                            <button onclick="event.stopPropagation();showBackupModal('${g.id}','${safeGname}')"
+                                class="w-7 h-7 flex items-center justify-center rounded-lg transition"
+                                style="color:#AFCDA8"
+                                onmouseover="this.style.background='rgba(122,143,129,0.1)';this.style.color='#7A8F81'" onmouseout="this.style.background='transparent';this.style.color='#AFCDA8'"
+                                title="查看備份"><i class="fas fa-box-archive text-[10px]"></i></button>
                             <button onclick="event.stopPropagation();openRenameGroupModal(this.dataset.gid,this.dataset.gname)"
                                 data-gid="${g.id}" data-gname="${safeGname}"
                                 class="w-7 h-7 flex items-center justify-center rounded-lg transition"
@@ -6528,6 +6534,11 @@
                 renderGroupsTab();
                 updateGroupNavDisplay();
                 renderGroupSelectOverlay(); // 若群組選擇頁正開著，同步更新清單
+                // 每日備份：今天第一次載入群組清單時觸發（每次開頁面只跑一次）
+                if (!_backupTriggered) {
+                    _backupTriggered = true;
+                    setTimeout(() => runDailyBackupIfNeeded(), 3000);
+                }
             }, (err) => { console.error('群組登錄簿同步錯誤:', err); });
         }
 
@@ -6538,6 +6549,120 @@
                 const registryRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'groups_registry');
                 await window.FirebaseCore.setDoc(registryRef, { groups: groups, groupCategories: groupCategories, updatedAt: Date.now() });
             } catch(e) { console.error('群組登錄簿寫入失敗:', e); }
+        }
+
+        // ═══════════════════════════════════════════
+        // 📦 每日自動備份（升級版方案A：備份所有群組）
+        // ═══════════════════════════════════════════
+        async function runDailyBackupIfNeeded() {
+            if (!isCloudReady || !db || !auth || !auth.currentUser) return;
+            if (!groups || groups.length === 0) return;
+
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+            try {
+                // 檢查今天是否已備份
+                const indexRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'backup_index');
+                const indexSnap = await window.FirebaseCore.getDoc(indexRef);
+                const indexData = indexSnap.exists() ? indexSnap.data() : {};
+                if (indexData.lastBackupDate === today) return; // 今天已備份，跳過
+
+                // 備份所有群組
+                const backupData = {};
+                for (const group of groups) {
+                    try {
+                        const teamRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', group.id);
+                        const snap = await window.FirebaseCore.getDoc(teamRef);
+                        if (snap.exists()) backupData[group.id] = snap.data();
+                    } catch(e) { console.warn('備份群組失敗:', group.id, e); }
+                }
+
+                // 儲存今日備份
+                const backupRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'daily_backups', today);
+                await window.FirebaseCore.setDoc(backupRef, { groups: backupData, backedAt: Date.now() });
+
+                // 更新備份索引（保留最近 7 天）
+                const dates = (indexData.dates || []).filter(d => d !== today);
+                dates.unshift(today);
+                await window.FirebaseCore.setDoc(indexRef, { lastBackupDate: today, dates: dates.slice(0, 7) });
+
+                console.log('✅ 每日備份完成:', today, '共', groups.length, '個群組');
+            } catch(e) { console.error('每日備份失敗:', e); }
+        }
+
+        // 開啟備份還原 Modal
+        let _backupTargetGroupId = null;
+        window.showBackupModal = async function(groupId, groupName) {
+            if (!isCloudReady || !db) { showToast('雲端未連線，無法查看備份'); return; }
+            _backupTargetGroupId = groupId || appConfig.teamId;
+            const displayName = groupName || appConfig.title || '此群組';
+            const modal = document.getElementById('backup-restore-modal');
+            const listEl = document.getElementById('backup-date-list');
+            const targetEl = document.getElementById('backup-target-name');
+            if (!modal || !listEl) return;
+
+            if (targetEl) targetEl.innerText = displayName;
+            listEl.innerHTML = `<div class="text-center py-6"><i class="fas fa-circle-notch fa-spin text-2xl" style="color:#AFCDA8"></i></div>`;
+            modal.classList.remove('hidden');
+
+            try {
+                const indexRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'backup_index');
+                const indexSnap = await window.FirebaseCore.getDoc(indexRef);
+                if (!indexSnap.exists() || !(indexSnap.data().dates || []).length) {
+                    listEl.innerHTML = `<p class="text-center text-sm py-6" style="color:#AFCDA8">尚無備份紀錄</p>`;
+                    return;
+                }
+                const dates = indexSnap.data().dates || [];
+                listEl.innerHTML = dates.map(date => {
+                    const label = date === new Date().toISOString().slice(0,10) ? `${date}（今天）` : date;
+                    return `<button onclick="confirmRestoreBackup('${date}')"
+                        class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all mb-2"
+                        style="background:rgba(122,143,129,0.08);color:#2E4A2A;border:1.5px solid #D8E8D4"
+                        onmouseover="this.style.background='rgba(122,143,129,0.18)'" onmouseout="this.style.background='rgba(122,143,129,0.08)'">
+                        <i class="fas fa-box-archive mr-2" style="color:#AFCDA8"></i>${label}
+                    </button>`;
+                }).join('');
+            } catch(e) {
+                listEl.innerHTML = `<p class="text-center text-sm py-6" style="color:#FCA5A5">讀取備份失敗</p>`;
+            }
+        };
+
+        window.closeBackupModal = function() {
+            document.getElementById('backup-restore-modal')?.classList.add('hidden');
+        };
+
+        window.confirmRestoreBackup = function(date) {
+            const targetName = document.getElementById('backup-target-name')?.innerText || '此群組';
+            showCustomConfirm(
+                '⚠️ 確認還原備份',
+                `將把「${targetName}」還原至 ${date} 的備份狀態。\n\n目前的資料將被覆蓋，此操作無法復原。\n\n確定要繼續嗎？`,
+                async () => {
+                    closeBackupModal();
+                    await restoreFromBackup(date);
+                }
+            );
+        };
+
+        async function restoreFromBackup(date) {
+            if (!isCloudReady || !db || !auth || !auth.currentUser) return;
+            const targetId = _backupTargetGroupId || appConfig.teamId;
+            try {
+                showToast('⏳ 還原中...');
+                const backupRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'daily_backups', date);
+                const snap = await window.FirebaseCore.getDoc(backupRef);
+                if (!snap.exists()) { showToast('❌ 找不到此備份'); return; }
+
+                const groupData = snap.data().groups?.[targetId];
+                if (!groupData) { showToast('❌ 此備份中沒有該群組的資料'); return; }
+
+                const teamRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetId);
+                await window.FirebaseCore.setDoc(teamRef, groupData);
+                showToast('✅ 還原成功！頁面將重新整理...');
+                setTimeout(() => location.reload(), 1500);
+            } catch(e) {
+                console.error('還原失敗:', e);
+                showToast('❌ 還原失敗，請再試一次');
+            }
         }
 
         function initGroups() {
@@ -7394,6 +7519,25 @@
                 <i class="fas fa-arrow-right mr-2"></i>進入
             </button>
             <p class="text-[10px] font-bold mt-5 text-center" style="color:#AFCDA8;max-width:320px">選擇您的名字後即可進入使用所有功能</p>
+        </div>
+    </div>
+
+    <!-- ══ 備份還原 Modal ══ -->
+    <div id="backup-restore-modal" class="hidden fixed inset-0 z-[1100] flex items-center justify-center px-4" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">
+        <div class="w-full rounded-3xl p-6" style="max-width:400px;background:white;box-shadow:0 8px 40px rgba(0,0,0,0.18)">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-black" style="color:#2E4A2A"><i class="fas fa-box-archive mr-2" style="color:#AFCDA8"></i>查看備份</h2>
+                <button onclick="closeBackupModal()" class="w-8 h-8 flex items-center justify-center rounded-xl transition hover:bg-black/10" style="color:#9CA3AF">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl" style="background:rgba(122,143,129,0.08)">
+                <i class="fas fa-layer-group text-[11px]" style="color:#AFCDA8"></i>
+                <span class="text-[11px] font-bold" style="color:#7A8F81">還原對象：</span>
+                <span id="backup-target-name" class="text-[11px] font-black" style="color:#2E4A2A"></span>
+            </div>
+            <p class="text-[11px] mb-3 font-bold" style="color:#AFCDA8">選擇要還原的日期</p>
+            <div id="backup-date-list"></div>
         </div>
     </div>
 </body>
