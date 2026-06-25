@@ -6182,7 +6182,13 @@
                     const tdCells = taskNames.map((r, idx) => {
                         const isLastCell = idx === taskNames.length - 1;
                         const rightBorder = (isToday && isLastCell) ? 'border-right:3px solid #5A8AAD;' : '';
-                        const users = taskMap[r] || [];
+                        // 先依任務名稱比對（欄位重新排序時，人會正確跟著任務走）；
+                        // 名稱對不上時（例如在設定頁替任務改名，如加「+RF」），退回依欄位位置比對，
+                        // 確保已生成的排班不會因為任務改名就整欄消失變成「—」
+                        let users = taskMap[r] || [];
+                        if (!users.length && tasks[idx] && tasks[idx].userName) {
+                            users = [tasks[idx].userName];
+                        }
                         if (!users.length) {
                             return `<td class="px-3 py-2 text-center" style="background:${rowBg};${todayFrame}${rightBorder}"><span style="color:#D1D5DB;font-size:10px">—</span></td>`;
                         }
