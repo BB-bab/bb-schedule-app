@@ -6671,6 +6671,62 @@
             }
         }
 
+        // ═══════════════════════════════════════════
+        // ⚡ 手動立即備份：只把「當前群組」更新到今天的快照
+        //    ・不影響其他群組（用 merge 只更新該群組那一格）
+        //    ・不更新 lastBackupDate → 自動全群組備份今天仍會照常執行
+        //    ・寫入格式與每日自動備份完全相容，還原邏輯不需改動
+        // ═══════════════════════════════════════════
+        window.manualBackupNow = async function() {
+            if (!isCloudReady || !db || !auth || !auth.currentUser) {
+                showToast('雲端未連線，無法備份');
+                return;
+            }
+            const targetId = _backupTargetGroupId || appConfig.teamId;
+            const btn = document.getElementById('manual-backup-btn');
+            const _origHtml = btn ? btn.innerHTML : '';
+            try {
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>備份中...'; }
+
+                // 1. 先把目前群組的最新變更寫進雲端，確保快照抓到的是最新
+                await uploadToCloud();
+
+                // 2. 從雲端讀取該群組最新資料
+                const teamRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetId);
+                const teamSnap = await window.FirebaseCore.getDoc(teamRef);
+                if (!teamSnap.exists()) { showToast('❌ 找不到該群組的雲端資料'); return; }
+
+                const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+                // 3. 只更新今天快照裡「該群組」那一格（merge 不影響其他群組）
+                const backupRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'daily_backups', today);
+                await window.FirebaseCore.setDoc(backupRef, {
+                    groups: { [targetId]: teamSnap.data() },
+                    backedAt: Date.now()
+                }, { merge: true });
+
+                // 4. 確保今天出現在備份索引清單（去重、保留最近 7 天）
+                //    ⚠️ 刻意不寫 lastBackupDate，讓自動全群組備份今天仍會照常執行
+                const indexRef = window.FirebaseCore.doc(db, 'artifacts', appId, 'public', 'data', 'meta', 'backup_index');
+                const indexSnap = await window.FirebaseCore.getDoc(indexRef);
+                const indexData = indexSnap.exists() ? indexSnap.data() : {};
+                const dates = (indexData.dates || []).filter(d => d !== today);
+                dates.unshift(today);
+                await window.FirebaseCore.setDoc(indexRef, { dates: dates.slice(0, 7) }, { merge: true });
+
+                showToast('✅ 已備份至今天最新');
+
+                // 5. 刷新 Modal 的日期清單
+                const _name = document.getElementById('backup-target-name')?.innerText || '';
+                showBackupModal(targetId, _name);
+            } catch (e) {
+                console.error('立即備份失敗:', e);
+                showToast('❌ 備份失敗，請再試一次');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = _origHtml; }
+            }
+        };
+
         function initGroups() {
             if (groups.length === 0) {
                 groups = [{ id: appConfig.teamId, name: '主群組', createdAt: Date.now() }];
@@ -7542,6 +7598,12 @@
                 <span class="text-[11px] font-bold" style="color:#7A8F81">還原對象：</span>
                 <span id="backup-target-name" class="text-[11px] font-black" style="color:#2E4A2A"></span>
             </div>
+            <button id="manual-backup-btn" onclick="manualBackupNow()"
+                class="w-full mb-4 px-4 py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2"
+                style="background:linear-gradient(135deg,#7A8F81 0%,#A3B5A8 100%);color:white;box-shadow:0 4px 12px rgba(122,143,129,0.3)"
+                onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter=''">
+                <i class="fas fa-bolt"></i>立即備份至最新
+            </button>
             <p class="text-[11px] mb-3 font-bold" style="color:#AFCDA8">選擇要還原的日期</p>
             <div id="backup-date-list"></div>
         </div>
