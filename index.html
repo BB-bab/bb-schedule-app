@@ -6086,47 +6086,61 @@
             const _now = new Date();
             const _todayKey = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
 
-            // 依幾人模式分組（key = 任務數量字串）
-            // modeGroups[modeKey] = { taskNames: [...], days: [dKey, ...] }
-            const modeGroups = {};
+            // 依日期連續排序、同模式相鄰日子合為一段（取代舊的「依模式分桶」）
+            // 收集本月所有已排班的日期
+            const _allDays = [];
             for (let d = 1; d <= daysInMonth; d++) {
                 const dKey  = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const tasks = monthAssignments[dKey];
                 if (!tasks || tasks.length === 0) continue;
-                const modeKey = String(tasks.length);
-                if (!modeGroups[modeKey]) {
-                    // 優先使用 scheduleModules 的任務名稱（保持設定順序）
-                    // 若找不到對應模組則從實際指派資料萃取
-                    const modTasks = scheduleModules[modeKey];
-                    const taskNames = Array.isArray(modTasks) && modTasks.length
-                        ? modTasks
-                        : tasks.map(t => t.ruleName);
-                    modeGroups[modeKey] = { taskNames, days: [] };
-                }
-                modeGroups[modeKey].days.push(dKey);
+                _allDays.push(dKey);
             }
 
-            if (Object.keys(modeGroups).length === 0) {
+            if (_allDays.length === 0) {
                 renderMemberFilterBar();
                 renderMemberSummary();
                 renderScheduleLockUI();
                 return;
             }
 
-            // 模式排序：含今天的群組優先，其餘從大到小
-            const _todayModeKey = Object.keys(modeGroups).find(k => modeGroups[k].days.includes(_todayKey)) || null;
-            const sortedModes = Object.keys(modeGroups).sort((a, b) => {
-                if (a === _todayModeKey) return -1;
-                if (b === _todayModeKey) return 1;
-                return Number(b) - Number(a);
+            // 排序：今天+未來在上（升冪連續）、過去沉底（升冪連續）
+            // 不再把今天硬浮到第一列；今天因是非過去裡日期最小者，自然落在上半部開頭
+            const sortedAllDays = _allDays.sort((a, b) => {
+                const aPast = a < _todayKey;
+                const bPast = b < _todayKey;
+                if (aPast && !bPast) return 1;
+                if (!aPast && bPast) return -1;
+                return a < b ? -1 : 1;
             });
+
+            // 連續掃描分段：模式改變、或跨越「今天/過去」分界時，就開新的一段
+            // 同一個模式可重複出現多次，模式切換時插入對應的模式標題列
+            const segments = [];
+            let _curSeg = null;
+            let _prevIsPast = null;
+            for (const dKey of sortedAllDays) {
+                const tasks     = monthAssignments[dKey];
+                const modeKey   = String(tasks.length);
+                const isPastDay = dKey < _todayKey;
+                if (!_curSeg || _curSeg.modeKey !== modeKey || _prevIsPast !== isPastDay) {
+                    // 優先使用 scheduleModules 的任務名稱（保持設定順序），找不到才從實際資料萃取
+                    const modTasks  = scheduleModules[modeKey];
+                    const taskNames = Array.isArray(modTasks) && modTasks.length
+                        ? modTasks
+                        : tasks.map(t => t.ruleName);
+                    _curSeg = { modeKey, taskNames, days: [] };
+                    segments.push(_curSeg);
+                }
+                _curSeg.days.push(dKey);
+                _prevIsPast = isPastDay;
+            }
 
             const _dayNames = ['日','一','二','三','四','五','六'];
             let allTablesHtml = '';
 
-            for (const modeKey of sortedModes) {
-                const { taskNames, days } = modeGroups[modeKey];
-                const modeLabel = `${modeKey} 人模式`;
+            for (const seg of segments) {
+                const { taskNames, days } = seg;
+                const modeLabel = `${seg.modeKey} 人模式`;
 
                 // ── 模式表頭列（深綠底白字）──
                 const thModeName = `<th class="px-4 py-2.5 text-center font-black text-white text-[15px] whitespace-nowrap" style="background:#5A7A56;width:96px">${escapeHtml(modeLabel)}</th>`;
@@ -6138,19 +6152,8 @@
 
                 let tbodyHtml = '';
 
-                // ── 日期排序：今天第一、未來由近到遠、過去沉底由近到遠 ──
-                const sortedDays = [...days].sort((a, b) => {
-                    if (a === _todayKey) return -1;
-                    if (b === _todayKey) return 1;
-                    const aPast = a < _todayKey;
-                    const bPast = b < _todayKey;
-                    if (aPast && !bPast) return 1;
-                    if (!aPast && bPast) return -1;
-                    return a < b ? -1 : 1;
-                });
-
-                // ── 日期資料列 ──
-                for (const dKey of sortedDays) {
+                // ── 日期資料列（已全域依日期連續排序，直接輸出）──
+                for (const dKey of days) {
                     const tasks   = monthAssignments[dKey] || [];
                     const dateObj = new Date(dKey + 'T00:00:00');
                     const dd      = dateObj.getDate();
