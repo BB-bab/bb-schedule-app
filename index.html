@@ -648,6 +648,7 @@
                                     <div class="flex gap-2">
                                         <select id="draw-member-quick-select" class="input-minimal bg-white flex-1 font-bold text-xs"></select>
                                         <button onclick="quickAddMemberToDrawPool()" class="bg-[#7A8F81] hover:bg-[#637569] text-white px-4 py-2 rounded-xl text-xs font-black transition shrink-0">加入成員</button>
+                                        <button onclick="addAllMembersToDrawPool()" class="bg-white hover:bg-gray-50 text-[#7A8F81] border border-[#7A8F81] px-4 py-2 rounded-xl text-xs font-black transition shrink-0">全部加入</button>
                                     </div>
                                     <textarea id="draw-names-input" rows="3" class="input-minimal w-full font-bold focus:border-[#7A8F81] h-[80px] resize-none text-xs hidden" placeholder="原始抽籤名單 (由膠囊自動同步)"></textarea>
                                 </div>
@@ -3692,6 +3693,20 @@
             renderDrawPoolTags();
             selector.value = "";
             showToast(`已手動加入成員：${name}`);
+        };
+
+        // 5-1. 一鍵補齊所有成員至抽籤池（保留現有順序，只補缺少的）
+        window.addAllMembersToDrawPool = function() {
+            const missing = students.filter(m => !currentDrawPool.includes(m));
+            if (!missing.length) {
+                showToast("所有成員都已在抽籤名單中囉！");
+                return;
+            }
+            currentDrawPool.push(...missing);
+            syncDrawPoolToTextarea();
+            renderDrawPoolTags();
+            document.getElementById('draw-member-quick-select').value = "";
+            showToast(`已加入 ${missing.length} 位成員（${students.length - missing.length} 位已在名單中）`);
         };
 
         // 6. 一鍵清空膠囊
